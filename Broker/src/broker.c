@@ -1,8 +1,8 @@
 /*
  ============================================================================
- Name        : Game Boy
+ Name        : Broker
  Author      : Fran and Co
- Description : Proceso Game Boy
+ Description : Proceso Broker
  ============================================================================
  */
 
@@ -10,6 +10,7 @@
 #include <stdlib.h>
 
 int main(void) {
-	puts("Soy el proceso Game Boy");
-	return EXIT_SUCCESS;
+
+
+
 }
