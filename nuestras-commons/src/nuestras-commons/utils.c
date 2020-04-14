@@ -37,39 +37,40 @@ int crear_conexion(char *ip, char* puerto)
 	return socket_cliente;
 }
 
-void enviar_mensaje(op_code codigo, void* mensaje, int socket_cliente)
+void enviar_mensaje(op_code codigo_op, void* mensaje, int socket_cliente)
 {
-	t_buffer* buffer=malloc(sizeof(t_buffer));
-			buffer->size = sizeof(mensaje);
-			buffer->stream = malloc(buffer->size);
-			memcpy(buffer->stream, mensaje, buffer->size);
+	t_buffer* buffer = malloc(sizeof(t_buffer));
+	buffer->size = sizeof(mensaje);
+	buffer->stream = malloc(buffer->size);
+	memcpy(buffer->stream, mensaje, buffer->size);
 
-			t_paquete* paquete = malloc(sizeof(paquete));
-			paquete->codigo_operacion = codigo;
-			paquete->buffer = malloc(buffer->size + sizeof(buffer->size));
+	t_paquete* paquete = malloc(sizeof(paquete));
+	paquete->codigo_operacion = codigo_op;
+	paquete->buffer = malloc(buffer->size + sizeof(buffer->size)); //en el vid hace malloc(sizeof(t_buffer)
 
-			memcpy(paquete->buffer, buffer, buffer->size + sizeof(buffer->size));
+	memcpy(paquete->buffer, buffer, buffer->size + sizeof(buffer->size));
 
-			int cant_bytes;
-			void* a_enviar = serializar_paquete(paquete,&cant_bytes);
+	int cant_bytes;
+	void* a_enviar = serializar_paquete(paquete, &cant_bytes);
 
-			send(socket_cliente,a_enviar,cant_bytes,0);
+	send(socket_cliente, a_enviar, cant_bytes, 0);
 
-			free(a_enviar);
-			free(paquete->buffer->stream);
-			free(paquete->buffer);
-			free(paquete);
+	free(a_enviar);
+	free(paquete->buffer->stream);
+	free(paquete->buffer);
+	free(paquete);
 
-			return;
+	return;
 }
 
 t_paquete* recibir_paquete(int socket_cliente)
 {
 	t_paquete* paquete_recibido = malloc(sizeof(paquete_recibido));
-	recv(socket_cliente,&(paquete_recibido->codigo_operacion),sizeof(int),0);
-	paquete_recibido->buffer=malloc(sizeof(paquete_recibido->buffer));
-	recv(socket_cliente,&(paquete_recibido->buffer->size),sizeof(int),0);
+	paquete_recibido->buffer = malloc(sizeof(paquete_recibido->buffer));
 	paquete_recibido->buffer->stream = malloc(paquete_recibido->buffer->size);
+
+	recv(socket_cliente,&(paquete_recibido->codigo_operacion),sizeof(int),0);
+	recv(socket_cliente,&(paquete_recibido->buffer->size),sizeof(int),0);
 	recv(socket_cliente,(paquete_recibido->buffer->stream),(paquete_recibido->buffer->size),0);
 
 	return paquete_recibido;

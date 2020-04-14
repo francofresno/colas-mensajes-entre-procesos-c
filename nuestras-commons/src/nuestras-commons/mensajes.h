@@ -2,40 +2,45 @@
 #define MENSAJES_H_
 
 	typedef struct {
-		int posx;
-		int posy;
+		uint32_t nombre_lenght;
+		char* nombre_pokemon;
+	} t_nombre_pokemon;
+
+	typedef struct {
+		uint32_t posx;
+		uint32_t posy;
 	} t_coordenadas;
 
+	// ---- Estructuras de los mensajes ---- //
 	typedef struct {
-		char* nombre;
+		t_nombre_pokemon nombre_pokemon;
 		t_coordenadas coords;
-	} t_comun;
-
-	typedef struct {
-		t_comun comun;
-		int cant;
+		uint32_t cantidad;
 	} t_new;
 
 	typedef struct {
-		t_comun comun;
+		t_nombre_pokemon nombre_pokemon;
+		t_coordenadas coords;
 	} t_appeared;
 
 	typedef struct {
-		t_comun comun;
+		t_nombre_pokemon nombre_pokemon;
+		t_coordenadas coords;
 	} t_catch;
 
 	typedef struct {
-		int estado;
+		uint32_t estado;
 	} t_caught;
 
 	typedef struct {
-		char* nombre;
+		t_nombre_pokemon nombre_pokemon;
 	} t_get;
 
 	typedef struct {
-		char* nombre;
-		int cantidad_coords;
+		t_nombre_pokemon nombre_pokemon;
+		uint32_t cantidad_coords;
 		t_coordenadas **coords;
 	} t_localized;
+	// ---- END Estructuras de los mensajes ---- //
 
 #endif /* MENSAJES_H_ */
