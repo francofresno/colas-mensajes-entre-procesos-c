@@ -8,7 +8,7 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
--include src/subdir.mk
+-include nuestras-commons/subdir.mk
 -include subdir.mk
 -include objects.mk
 
@@ -23,25 +23,21 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: Broker
-
-dependents:
-	-cd /home/utnso/workspace/nuestras-commons/Debug && $(MAKE) all
+all: libnuestras-commons.so
 
 # Tool invocations
-Broker: $(OBJS) $(USER_OBJS) /home/utnso/workspace/nuestras-commons/Debug/libnuestras-commons.so
+libnuestras-commons.so: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -L"/home/utnso/workspace/nuestras-commons/Debug" -o "Broker" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -shared -o "libnuestras-commons.so" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(EXECUTABLES)$(OBJS)$(C_DEPS) Broker
+	-$(RM) $(LIBRARIES)$(OBJS)$(C_DEPS) libnuestras-commons.so
 	-@echo ' '
 
 .PHONY: all clean dependents
-/home/utnso/workspace/nuestras-commons/Debug/libnuestras-commons.so:
 
 -include ../makefile.targets

@@ -1,19 +1,19 @@
 #include "utils.h"
 
-void* serializar_paquete(t_paquete* paquete, int *bytes)
-{
-	int offset = 0;
-	*bytes = paquete->buffer->size + sizeof(int) * 2;
-	void* a_enviar = malloc(*bytes);
-
-	memcpy(a_enviar + offset, &(paquete->codigo_operacion), sizeof(int));
-	offset += sizeof(int);
-	memcpy(a_enviar + offset, &(paquete->buffer->size), sizeof(int));
-	offset += sizeof(int);
-	memcpy(a_enviar + offset, paquete->buffer->stream, paquete->buffer->size);
-
-	return a_enviar;
-}
+//void* serializar_paquete(t_paquete* paquete, int *bytes)
+//{
+//	int offset = 0;
+//	*bytes = paquete->buffer->size + sizeof(int) * 2;
+//	void* a_enviar = malloc(*bytes);
+//
+//	memcpy(a_enviar + offset, &(paquete->codigo_operacion), sizeof(int));
+//	offset += sizeof(int);
+//	memcpy(a_enviar + offset, &(paquete->buffer->size), sizeof(int));
+//	offset += sizeof(int);
+//	memcpy(a_enviar + offset, paquete->buffer->stream, paquete->buffer->size);
+//
+//	return a_enviar;
+//}
 
 int crear_conexion(char *ip, char* puerto)
 {

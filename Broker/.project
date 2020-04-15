@@ -3,6 +3,7 @@
 	<name>Broker</name>
 	<comment></comment>
 	<projects>
+		<project>nuestras-commons</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
