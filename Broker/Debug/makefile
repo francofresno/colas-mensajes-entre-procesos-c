@@ -26,13 +26,13 @@ endif
 all: Broker
 
 dependents:
-	-cd /home/utnso/workspace/nuestras-commons/Debug && $(MAKE) all
+	-cd /home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug && $(MAKE) clean all
 
 # Tool invocations
-Broker: $(OBJS) $(USER_OBJS) /home/utnso/workspace/nuestras-commons/Debug/libnuestras-commons.so
+Broker: $(OBJS) $(USER_OBJS) /home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug/libnuestras-commons.so
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -L"/home/utnso/workspace/nuestras-commons/Debug" -o "Broker" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L"/home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug" -o "Broker" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -42,6 +42,6 @@ clean:
 	-@echo ' '
 
 .PHONY: all clean dependents
-/home/utnso/workspace/nuestras-commons/Debug/libnuestras-commons.so:
+/home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug/libnuestras-commons.so:
 
 -include ../makefile.targets

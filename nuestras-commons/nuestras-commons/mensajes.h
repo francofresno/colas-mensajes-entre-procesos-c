@@ -5,13 +5,14 @@
 
 	typedef struct  Nombre_Pokemon {
 		uint32_t nombre_lenght;
-		char* nombre_pokemon;
+		char* nombre;
 	} t_nombre;
 
 	typedef struct Coordenadas {
 		uint32_t posx;
 		uint32_t posy;
 	} t_coords;
+
 
 	// ---- Estructuras de los mensajes ---- //
 	typedef struct New_Message {

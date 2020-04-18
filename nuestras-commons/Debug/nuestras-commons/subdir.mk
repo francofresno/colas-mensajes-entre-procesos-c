@@ -4,22 +4,16 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../nuestras-commons/mensajes.c \
-../nuestras-commons/nuestras_commons.c \
-../nuestras-commons/server_utils.c \
-../nuestras-commons/utils.c 
+../nuestras-commons/conexion.c \
+../nuestras-commons/mensajes.c 
 
 OBJS += \
-./nuestras-commons/mensajes.o \
-./nuestras-commons/nuestras_commons.o \
-./nuestras-commons/server_utils.o \
-./nuestras-commons/utils.o 
+./nuestras-commons/conexion.o \
+./nuestras-commons/mensajes.o 
 
 C_DEPS += \
-./nuestras-commons/mensajes.d \
-./nuestras-commons/nuestras_commons.d \
-./nuestras-commons/server_utils.d \
-./nuestras-commons/utils.d 
+./nuestras-commons/conexion.d \
+./nuestras-commons/mensajes.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

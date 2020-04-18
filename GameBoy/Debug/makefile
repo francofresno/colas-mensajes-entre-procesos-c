@@ -25,11 +25,14 @@ endif
 # All Target
 all: GameBoy
 
+dependents:
+	-cd /home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug && $(MAKE) all
+
 # Tool invocations
-GameBoy: $(OBJS) $(USER_OBJS)
+GameBoy: $(OBJS) $(USER_OBJS) /home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug/libnuestras-commons.so
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc  -o "GameBoy" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L"/home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug" -o "GameBoy" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -39,5 +42,6 @@ clean:
 	-@echo ' '
 
 .PHONY: all clean dependents
+/home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug/libnuestras-commons.so:
 
 -include ../makefile.targets
