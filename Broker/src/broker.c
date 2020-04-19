@@ -18,8 +18,11 @@ int main(void) {
 	printf("Broker!");
 	fflush(stdout);
 
-	while(1)
-		esperar_cliente(socket_servidor);
+	while(1) {
+		int socket_cliente = esperar_cliente(socket_servidor);
+		pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
+		pthread_detach(thread);
+	}
 
 }
 
@@ -36,23 +39,9 @@ t_config* leer_config(void)
 
 }
 
-void esperar_cliente(int socket_servidor)
-{
-	struct sockaddr_in dir_cliente;
-
-	socklen_t tam_direccion = sizeof(struct sockaddr_in);
-
-	int socket_cliente = accept(socket_servidor, (void*) &dir_cliente, &tam_direccion);
-
-	pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
-	pthread_detach(thread);
-}
-
 void serve_client(int* socket_cliente)
 {
-	int cod_op;
-	if(recv(*socket_cliente, &cod_op, sizeof(int), MSG_WAITALL) == -1)
-		cod_op = -1;
+	int cod_op = recibir_codigo_operacion(*socket_cliente);
 	process_request(cod_op, *socket_cliente);
 }
 
@@ -75,6 +64,7 @@ void process_request(int cod_op, int cliente_fd) {
 			fflush(stdout);
 			break;
 		case 0:
+			close(cliente_fd);
 			pthread_exit(NULL);
 		case -1:
 			pthread_exit(NULL);

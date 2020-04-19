@@ -72,6 +72,26 @@ int iniciar_servidor(char *ip, char* puerto)
     return socket_servidor;
 }
 
+int esperar_cliente(int socket_servidor)
+{
+	struct sockaddr_in dir_cliente;
+
+	socklen_t tam_direccion = sizeof(struct sockaddr_in);
+
+	int socket_cliente = accept(socket_servidor, (void*) &dir_cliente, &tam_direccion);
+
+	return socket_cliente;
+}
+
+int recibir_codigo_operacion(int socket_cliente) {
+	int cod_op;
+
+	if(recv(socket_cliente, &cod_op, sizeof(int), MSG_WAITALL) == -1)
+		cod_op = -1;
+
+	return cod_op;
+}
+
 void* recibir_mensaje(int socket_cliente, int* size)
 {
 	void * buffer;

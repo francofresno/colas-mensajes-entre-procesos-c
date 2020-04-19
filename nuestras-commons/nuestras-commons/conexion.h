@@ -34,6 +34,8 @@
 
 	int crear_conexion(char *ip, char* puerto);
 	int iniciar_servidor(char *ip, char* puerto);
+	int esperar_cliente(int socket_servidor);
+	int recibir_codigo_operacion(int socket_cliente);
 	void* recibir_mensaje(int socket_cliente, int* size);
 	t_paquete* recibir_paquete(int socket);
 	void enviar_mensaje(op_code codigo_op, void* mensaje, int socket_servidor);
