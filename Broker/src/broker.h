@@ -23,8 +23,8 @@
 #define BROKER_LOG "broker.log"
 #define BROKER_NAME "broker"
 #define BROKER_CONFIG "broker.config"
-#define IP "IP_BROKER"
-#define PUERTO "PUERTO_BROKER"
+#define IP "127.0.0.1"
+#define PUERTO "6011"
 
 pthread_t thread;
 

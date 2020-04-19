@@ -13,10 +13,7 @@ int main(void) {
 
 	//t_config* config = leer_config();
 
-	//char* ip = config_get_string_value(config, IP);
-	//char* puerto = config_get_string_value(config, PUERTO);
-
-	int socket_servidor = iniciar_servidor("127.0.0.1", "6011");
+	int socket_servidor = iniciar_servidor(IP, PUERTO);
 
 	printf("Broker!");
 	fflush(stdout);
@@ -43,7 +40,7 @@ void esperar_cliente(int socket_servidor)
 {
 	struct sockaddr_in dir_cliente;
 
-	int tam_direccion = sizeof(struct sockaddr_in);
+	socklen_t tam_direccion = sizeof(struct sockaddr_in);
 
 	int socket_cliente = accept(socket_servidor, (void*) &dir_cliente, &tam_direccion);
 

@@ -21,8 +21,8 @@
 #define GAMEBOY_LOG "gameboy.log"
 #define GAMEBOY_NAME "gameboy"
 #define GAMEBOY_CONFIG "gameboy.config"
-#define IP "IP_GAMEBOY"
-#define PUERTO "PUERTO_GAMEBOY"
+#define IP "127.0.0.4"
+#define PUERTO "6014"
 
 t_log* iniciar_logger(void);
 t_config* leer_config(void);
