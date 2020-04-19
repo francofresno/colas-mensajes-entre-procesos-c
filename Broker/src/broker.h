@@ -30,7 +30,7 @@ pthread_t thread;
 
 t_log* iniciar_logger(void);
 t_config* leer_config(void);
-void esperar_cliente(int socket_servidor);
+int esperar_cliente(int socket_servidor);
 void serve_client(int* socket_cliente);
 void process_request(int cod_op,int cliente_fd);
 void terminar_programa(int socket, t_log* logger, t_config* config);
