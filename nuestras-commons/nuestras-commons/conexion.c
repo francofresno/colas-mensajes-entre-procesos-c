@@ -24,18 +24,18 @@ int crear_conexion(char *ip, char* puerto)
 	return socket_cliente;
 }
 
-t_paquete* recibir_paquete(int socket)
-{
-	t_paquete* paquete_recibido = malloc(sizeof(paquete_recibido));
-	paquete_recibido->buffer = malloc(sizeof(paquete_recibido->buffer));
-	paquete_recibido->buffer->stream = malloc(paquete_recibido->buffer->size);
-
-	recv(socket,&(paquete_recibido->codigo_operacion),sizeof(int),0);
-	recv(socket,&(paquete_recibido->buffer->size),sizeof(int),0);
-	recv(socket,(paquete_recibido->buffer->stream),(paquete_recibido->buffer->size),0);
-
-	return paquete_recibido;
-}
+//t_paquete* recibir_paquete(int socket)
+//{
+//	t_paquete* paquete_recibido = malloc(sizeof(paquete_recibido));
+//	paquete_recibido->buffer = malloc(sizeof(paquete_recibido->buffer));
+//	paquete_recibido->buffer->stream = malloc(paquete_recibido->buffer->size);
+//
+//	recv(socket,&(paquete_recibido->codigo_operacion),sizeof(int),0);
+//	recv(socket,&(paquete_recibido->buffer->size),sizeof(int),0);
+//	recv(socket,(paquete_recibido->buffer->stream),(paquete_recibido->buffer->size),0);
+//
+//	return paquete_recibido;
+//}
 // ---- END Especificas de Cliente ---- //
 
 
@@ -94,7 +94,7 @@ int recibir_codigo_operacion(int socket_cliente) {
 
 void* recibir_mensaje(int socket_cliente, int* size)
 {
-	void * buffer;
+	void* buffer;
 
 	recv(socket_cliente, size, sizeof(int), MSG_WAITALL);
 	buffer = malloc(*size);
@@ -105,44 +105,71 @@ void* recibir_mensaje(int socket_cliente, int* size)
 // ---- END Especificas de Server ---- //
 
 
-void* serializar_paquete(t_paquete* paquete, int *bytes)
+//void* serializar_paquete(t_paquete* paquete, int *bytes)
+//{
+//	int offset = 0;
+//	*bytes = paquete->buffer->size + sizeof(int) * 2;
+//	void* a_enviar = malloc(*bytes);
+//
+//	memcpy(a_enviar + offset, &(paquete->codigo_operacion), sizeof(int));
+//	offset += sizeof(int);
+//	memcpy(a_enviar + offset, &(paquete->buffer->size), sizeof(int));
+//	offset += sizeof(int);
+//	memcpy(a_enviar + offset, paquete->buffer->stream, paquete->buffer->size);
+//
+//	return a_enviar;
+//}
+
+//void enviar_mensaje(op_code codigo_op, t_buffer* buffer, int socket_servidor)
+//{
+//	t_paquete* paquete = malloc(sizeof(paquete));
+//	paquete->codigo_operacion = codigo_op;
+//	paquete->buffer = malloc(buffer->size + sizeof(buffer->size));
+//
+//	memcpy(paquete->buffer, buffer, buffer->size + sizeof(buffer->size));
+//
+//	int cant_bytes;
+//	void* a_enviar = serializar_paquete(paquete, &cant_bytes);
+//
+//	send(socket_servidor, a_enviar, cant_bytes, 0);
+//
+//	free(a_enviar);
+//	free(paquete->buffer->stream);
+//	free(paquete->buffer);
+//	free(paquete);
+//
+//}
+
+void* serializar_paquete(t_paquete* paquete, int tamanio_buffer, int *bytes)
 {
 	int offset = 0;
-	*bytes = paquete->buffer->size + sizeof(int) * 2;
+	*bytes = tamanio_buffer + sizeof(int);
 	void* a_enviar = malloc(*bytes);
 
 	memcpy(a_enviar + offset, &(paquete->codigo_operacion), sizeof(int));
 	offset += sizeof(int);
-	memcpy(a_enviar + offset, &(paquete->buffer->size), sizeof(int));
-	offset += sizeof(int);
-	memcpy(a_enviar + offset, paquete->buffer->stream, paquete->buffer->size);
+	memcpy(a_enviar + offset, paquete->stream, tamanio_buffer);
 
 	return a_enviar;
 }
 
-void enviar_mensaje(op_code codigo_op, void* mensaje, int socket_servidor)
-{
-	t_buffer* buffer = malloc(sizeof(t_buffer));
-	buffer->size = sizeof(mensaje);
-
-	buffer->stream = malloc(buffer->size);
-	memcpy(buffer->stream, mensaje, buffer->size);
-
+void enviar_mensaje(op_code codigo_op, t_buffer* buffer, int socket_servidor) {
 	t_paquete* paquete = malloc(sizeof(paquete));
 	paquete->codigo_operacion = codigo_op;
-	paquete->buffer = malloc(buffer->size + sizeof(buffer->size));
-
-	memcpy(paquete->buffer, buffer, buffer->size + sizeof(buffer->size));
-
+	paquete->stream = malloc(buffer->size + sizeof(buffer->size));
+	
+	memcpy(paquete->stream, buffer->stream, buffer->size + sizeof(buffer->size));
+	
 	int cant_bytes;
-	void* a_enviar = serializar_paquete(paquete, &cant_bytes);
-
+	void* a_enviar = serializar_paquete(paquete, buffer->size, &cant_bytes);
+	
 	send(socket_servidor, a_enviar, cant_bytes, 0);
 
 	free(a_enviar);
-	free(paquete->buffer->stream);
-	free(paquete->buffer);
+	free(paquete->stream);
 	free(paquete);
+	free(buffer->stream);
+	free(buffer);
 }
 
 void liberar_conexion(int socket)

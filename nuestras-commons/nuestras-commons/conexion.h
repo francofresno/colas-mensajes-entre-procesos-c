@@ -29,7 +29,8 @@
 	typedef struct
 	{
 		op_code codigo_operacion;
-		t_buffer* buffer;
+		//t_buffer* buffer;
+		void* stream;
 	} t_paquete;
 
 	// Cliente
@@ -43,8 +44,8 @@
 	void* recibir_mensaje(int socket_cliente, int* size);
 
 	// Generales
-	void* serializar_paquete(t_paquete* paquete, int *bytes);
-	void enviar_mensaje(op_code codigo_op, void* mensaje, int socket_servidor);
+	void* serializar_paquete(t_paquete* paquete, int tamanio_buffer, int *bytes);
+	void enviar_mensaje(op_code codigo_op, t_buffer* buffer, int socket_servidor);
 	void liberar_conexion(int socket);
 
 

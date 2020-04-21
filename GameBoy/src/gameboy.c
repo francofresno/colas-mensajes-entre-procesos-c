@@ -25,36 +25,24 @@ int main(int argc, char *argv[]) {
 	//TODO catch si crear_conexion devuelve error (si es -1)
 	int socket_cliente = crear_conexion ("127.0.0.1", "6011");
 
-	t_new_message* new_pokemon_msg = malloc(sizeof(new_pokemon_msg));
+	t_new_pokemon_msg* new_pokemon_msg = malloc(sizeof(new_pokemon_msg));
 
 	t_nombre nom;
 	nom.nombre = "PIKACHU";
-	nom.nombre_lenght = 8;
+	nom.nombre_lenght = strlen(nom.nombre)+1;
 
-	t_coords coord;
-	coord.posx = 1;
-	coord.posy = 2;
+	t_coords coordenadas;
+	coordenadas.posx = 3;
+	coordenadas.posy = 4;
 
 	new_pokemon_msg->nombre_pokemon = nom;
-	new_pokemon_msg->coords = coord;
+	new_pokemon_msg->coords = coordenadas;
 	new_pokemon_msg->cantidad = 1;
 
+	t_buffer* buffer = malloc(sizeof(buffer));
+	buffer = serializar_new_pokemon_msg(new_pokemon_msg);
 
-	printf("%s\n",new_pokemon_msg->nombre_pokemon.nombre);
-	fflush(stdout);
-
-	printf("%d\n",sizeof(*new_pokemon_msg));
-	fflush(stdout);
-
-	enviar_mensaje(NEW_POKEMON, new_pokemon_msg, socket_cliente);
-
-//	sleep(2);
-//
-//	socket_cliente = crear_conexion ("127.0.0.1", "6011");
-//
-//	enviar_mensaje(APPEARED_POKEMON, "APPEARED_POKEMON", socket_cliente);
-
-
+	enviar_mensaje(NEW_POKEMON, buffer, socket_cliente);
 
 	return EXIT_SUCCESS;
 }
