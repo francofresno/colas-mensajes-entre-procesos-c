@@ -36,10 +36,11 @@ t_buffer* serializar_new_pokemon_msg(t_newPokemon_msg* new_pokemon_msg) {
 
 t_newPokemon_msg* deserializar_new_pokemon_msg(int socket_cliente) {
 
-	t_newPokemon_msg* new_pokemon_msg = malloc(sizeof(t_newPokemon_msg));
-	t_nombrePokemon* nom = malloc(sizeof(t_nombrePokemon));
-	t_coordenadas* coordenadas = malloc(sizeof(t_coordenadas));
-	new_pokemon_msg->nombre_pokemon = nom;
+	t_newPokemon_msg* new_pokemon_msg = malloc(sizeof(new_pokemon_msg));
+	t_nombrePokemon* nombre_pokemon = malloc(sizeof(nombre_pokemon));
+	nombre_pokemon->nombre = malloc(sizeof(nombre_pokemon->nombre));
+	t_coordenadas* coordenadas = malloc(sizeof(coordenadas));
+	new_pokemon_msg->nombre_pokemon = nombre_pokemon;
 	new_pokemon_msg->coordenadas = coordenadas;
 
 	recv(socket_cliente, &(new_pokemon_msg->nombre_pokemon->nombre_lenght), sizeof(new_pokemon_msg->nombre_pokemon->nombre_lenght), MSG_WAITALL);

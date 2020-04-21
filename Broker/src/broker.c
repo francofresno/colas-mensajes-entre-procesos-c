@@ -55,8 +55,19 @@ void process_request(int cod_op, int cliente_fd) {
 			free(new_pokemon_msg);
 			break;
 		case APPEARED_POKEMON:
-			printf("APPEARED_POKEMON");
-			fflush(stdout);
+
+			break;
+		case CATCH_POKEMON:
+
+			break;
+		case CAUGHT_POKEMON:
+
+			break;
+		case GET_POKEMON:
+
+			break;
+		case LOCALIZED_POKEMON:
+
 			break;
 		case 0:
 			close(cliente_fd);

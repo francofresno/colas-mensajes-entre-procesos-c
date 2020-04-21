@@ -27,11 +27,11 @@ int main(int argc, char *argv[]) {
 
 	t_newPokemon_msg* new_pokemon_msg = malloc(sizeof(new_pokemon_msg));
 
-	t_nombrePokemon* nom = malloc(sizeof(t_nombrePokemon));
+	t_nombrePokemon* nom = malloc(sizeof(nom));
 	nom->nombre = "PIKACHU";
 	nom->nombre_lenght = strlen(nom->nombre)+1;
 
-	t_coordenadas* coordenadas = malloc(sizeof(t_coordenadas));
+	t_coordenadas* coordenadas = malloc(sizeof(coordenadas));
 	coordenadas->posX = 3;
 	coordenadas->posY = 4;
 
