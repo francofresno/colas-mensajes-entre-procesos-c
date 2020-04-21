@@ -1,6 +1,6 @@
 #include "mensajes.h"
 
-t_buffer* serializar_new_pokemon_msg(t_new_pokemon_msg* new_pokemon_msg) {
+t_buffer* serializar_new_pokemon_msg(t_newPokemon_msg* new_pokemon_msg) {
 
 	int tam_nombre_lenght = sizeof(new_pokemon_msg->nombre_pokemon.nombre_lenght);
 	int tam_nombre = new_pokemon_msg->nombre_pokemon.nombre_lenght;
@@ -34,9 +34,9 @@ t_buffer* serializar_new_pokemon_msg(t_new_pokemon_msg* new_pokemon_msg) {
 }
 
 
-t_new_pokemon_msg* deserializar_new_pokemon_msg(int socket_cliente) {
+t_newPokemon_msg* deserializar_new_pokemon_msg(int socket_cliente) {
 
-	t_new_pokemon_msg* new_pokemon_msg = malloc(new_pokemon_msg);
+	t_newPokemon_msg* new_pokemon_msg = malloc(new_pokemon_msg);
 
 	recv(socket_cliente, &(new_pokemon_msg->nombre_pokemon.nombre_lenght), sizeof(new_pokemon_msg->nombre_pokemon.nombre_lenght), MSG_WAITALL);
 	recv(socket_cliente, new_pokemon_msg->nombre_pokemon.nombre, sizeof(new_pokemon_msg->nombre_pokemon.nombre_lenght), MSG_WAITALL);

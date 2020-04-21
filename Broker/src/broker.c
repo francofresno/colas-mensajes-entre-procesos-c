@@ -34,7 +34,7 @@ void serve_client(int* socket_cliente)
 
 void process_request(int cod_op, int cliente_fd) {
 	int size;
-	t_new_pokemon_msg* new_pokemon_msg;
+	t_newPokemon_msg* new_pokemon_msg;
 
 	switch (cod_op) {
 	//TODO todos los cases

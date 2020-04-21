@@ -25,13 +25,13 @@ int main(int argc, char *argv[]) {
 	//TODO catch si crear_conexion devuelve error (si es -1)
 	int socket_cliente = crear_conexion ("127.0.0.1", "6011");
 
-	t_new_pokemon_msg* new_pokemon_msg = malloc(sizeof(new_pokemon_msg));
+	t_newPokemon_msg* new_pokemon_msg = malloc(sizeof(new_pokemon_msg));
 
-	t_nombre nom;
+	t_nombrePokemon nom;
 	nom.nombre = "PIKACHU";
 	nom.nombre_lenght = strlen(nom.nombre)+1;
 
-	t_coords coordenadas;
+	t_coordenadas coordenadas;
 	coordenadas.posx = 3;
 	coordenadas.posy = 4;
 
