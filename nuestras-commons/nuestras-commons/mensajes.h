@@ -19,25 +19,25 @@ typedef struct {
 } t_coordenadas;
 
 /****************************************
- ****** ESTRUCTURAS DE LOS MENSAJES******
+ *******ESTRUCTURAS DE LOS MENSAJES******
  ****************************************/
 
 typedef struct
 {
-	t_nombrePokemon nombrePokemon;
-	t_coordenadas coordenadas;
-	uint32_t cantidadPokemones;
+	t_nombrePokemon* nombre_pokemon;
+	t_coordenadas* coordenadas;
+	uint32_t cantidad_pokemons;
 } t_newPokemon_msg;
 
 typedef struct
 {
-	t_nombrePokemon nombrePokemon;
+	t_nombrePokemon nombre_pokemon;
 	t_coordenadas coordenadas;
 } t_appearedPokemon_msg;
 
 typedef struct
 {
-	t_nombrePokemon nombrePokemon;
+	t_nombrePokemon nombre_pokemon;
 	t_coordenadas coordenadas;
 } t_catchPokemon_msg;
 
@@ -48,13 +48,13 @@ typedef struct
 
 typedef struct
 {
-	t_nombrePokemon nombrePokemon;
+	t_nombrePokemon nombre_pokemon;
 } t_getPokemon_msg;
 
 typedef struct
 {
-	t_nombrePokemon nombrePokemon;
-	uint32_t cantidadCoordenadas;
+	t_nombrePokemon nombre_pokemon;
+	uint32_t cantidad_coordenadas;
 	t_coordenadas coordenadas[];
 } t_localizedPokemon_msg;
 

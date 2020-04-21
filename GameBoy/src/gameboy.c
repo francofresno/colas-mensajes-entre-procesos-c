@@ -27,17 +27,17 @@ int main(int argc, char *argv[]) {
 
 	t_newPokemon_msg* new_pokemon_msg = malloc(sizeof(new_pokemon_msg));
 
-	t_nombrePokemon nom;
-	nom.nombre = "PIKACHU";
-	nom.nombre_lenght = strlen(nom.nombre)+1;
+	t_nombrePokemon* nom = malloc(sizeof(t_nombrePokemon));
+	nom->nombre = "PIKACHU";
+	nom->nombre_lenght = strlen(nom->nombre)+1;
 
-	t_coordenadas coordenadas;
-	coordenadas.posx = 3;
-	coordenadas.posy = 4;
+	t_coordenadas* coordenadas = malloc(sizeof(t_coordenadas));
+	coordenadas->posX = 3;
+	coordenadas->posY = 4;
 
 	new_pokemon_msg->nombre_pokemon = nom;
-	new_pokemon_msg->coords = coordenadas;
-	new_pokemon_msg->cantidad = 1;
+	new_pokemon_msg->coordenadas = coordenadas;
+	new_pokemon_msg->cantidad_pokemons = 1;
 
 	t_buffer* buffer = malloc(sizeof(buffer));
 	buffer = serializar_new_pokemon_msg(new_pokemon_msg);

@@ -33,7 +33,7 @@ void serve_client(int* socket_cliente)
 }
 
 void process_request(int cod_op, int cliente_fd) {
-	int size;
+	//int size;
 	t_newPokemon_msg* new_pokemon_msg;
 
 	switch (cod_op) {
@@ -43,7 +43,7 @@ void process_request(int cod_op, int cliente_fd) {
 			//new_pokemon_msg = (t_new_pokemon_msg*) recibir_mensaje(cliente_fd, &size);
 			new_pokemon_msg = deserializar_new_pokemon_msg(cliente_fd);
 
-			printf("%s",new_pokemon_msg->nombre_pokemon.nombre);
+			printf("%s",new_pokemon_msg->nombre_pokemon->nombre);
 			fflush(stdout);
 
 			free(new_pokemon_msg);
