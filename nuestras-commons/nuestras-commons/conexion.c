@@ -156,9 +156,9 @@ void* serializar_paquete(t_paquete* paquete, int tamanio_buffer, int *bytes)
 void enviar_mensaje(op_code codigo_op, t_buffer* buffer, int socket_servidor) {
 	t_paquete* paquete = malloc(sizeof(paquete));
 	paquete->codigo_operacion = codigo_op;
-	paquete->stream = malloc(buffer->size + sizeof(buffer->size));
+	paquete->stream = malloc(buffer->size);
 	
-	memcpy(paquete->stream, buffer->stream, buffer->size + sizeof(buffer->size));
+	memcpy(paquete->stream, buffer->stream, buffer->size);
 	
 	int cant_bytes;
 	void* a_enviar = serializar_paquete(paquete, buffer->size, &cant_bytes);

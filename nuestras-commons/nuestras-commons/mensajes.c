@@ -14,13 +14,13 @@ t_buffer* serializar_new_pokemon_msg(t_newPokemon_msg* new_pokemon_msg) {
 	void* stream = malloc(tamano_mensaje);
 
 	memcpy(stream + offset, &(new_pokemon_msg->nombre_pokemon->nombre_lenght), tam_nombre_lenght);
-	offset += sizeof(tam_nombre_lenght);
+	offset += tam_nombre_lenght;
 	memcpy(stream + offset, new_pokemon_msg->nombre_pokemon->nombre, tam_nombre);
-	offset += sizeof(tam_nombre);
+	offset += tam_nombre;
 	memcpy(stream + offset, &(new_pokemon_msg->coordenadas->posX), tam_coordx);
-	offset += sizeof(tam_coordx);
+	offset += tam_coordx;
 	memcpy(stream + offset, &(new_pokemon_msg->coordenadas->posY), tam_coordy);
-	offset += sizeof(tam_coordy);
+	offset += tam_coordy;
 	memcpy(stream + offset, &(new_pokemon_msg->cantidad_pokemons), tam_cantidad);
 
 	t_buffer* buffer = malloc(sizeof(t_buffer));
@@ -43,7 +43,7 @@ t_newPokemon_msg* deserializar_new_pokemon_msg(int socket_cliente) {
 	new_pokemon_msg->coordenadas = coordenadas;
 
 	recv(socket_cliente, &(new_pokemon_msg->nombre_pokemon->nombre_lenght), sizeof(new_pokemon_msg->nombre_pokemon->nombre_lenght), MSG_WAITALL);
-	recv(socket_cliente, new_pokemon_msg->nombre_pokemon->nombre, sizeof(new_pokemon_msg->nombre_pokemon->nombre_lenght), MSG_WAITALL);
+	recv(socket_cliente, new_pokemon_msg->nombre_pokemon->nombre, new_pokemon_msg->nombre_pokemon->nombre_lenght, MSG_WAITALL);
 	recv(socket_cliente, &(new_pokemon_msg->coordenadas->posX), sizeof(new_pokemon_msg->coordenadas->posX), MSG_WAITALL);
 	recv(socket_cliente, &(new_pokemon_msg->coordenadas->posY), sizeof(new_pokemon_msg->coordenadas->posY), MSG_WAITALL);
 	recv(socket_cliente, &(new_pokemon_msg->cantidad_pokemons), sizeof(new_pokemon_msg->cantidad_pokemons), MSG_WAITALL);
