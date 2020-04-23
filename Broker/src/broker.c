@@ -29,57 +29,94 @@ int main(void) {
 void serve_client(int* socket_cliente)
 {
 	int cod_op = recibir_codigo_operacion(*socket_cliente);
-	process_request(cod_op, *socket_cliente);
-}
+	void* paqueteRecibido = recibir_paquete(cod_op, *socket_cliente);
+	switch(cod_op)
+	{
+		case NEW_POKEMON: ;
+			t_newPokemon_msg* estructuraNew = malloc(sizeof(estructuraNew));
+			estructuraNew = paqueteRecibido;
 
-void process_request(int cod_op, int cliente_fd) {
-	t_newPokemon_msg* new_pokemon_msg;
-
-	switch (cod_op) {
-	//TODO todos los cases
-		case NEW_POKEMON:
-			new_pokemon_msg = malloc(sizeof(new_pokemon_msg));
-			new_pokemon_msg = deserializar_new_pokemon_msg(cliente_fd);
-
-			printf("\n%d|",new_pokemon_msg->nombre_pokemon->nombre_lenght);
+			printf("\n%d|",estructuraNew->nombre_pokemon.nombre_lenght);
 			fflush(stdout);
-			printf("%s|",new_pokemon_msg->nombre_pokemon->nombre);
+			printf("%s|",estructuraNew->nombre_pokemon.nombre);
 			fflush(stdout);
-			printf("%d|",new_pokemon_msg->coordenadas->posX);
+			printf("%d|",estructuraNew->coordenadas.posX);
 			fflush(stdout);
-			printf("%d|",new_pokemon_msg->coordenadas->posY);
+			printf("%d|",estructuraNew->coordenadas.posY);
 			fflush(stdout);
-			printf("%d",new_pokemon_msg->cantidad_pokemons);
-			fflush(stdout);
-
-			free(new_pokemon_msg);
-			break;
-		case APPEARED_POKEMON:
-
-			break;
-		case CATCH_POKEMON:
-
-			break;
-		case CAUGHT_POKEMON:
-
-			break;
-		case GET_POKEMON:
-
-			break;
-		case LOCALIZED_POKEMON:
-
-			break;
-		case 0:
-			close(cliente_fd);
-			pthread_exit(NULL);
-		case -1:
-			pthread_exit(NULL);
-		default:
-			printf("default");
+			printf("%d",estructuraNew->cantidad_pokemons);
 			fflush(stdout);
 			break;
+		case LOCALIZED_POKEMON: ;
+			t_localizedPokemon_msg* estructuraLocalized = malloc(sizeof(estructuraLocalized));
+			estructuraLocalized = paqueteRecibido;
+
+			printf("\n%d|",estructuraLocalized->nombre_pokemon.nombre_lenght);
+			fflush(stdout);
+			printf("%s|",estructuraLocalized->nombre_pokemon.nombre);
+			fflush(stdout);
+			printf("%d",estructuraLocalized->cantidad_coordenadas);
+			fflush(stdout);
+			for(int i = 0; i < estructuraLocalized->cantidad_coordenadas; i++)
+			{
+				printf("%d|",estructuraLocalized->coordenadas[i].posX);
+				fflush(stdout);
+				printf("%d|",estructuraLocalized->coordenadas[i].posY);
+				fflush(stdout);
+			}
+			break;
+
 	}
 }
+
+//void process_request(int cod_op, int cliente_fd) {
+//	t_newPokemon_msg* new_pokemon_msg;
+//
+//	switch (cod_op) {
+//	//TODO todos los cases
+//		case NEW_POKEMON:
+//			new_pokemon_msg = malloc(sizeof(new_pokemon_msg));
+//			new_pokemon_msg = deserializar_new_pokemon_msg(cliente_fd);
+//
+//			printf("\n%d|",new_pokemon_msg->nombre_pokemon.nombre_lenght);
+//			fflush(stdout);
+//			printf("%s|",new_pokemon_msg->nombre_pokemon.nombre);
+//			fflush(stdout);
+//			printf("%d|",new_pokemon_msg->coordenadas.posX);
+//			fflush(stdout);
+//			printf("%d|",new_pokemon_msg->coordenadas.posY);
+//			fflush(stdout);
+//			printf("%d",new_pokemon_msg->cantidad_pokemons);
+//			fflush(stdout);
+//
+//			//free(new_pokemon_msg);
+//			break;
+//		case APPEARED_POKEMON:
+//
+//			break;
+//		case CATCH_POKEMON:
+//
+//			break;
+//		case CAUGHT_POKEMON:
+//
+//			break;
+//		case GET_POKEMON:
+//
+//			break;
+//		case LOCALIZED_POKEMON:
+//
+//			break;
+//		case 0:
+//			close(cliente_fd);
+//			pthread_exit(NULL);
+//		case -1:
+//			pthread_exit(NULL);
+//		default:
+//			printf("\nERROR: %d", cod_op);
+//			fflush(stdout);
+//			break;
+//	}
+//}
 
 t_log* iniciar_logger(void)
 {
