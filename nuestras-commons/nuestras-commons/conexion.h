@@ -8,7 +8,8 @@
 	#include<sys/socket.h>
 	#include<netdb.h>
 	#include<string.h>
-#include "mensajes.h"
+
+	#include "mensajes.h"
 
 	// ---- Códigos de operación ---- //
 	typedef enum {
@@ -44,13 +45,15 @@
 	void* recibir_mensaje(int socket_cliente, int* size);
 
 	// Generales
-	//void* serializar_paquete(t_paquete* paquete, int tamanio_buffer, int *bytes);
-	//void enviar_mensaje(op_code codigo_op, t_buffer* buffer, int socket_servidor);
 	void liberar_conexion(int socket);
 	void enviar_mensaje(op_code codigoOperacion, void* estructura, int socket);
 	void* serializar_paquete(op_code codigoOperacion, void* estructura, int* bytes);
-	int serializar_entero(void* aEnviar, int entero, int offset);
+	void serializar_variable(void* a_enviar, void* a_serializar, int tamanio, int *offset);
+	void serializar_nombre(void* aEnviar, t_nombrePokemon nombrePokemon, int *offset);
 	void* recibir_paquete(op_code codigoOperacion, int socket);
+	void recibir_variable(int socket, void* a_serializar, int tamanio);
+	void recibir_nombre(int socket, t_nombrePokemon* estructuraNombre);
+	void recibir_coordenadas(int socket, t_coordenadas* estructuraCoordenadas);
 
 
 

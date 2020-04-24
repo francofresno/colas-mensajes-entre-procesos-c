@@ -2,7 +2,6 @@
 #define MENSAJES_H_
 
 #include <stdint.h>
-#include "conexion.h"
 
 /****************************************
  *********ESTRUCTURAS GENERALES**********
@@ -55,14 +54,8 @@ typedef struct
 {
 	t_nombrePokemon nombre_pokemon;
 	uint32_t cantidad_coordenadas;
-	t_coordenadas coordenadas[];
+	t_coordenadas* coordenadas;
 } t_localizedPokemon_msg;
 
-
-//t_buffer* serializar_new_pokemon_msg(t_newPokemon_msg* new_pokemon_msg);
-t_newPokemon_msg* deserializar_new_pokemon_msg(int socket_cliente);
-int serializar_nombre(void* aEnviar, t_nombrePokemon newPokemon, int offset);
-void recibir_nombre(int socket, t_nombrePokemon* estructuraNombre);
-void recibir_coordenadas(int socket, t_coordenadas* estructuraCoordenadas);
 
 #endif /* MENSAJES_H_ */

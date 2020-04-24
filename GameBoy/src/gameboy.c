@@ -8,8 +8,6 @@
 
 #include "gameboy.h"
 
-#include <unistd.h>
-
 int main(int argc, char *argv[]) {
 
 
@@ -24,16 +22,56 @@ int main(int argc, char *argv[]) {
 
 	//TODO catch si crear_conexion devuelve error (si es -1)
 	int socket_cliente = crear_conexion ("127.0.0.1", "6011");
-//
-	t_newPokemon_msg new_pokemon_msg;
 
-	new_pokemon_msg.nombre_pokemon.nombre = "PIKACHU";
-	new_pokemon_msg.nombre_pokemon.nombre_lenght = 8;
-	new_pokemon_msg.coordenadas.posX = 6;
-	new_pokemon_msg.coordenadas.posY = 2;
-	new_pokemon_msg.cantidad_pokemons = 7;
+	t_newPokemon_msg new;
+	new.nombre_pokemon.nombre = "PIKACHU";
+	new.nombre_pokemon.nombre_lenght = 8;
+	new.coordenadas.posX = 6;
+	new.coordenadas.posY = 2;
+	new.cantidad_pokemons = 7;
 
-	enviar_mensaje(NEW_POKEMON, &new_pokemon_msg, socket_cliente);
+
+	t_appearedPokemon_msg appeared;
+	appeared.nombre_pokemon.nombre = "PIKACHU";
+	appeared.nombre_pokemon.nombre_lenght = 8;
+	appeared.coordenadas.posX = 1;
+	appeared.coordenadas.posY = 2;
+
+
+	t_getPokemon_msg get;
+	get.nombre_pokemon.nombre = "PIKACHU";
+	get.nombre_pokemon.nombre_lenght = 8;
+
+
+	t_localizedPokemon_msg localized;
+	localized.nombre_pokemon.nombre = "PIKACHU";
+	localized.nombre_pokemon.nombre_lenght = 8;
+	localized.cantidad_coordenadas = 2;
+	localized.coordenadas = malloc(sizeof(uint32_t) * localized.cantidad_coordenadas * 2);
+	localized.coordenadas[0].posX = 1;
+	localized.coordenadas[0].posY = 2;
+	localized.coordenadas[1].posX = 3;
+	localized.coordenadas[1].posY = 4;
+
+
+	t_catchPokemon_msg catch;
+	catch.nombre_pokemon.nombre = "PIKACHU";
+	catch.nombre_pokemon.nombre_lenght = 8;
+	catch.coordenadas.posX = 1;
+	catch.coordenadas.posY = 2;
+
+
+	t_caughtPokemon_msg caught;
+	caught.atrapado = 1;
+
+	op_code n = NEW_POKEMON;
+	op_code a = APPEARED_POKEMON;
+	op_code g = GET_POKEMON; // roto
+	op_code l = LOCALIZED_POKEMON;
+	op_code cat = CATCH_POKEMON;
+	op_code cau = CAUGHT_POKEMON; // roto
+
+	enviar_mensaje(cau, &caught, socket_cliente);
 
 	return EXIT_SUCCESS;
 }

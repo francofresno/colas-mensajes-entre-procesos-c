@@ -1,7 +1,10 @@
 #include "conexion.h"
 
 
-// ---- Especificas de Cliente ---- //
+///////////////////////
+// ---- Cliente ---- //
+///////////////////////
+
 int crear_conexion(char *ip, char* puerto)
 {
 	struct addrinfo hints;
@@ -24,22 +27,11 @@ int crear_conexion(char *ip, char* puerto)
 	return socket_cliente;
 }
 
-//t_paquete* recibir_paquete(int socket)
-//{
-//	t_paquete* paquete_recibido = malloc(sizeof(paquete_recibido));
-//	paquete_recibido->buffer = malloc(sizeof(paquete_recibido->buffer));
-//	paquete_recibido->buffer->stream = malloc(paquete_recibido->buffer->size);
-//
-//	recv(socket,&(paquete_recibido->codigo_operacion),sizeof(int),0);
-//	recv(socket,&(paquete_recibido->buffer->size),sizeof(int),0);
-//	recv(socket,(paquete_recibido->buffer->stream),(paquete_recibido->buffer->size),0);
-//
-//	return paquete_recibido;
-//}
-// ---- END Especificas de Cliente ---- //
 
+//////////////////////
+// ---- Server ---- //
+//////////////////////
 
-// ---- Especificas de Server ---- //
 int iniciar_servidor(char *ip, char* puerto)
 {
 	int socket_servidor;
@@ -102,136 +94,110 @@ void* recibir_mensaje(int socket_cliente, int* size)
 
 	return buffer;
 }
-// ---- END Especificas de Server ---- //
 
-//void* serializar_paquete(t_paquete* paquete, int tamanio_buffer, int *bytes)
-//{
-//	int offset = 0;
-//	*bytes = tamanio_buffer + sizeof(int);
-//	void* a_enviar = malloc(*bytes);
-//
-//	memcpy(a_enviar + offset, &(paquete->codigo_operacion), sizeof(int));
-//	offset += sizeof(int);
-//	memcpy(a_enviar + offset, paquete->stream, tamanio_buffer);
-//
-//	return a_enviar;
-//}
-//
-//void enviar_mensaje(op_code codigo_op, t_buffer* buffer, int socket_servidor) {
-//	t_paquete* paquete = malloc(sizeof(paquete));
-//	paquete->codigo_operacion = codigo_op;
-//	paquete->stream = malloc(buffer->size);
-//
-//	memcpy(paquete->stream, buffer->stream, buffer->size);
-//
-//	int cant_bytes;
-//	void* a_enviar = serializar_paquete(paquete, buffer->size, &cant_bytes);
-//
-//	send(socket_servidor, a_enviar, cant_bytes, 0);
-//
-//	free(a_enviar);
-//	free(paquete->stream);
-//	free(paquete);
-//	free(buffer->stream);
-//	free(buffer);
-//}
 
-void liberar_conexion(int socket)
-{
-	close(socket);
-}
+//////////////////////////////////
+// ---- Envíos de mensajes ---- //
+//////////////////////////////////
 
 void enviar_mensaje(op_code codigoOperacion, void* new_pokemon_msg, int socket)
 {
 	int bytes;
 	void* paqueteAEnviar = serializar_paquete(codigoOperacion, new_pokemon_msg, &bytes);
-	send(socket, paqueteAEnviar, bytes, 0);
 
-	//free(paqueteAEnviar);
+	send(socket, paqueteAEnviar, bytes, 0);
 }
 
-void* serializar_paquete(op_code codigoOperacion, void* estructura, int* bytes)
+void* serializar_paquete(op_code codigo_operacion, void* estructura, int* bytes)
 {
 	int offset = 0;
 	*bytes = sizeof(uint32_t);
-	void* aEnviar;
-	switch(codigoOperacion)
+	void* a_enviar;
+
+	switch(codigo_operacion)
 	{
 		case NEW_POKEMON: ;
 			t_newPokemon_msg* estructuraNew = estructura;
-			printf("Nombre length: %d\nNombre: %s\nPosX: %d\nPosY: %d\nCantidad: %d\n", estructuraNew->nombre_pokemon.nombre_lenght, estructuraNew->nombre_pokemon.nombre, estructuraNew->coordenadas.posX, estructuraNew->coordenadas.posY, estructuraNew->cantidad_pokemons);
-			*bytes += sizeof(uint32_t)*5 + sizeof(estructuraNew->nombre_pokemon.nombre);
-			aEnviar = malloc(sizeof(*bytes));
-			offset = serializar_entero(aEnviar, codigoOperacion, offset);
-			offset = serializar_nombre(aEnviar, estructuraNew->nombre_pokemon, offset);
-			offset = serializar_entero(aEnviar, estructuraNew->coordenadas.posX, offset);
-			offset = serializar_entero(aEnviar, estructuraNew->coordenadas.posY, offset);
-			offset = serializar_entero(aEnviar, estructuraNew->cantidad_pokemons, offset);
+			*bytes += sizeof(uint32_t)*5 + estructuraNew->nombre_pokemon.nombre_lenght;
+			a_enviar = malloc(sizeof(*bytes));
+
+			serializar_variable(a_enviar, &codigo_operacion, sizeof(uint32_t), &offset);
+			serializar_nombre(a_enviar, estructuraNew->nombre_pokemon, &offset);
+			serializar_variable(a_enviar, &(estructuraNew->coordenadas.posX), sizeof(uint32_t), &offset);
+			serializar_variable(a_enviar, &(estructuraNew->coordenadas.posY), sizeof(uint32_t), &offset);
+			serializar_variable(a_enviar, &(estructuraNew->cantidad_pokemons), sizeof(uint32_t), &offset);
 			break;
 		case APPEARED_POKEMON: ;
 			t_appearedPokemon_msg* estructuraAppeared = estructura;
-			*bytes += sizeof(uint32_t)*3 + sizeof(&(estructuraAppeared->nombre_pokemon.nombre));
-			aEnviar = malloc(sizeof(*bytes));
-			offset = serializar_entero(aEnviar, codigoOperacion, offset);
-			offset = serializar_nombre(aEnviar, estructuraAppeared->nombre_pokemon, offset);
-			offset = serializar_entero(aEnviar, estructuraAppeared->coordenadas.posX, offset);
-			offset = serializar_entero(aEnviar, estructuraAppeared->coordenadas.posY, offset);
+			*bytes += sizeof(uint32_t)*4 + estructuraAppeared->nombre_pokemon.nombre_lenght;
+			a_enviar = malloc(sizeof(*bytes));
+
+			serializar_variable(a_enviar, &codigo_operacion, sizeof(uint32_t), &offset);
+			serializar_nombre(a_enviar, estructuraAppeared->nombre_pokemon, &offset);
+			serializar_variable(a_enviar, &(estructuraAppeared->coordenadas.posX), sizeof(uint32_t), &offset);
+			serializar_variable(a_enviar, &(estructuraAppeared->coordenadas.posY), sizeof(uint32_t), &offset);
 			break;
 		case GET_POKEMON: ;
 			t_getPokemon_msg* estructuraGet = estructura;
-			*bytes += sizeof(uint32_t) + sizeof(&(estructuraGet->nombre_pokemon.nombre));
-			aEnviar = malloc(sizeof(*bytes));
-			offset = serializar_entero(aEnviar, codigoOperacion, offset);
-			offset = serializar_nombre(aEnviar, estructuraGet->nombre_pokemon, offset);
+			*bytes += sizeof(uint32_t)*2 + estructuraGet->nombre_pokemon.nombre_lenght;
+			a_enviar = malloc(sizeof(*bytes));
+
+			serializar_variable(a_enviar, &codigo_operacion, sizeof(uint32_t), &offset);
+			serializar_nombre(a_enviar, estructuraGet->nombre_pokemon, &offset);
 			break;
 		case LOCALIZED_POKEMON: ;
 			t_localizedPokemon_msg* estructuraLocalized = estructura;
-			*bytes += sizeof(uint32_t)*(2+2*estructuraLocalized->cantidad_coordenadas) + sizeof(&(estructuraLocalized->nombre_pokemon.nombre));
-			aEnviar = malloc(sizeof(*bytes));
-			offset = serializar_entero(aEnviar, codigoOperacion, offset);
-			offset = serializar_nombre(aEnviar, estructuraLocalized->nombre_pokemon, offset);
-			offset = serializar_entero(aEnviar, estructuraLocalized->cantidad_coordenadas, offset);
+			*bytes += 6*sizeof(uint32_t)*(estructuraLocalized->cantidad_coordenadas) + estructuraLocalized->nombre_pokemon.nombre_lenght;
+			a_enviar = malloc(sizeof(*bytes));
+
+			serializar_variable(a_enviar, &codigo_operacion, sizeof(uint32_t), &offset);
+			serializar_nombre(a_enviar, estructuraLocalized->nombre_pokemon, &offset);
+			serializar_variable(a_enviar, &(estructuraLocalized->cantidad_coordenadas), sizeof(uint32_t), &offset);
 			for(int i = 0; i < estructuraLocalized->cantidad_coordenadas; i++)
 			{
-				offset = serializar_entero(aEnviar, estructuraLocalized->coordenadas[i].posX, offset);
-				offset = serializar_entero(aEnviar, estructuraLocalized->coordenadas[i].posY, offset);
+				serializar_variable(a_enviar, &(estructuraLocalized->coordenadas[i].posX), sizeof(uint32_t), &offset);
+				serializar_variable(a_enviar, &(estructuraLocalized->coordenadas[i].posY), sizeof(uint32_t), &offset);
 			}
 			break;
 		case CATCH_POKEMON: ;
 			t_catchPokemon_msg* estructuraCatch = estructura;
-			*bytes += sizeof(uint32_t)*2 + sizeof(&(estructuraCatch->nombre_pokemon.nombre));
-			aEnviar = malloc(sizeof(*bytes));
-			offset = serializar_entero(aEnviar, codigoOperacion, offset);
-			offset = serializar_nombre(aEnviar, estructuraCatch->nombre_pokemon, offset);
-			offset = serializar_entero(aEnviar, estructuraCatch->coordenadas.posX, offset);
-			offset = serializar_entero(aEnviar, estructuraCatch->coordenadas.posY, offset);
+			*bytes += sizeof(uint32_t)*4 + estructuraCatch->nombre_pokemon.nombre_lenght;
+			a_enviar = malloc(sizeof(*bytes));
+
+			serializar_variable(a_enviar, &codigo_operacion, sizeof(uint32_t), &offset);
+			serializar_nombre(a_enviar, estructuraCatch->nombre_pokemon, &offset);
+			serializar_variable(a_enviar, &(estructuraCatch->coordenadas.posX), sizeof(uint32_t), &offset);
+			serializar_variable(a_enviar, &(estructuraCatch->coordenadas.posY), sizeof(uint32_t), &offset);
 			break;
 		case CAUGHT_POKEMON: ;
 			t_caughtPokemon_msg* estructuraCaught = estructura;
-			*bytes += sizeof(uint32_t);
-			aEnviar = malloc(sizeof(*bytes));
-			offset = serializar_entero(aEnviar, codigoOperacion, offset);
-			offset = serializar_entero(aEnviar, estructuraCaught->atrapado, offset);
+			*bytes += sizeof(uint32_t)*2;
+			a_enviar = malloc(sizeof(*bytes));
+
+			serializar_variable(a_enviar, &codigo_operacion, sizeof(uint32_t), &offset);
+			serializar_variable(a_enviar, &(estructuraCaught->atrapado), sizeof(uint32_t), &offset);
 			break;
-		default: printf("\n[!] Error en el codigo de operacion al serializar paquete.\n"); break;
+		default: printf("\n[!] Error en el codigo de operacion al serializar paquete.\n"); break; //TODO esto tiene que ir a un log
 	}
-	return aEnviar;
+	return a_enviar;
 }
 
-int serializar_entero(void* aEnviar, int entero, int offset)
+void serializar_variable(void* a_enviar, void* a_serializar, int tamanio, int *offset)
 {
-	memcpy(aEnviar + offset, &(entero), sizeof(uint32_t));
-	offset += sizeof(uint32_t);
-	return offset;
+	memcpy(a_enviar + *offset, a_serializar, tamanio);
+	*offset += tamanio;
 }
 
-int serializar_nombre(void* aEnviar, t_nombrePokemon nombrePokemon, int offset)
+void serializar_nombre(void* aEnviar, t_nombrePokemon nombrePokemon, int *offset)
 {
-	offset = serializar_entero(aEnviar, nombrePokemon.nombre_lenght, offset);
-	memcpy(aEnviar + offset, nombrePokemon.nombre, nombrePokemon.nombre_lenght);
-	offset += nombrePokemon.nombre_lenght;
-	return offset;
+	serializar_variable(aEnviar, &(nombrePokemon.nombre_lenght), sizeof(uint32_t), offset);
+	serializar_variable(aEnviar, nombrePokemon.nombre, nombrePokemon.nombre_lenght, offset);
 }
+
+
+/////////////////////////////////////
+// ---- Recepción de mensajes ---- //
+/////////////////////////////////////
 
 void* recibir_paquete(op_code codigoOperacion, int socket)
 {
@@ -244,7 +210,7 @@ void* recibir_paquete(op_code codigoOperacion, int socket)
 
 			recibir_nombre(socket, &(estructuraNew->nombre_pokemon));
 			recibir_coordenadas(socket, &(estructuraNew->coordenadas));
-			recv(socket, &(estructuraNew->cantidad_pokemons), sizeof(int), MSG_WAITALL);
+			recibir_variable(socket, &(estructuraNew->cantidad_pokemons), sizeof(uint32_t));
 			paqueteRecibido = estructuraNew;
 			break;
 		case APPEARED_POKEMON: ;
@@ -260,17 +226,22 @@ void* recibir_paquete(op_code codigoOperacion, int socket)
 			estructuraGet->nombre_pokemon.nombre = malloc(sizeof(estructuraGet->nombre_pokemon.nombre));
 
 			recibir_nombre(socket, &(estructuraGet->nombre_pokemon));
+			paqueteRecibido = estructuraGet;
 			break;
 		case LOCALIZED_POKEMON: ;
 			t_localizedPokemon_msg* estructuraLocalized = malloc(sizeof(estructuraLocalized));
 			estructuraLocalized->nombre_pokemon.nombre = malloc(sizeof(estructuraLocalized->nombre_pokemon.nombre));
 
 			recibir_nombre(socket, &(estructuraLocalized->nombre_pokemon));
-			recv(socket, &(estructuraLocalized->cantidad_coordenadas), sizeof(int), MSG_WAITALL);
+			recibir_variable(socket, &(estructuraLocalized->cantidad_coordenadas), sizeof(uint32_t));
+
+			estructuraLocalized->coordenadas = malloc(sizeof(uint32_t) * estructuraLocalized->cantidad_coordenadas * 2);
 			for(int i = 0; i < estructuraLocalized->cantidad_coordenadas; i++)
 			{
 				recibir_coordenadas(socket, &(estructuraLocalized->coordenadas[i]));
 			}
+
+			paqueteRecibido = estructuraLocalized;
 			break;
 		case CATCH_POKEMON: ;
 			t_catchPokemon_msg* estructuraCatch = malloc(sizeof(estructuraCatch));
@@ -283,25 +254,39 @@ void* recibir_paquete(op_code codigoOperacion, int socket)
 		case CAUGHT_POKEMON: ;
 			t_caughtPokemon_msg* estructuraCaught = malloc(sizeof(estructuraCaught));
 
-			recv(socket, &(estructuraCaught->atrapado), sizeof(int), MSG_WAITALL);
+			recibir_variable(socket, &(estructuraCaught->atrapado), sizeof(uint32_t));
+			paqueteRecibido = estructuraCaught;
 			break;
+			//TODO default con error
 	}
 	return paqueteRecibido;
 }
 
+void recibir_variable(int socket, void* a_serializar, int tamanio)
+{
+	recv(socket, a_serializar, tamanio, MSG_WAITALL);
+}
+
 void recibir_nombre(int socket, t_nombrePokemon* estructuraNombre)
 {
-	recv(socket, &(estructuraNombre->nombre_lenght), sizeof(int), MSG_WAITALL);
 	estructuraNombre->nombre = malloc(estructuraNombre->nombre_lenght);
-	recv(socket, estructuraNombre->nombre, estructuraNombre->nombre_lenght, MSG_WAITALL);
+	recibir_variable(socket, &(estructuraNombre->nombre_lenght), sizeof(uint32_t));
+	recibir_variable(socket, estructuraNombre->nombre, estructuraNombre->nombre_lenght);
 }
 
 void recibir_coordenadas(int socket, t_coordenadas* estructuraCoordenadas)
 {
-	recv(socket, &(estructuraCoordenadas->posX), sizeof(int), MSG_WAITALL);
-	recv(socket, &(estructuraCoordenadas->posY), sizeof(int), MSG_WAITALL);
+	recibir_variable(socket, &(estructuraCoordenadas->posX), sizeof(uint32_t));
+	recibir_variable(socket, &(estructuraCoordenadas->posY), sizeof(uint32_t));
 }
 
 
+/////////////////////
+// ---- Otros ---- //
+/////////////////////
 
+void liberar_conexion(int socket)
+{
+	close(socket);
+}
 

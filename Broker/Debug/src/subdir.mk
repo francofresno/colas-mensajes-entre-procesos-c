@@ -5,15 +5,15 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../src/broker.c \
-../src/queues.c 
+../src/messages_queues.c 
 
 OBJS += \
 ./src/broker.o \
-./src/queues.o 
+./src/messages_queues.o 
 
 C_DEPS += \
 ./src/broker.d \
-./src/queues.d 
+./src/messages_queues.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
