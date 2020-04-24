@@ -20,9 +20,8 @@ int main(void) {
 
 	while(1) {
 		int socket_cliente = esperar_cliente(socket_servidor);
-		serve_client(&socket_cliente);
-//		pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
-//		pthread_detach(thread);
+		pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
+		pthread_detach(thread);
 	}
 
 }
