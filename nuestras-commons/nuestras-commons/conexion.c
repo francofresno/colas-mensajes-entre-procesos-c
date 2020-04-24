@@ -152,12 +152,14 @@ void* serializar_paquete(op_code codigo_operacion, void* estructura, int* bytes)
 
 			serializar_variable(a_enviar, &codigo_operacion, sizeof(uint32_t), &offset);
 			serializar_nombre(a_enviar, estructuraLocalized->nombre_pokemon, &offset);
+
 			serializar_variable(a_enviar, &(estructuraLocalized->cantidad_coordenadas), sizeof(uint32_t), &offset);
 			for(int i = 0; i < estructuraLocalized->cantidad_coordenadas; i++)
 			{
 				serializar_variable(a_enviar, &(estructuraLocalized->coordenadas[i].posX), sizeof(uint32_t), &offset);
 				serializar_variable(a_enviar, &(estructuraLocalized->coordenadas[i].posY), sizeof(uint32_t), &offset);
 			}
+
 			break;
 		case CATCH_POKEMON: ;
 			t_catchPokemon_msg* estructuraCatch = estructura;
@@ -179,6 +181,7 @@ void* serializar_paquete(op_code codigo_operacion, void* estructura, int* bytes)
 			break;
 		default: printf("\n[!] Error en el codigo de operacion al serializar paquete.\n"); break; //TODO esto tiene que ir a un log
 	}
+
 	return a_enviar;
 }
 

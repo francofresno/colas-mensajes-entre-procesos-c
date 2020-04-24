@@ -66,10 +66,10 @@ int main(int argc, char *argv[]) {
 
 	op_code n = NEW_POKEMON;
 	op_code a = APPEARED_POKEMON;
-	op_code g = GET_POKEMON; // roto
+	op_code g = GET_POKEMON;
 	op_code l = LOCALIZED_POKEMON;
 	op_code cat = CATCH_POKEMON;
-	op_code cau = CAUGHT_POKEMON; // roto
+	op_code cau = CAUGHT_POKEMON;
 
 	enviar_mensaje(cau, &caught, socket_cliente);
 
