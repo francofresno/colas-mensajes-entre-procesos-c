@@ -17,6 +17,13 @@ typedef struct {
 	uint32_t posY;
 } t_coordenadas;
 
+typedef struct {
+	int id_entrenador;
+	t_coordenadas coordenadas;
+	t_nombrePokemon pokemones;
+	uint32_t cantidad_pokemons;
+} t_entrenador;
+
 /****************************************
  *******ESTRUCTURAS DE LOS MENSAJES******
  ****************************************/
