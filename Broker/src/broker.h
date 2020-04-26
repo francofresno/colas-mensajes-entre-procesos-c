@@ -29,12 +29,13 @@
 #define PUERTO "6011"
 
 pthread_t thread;
+int id_contador;
 
 t_log* iniciar_logger(void);
 t_config* leer_config(void);
 int esperar_cliente(int socket_servidor);
 void serve_client(int* socket_cliente);
-void process_request(int cod_op,int cliente_fd);
+void process_request(int cod_op, int id, int id_correlativo, void* mensaje_recibido);
 void terminar_programa(int socket, t_log* logger, t_config* config);
 
 #endif /* BROKER_H_ */

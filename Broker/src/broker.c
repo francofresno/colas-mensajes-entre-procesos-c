@@ -29,12 +29,19 @@ int main(void) {
 void serve_client(int* socket_cliente)
 {
 	int cod_op = recibir_codigo_operacion(*socket_cliente);
-	void* paqueteRecibido = recibir_paquete(cod_op, *socket_cliente);
+	int id = recibir_id(*socket_cliente);
+	int id_correlativo = recibir_id(*socket_cliente);
+	void* mensaje_recibido = recibir_mensaje(cod_op, *socket_cliente);
+	process_request(cod_op, id, id_correlativo, mensaje_recibido);
+}
+
+void process_request(int cod_op, int id, int id_correlativo, void* mensaje_recibido)
+{
 	switch(cod_op)
 	{
 		case NEW_POKEMON: ;
 			t_newPokemon_msg* estructuraNew = malloc(sizeof(estructuraNew));
-			estructuraNew = paqueteRecibido;
+			estructuraNew = mensaje_recibido;
 
 			printf("\n%s|","NEW");
 			printf("%d|",estructuraNew->nombre_pokemon.nombre_lenght);
@@ -46,7 +53,7 @@ void serve_client(int* socket_cliente)
 			break;
 		case APPEARED_POKEMON: ;
 			t_appearedPokemon_msg* estructuraAppeared = malloc(sizeof(estructuraAppeared));
-			estructuraAppeared = paqueteRecibido;
+			estructuraAppeared = mensaje_recibido;
 
 			printf("\n%s|","APPEARED");
 			printf("%d|",estructuraAppeared->nombre_pokemon.nombre_lenght);
@@ -57,7 +64,7 @@ void serve_client(int* socket_cliente)
 			break;
 		case GET_POKEMON: ;
 			t_getPokemon_msg* estructuraGet = malloc(sizeof(estructuraGet));
-			estructuraGet = paqueteRecibido;
+			estructuraGet = mensaje_recibido;
 
 			printf("\n%s|","GET");
 			printf("%d|",estructuraGet->nombre_pokemon.nombre_lenght);
@@ -66,7 +73,7 @@ void serve_client(int* socket_cliente)
 			break;
 		case LOCALIZED_POKEMON: ;
 			t_localizedPokemon_msg* estructuraLocalized = malloc(sizeof(estructuraLocalized));
-			estructuraLocalized = paqueteRecibido;
+			estructuraLocalized = mensaje_recibido;
 
 			printf("\n%s|","LOCALIZED");
 			printf("%d|",estructuraLocalized->nombre_pokemon.nombre_lenght);
@@ -82,7 +89,7 @@ void serve_client(int* socket_cliente)
 			break;
 		case CATCH_POKEMON: ;
 			t_catchPokemon_msg* estructuraCatch = malloc(sizeof(estructuraCatch));
-			estructuraCatch = paqueteRecibido;
+			estructuraCatch = mensaje_recibido;
 
 			printf("\n%s|","CATCH");
 			printf("%d|",estructuraCatch->nombre_pokemon.nombre_lenght);
@@ -93,7 +100,7 @@ void serve_client(int* socket_cliente)
 		break;
 		case CAUGHT_POKEMON: ;
 			t_caughtPokemon_msg* estructuraCaught = malloc(sizeof(estructuraCaught));
-			estructuraCaught = paqueteRecibido;
+			estructuraCaught = mensaje_recibido;
 
 			printf("\n%s|","CAUGHT");
 			printf("%d|",estructuraCaught->atrapado);
@@ -101,55 +108,6 @@ void serve_client(int* socket_cliente)
 		break;
 	}
 }
-
-//void process_request(int cod_op, int cliente_fd) {
-//	t_newPokemon_msg* new_pokemon_msg;
-//
-//	switch (cod_op) {
-//	//TODO todos los cases
-//		case NEW_POKEMON:
-//			new_pokemon_msg = malloc(sizeof(new_pokemon_msg));
-//			new_pokemon_msg = deserializar_new_pokemon_msg(cliente_fd);
-//
-//			printf("\n%d|",new_pokemon_msg->nombre_pokemon.nombre_lenght);
-//			fflush(stdout);
-//			printf("%s|",new_pokemon_msg->nombre_pokemon.nombre);
-//			fflush(stdout);
-//			printf("%d|",new_pokemon_msg->coordenadas.posX);
-//			fflush(stdout);
-//			printf("%d|",new_pokemon_msg->coordenadas.posY);
-//			fflush(stdout);
-//			printf("%d",new_pokemon_msg->cantidad_pokemons);
-//			fflush(stdout);
-//
-//			//free(new_pokemon_msg);
-//			break;
-//		case APPEARED_POKEMON:
-//
-//			break;
-//		case CATCH_POKEMON:
-//
-//			break;
-//		case CAUGHT_POKEMON:
-//
-//			break;
-//		case GET_POKEMON:
-//
-//			break;
-//		case LOCALIZED_POKEMON:
-//
-//			break;
-//		case 0:
-//			close(cliente_fd);
-//			pthread_exit(NULL);
-//		case -1:
-//			pthread_exit(NULL);
-//		default:
-//			printf("\nERROR: %d", cod_op);
-//			fflush(stdout);
-//			break;
-//	}
-//}
 
 t_log* iniciar_logger(void)
 {
