@@ -26,7 +26,7 @@ endif
 all: GameBoy
 
 dependents:
-	-cd /home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug && $(MAKE) clean all
+	-cd /home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug && $(MAKE) all
 
 # Tool invocations
 GameBoy: $(OBJS) $(USER_OBJS) /home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug/libnuestras-commons.so
