@@ -29,6 +29,8 @@ int main(void) {
 void serve_client(int* socket_cliente)
 {
 	int cod_op = recibir_codigo_operacion(*socket_cliente);
+	uint32_t id = recibir_id(*socket_cliente);
+	uint32_t id_correlativo = recibir_id(*socket_cliente);
 	void* paqueteRecibido = recibir_paquete(cod_op, *socket_cliente);
 	switch(cod_op)
 	{
@@ -37,6 +39,8 @@ void serve_client(int* socket_cliente)
 			estructuraNew = paqueteRecibido;
 
 			printf("\n%s|","NEW");
+			printf("%d|",id);
+			printf("%d|",id_correlativo);
 			printf("%d|",estructuraNew->nombre_pokemon.nombre_lenght);
 			printf("%s|",estructuraNew->nombre_pokemon.nombre);
 			printf("%d|",estructuraNew->coordenadas.posX);
@@ -49,6 +53,8 @@ void serve_client(int* socket_cliente)
 			estructuraAppeared = paqueteRecibido;
 
 			printf("\n%s|","APPEARED");
+			printf("%d|",id);
+			printf("%d|",id_correlativo);
 			printf("%d|",estructuraAppeared->nombre_pokemon.nombre_lenght);
 			printf("%s|",estructuraAppeared->nombre_pokemon.nombre);
 			printf("%d|",estructuraAppeared->coordenadas.posX);
@@ -60,6 +66,8 @@ void serve_client(int* socket_cliente)
 			estructuraGet = paqueteRecibido;
 
 			printf("\n%s|","GET");
+			printf("%d|",id);
+			printf("%d|",id_correlativo);
 			printf("%d|",estructuraGet->nombre_pokemon.nombre_lenght);
 			printf("%s|",estructuraGet->nombre_pokemon.nombre);
 			fflush(stdout);
@@ -69,6 +77,8 @@ void serve_client(int* socket_cliente)
 			estructuraLocalized = paqueteRecibido;
 
 			printf("\n%s|","LOCALIZED");
+			printf("%d|",id);
+			printf("%d|",id_correlativo);
 			printf("%d|",estructuraLocalized->nombre_pokemon.nombre_lenght);
 			printf("%s|",estructuraLocalized->nombre_pokemon.nombre);
 			printf("%d|",estructuraLocalized->cantidad_coordenadas);
@@ -85,6 +95,8 @@ void serve_client(int* socket_cliente)
 			estructuraCatch = paqueteRecibido;
 
 			printf("\n%s|","CATCH");
+			printf("%d|",id);
+			printf("%d|",id_correlativo);
 			printf("%d|",estructuraCatch->nombre_pokemon.nombre_lenght);
 			printf("%s|",estructuraCatch->nombre_pokemon.nombre);
 			printf("%d|",estructuraCatch->coordenadas.posX);
@@ -96,6 +108,8 @@ void serve_client(int* socket_cliente)
 			estructuraCaught = paqueteRecibido;
 
 			printf("\n%s|","CAUGHT");
+			printf("%d|",id);
+			printf("%d|",id_correlativo);
 			printf("%d|",estructuraCaught->atrapado);
 			fflush(stdout);
 		break;

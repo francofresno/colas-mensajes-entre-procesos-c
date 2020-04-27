@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 			new.coordenadas.posX = 6;
 			new.coordenadas.posY = 2;
 			new.cantidad_pokemons = 7;
-			enviar_mensaje(codigoOperacion, &new, socket_cliente);
+			enviar_mensaje(codigoOperacion, 1, 0, &new, socket_cliente);
 			break;
 		case APPEARED_POKEMON: ;
 			t_appearedPokemon_msg appeared;
@@ -56,13 +56,13 @@ int main(int argc, char *argv[]) {
 			appeared.nombre_pokemon.nombre_lenght = 8;
 			appeared.coordenadas.posX = 1;
 			appeared.coordenadas.posY = 2;
-			enviar_mensaje(codigoOperacion, &appeared, socket_cliente);
+			enviar_mensaje(codigoOperacion, 2, 1, &appeared, socket_cliente);
 			break;
 		case GET_POKEMON: ;
 			t_getPokemon_msg get;
 			get.nombre_pokemon.nombre = "PIKACHU";
 			get.nombre_pokemon.nombre_lenght = 8;
-			enviar_mensaje(codigoOperacion, &get, socket_cliente);
+			enviar_mensaje(codigoOperacion, 3, 0, &get, socket_cliente);
 			break;
 		case LOCALIZED_POKEMON: ;
 			t_localizedPokemon_msg localized;
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
 			localized.coordenadas[0].posY = 2;
 			localized.coordenadas[1].posX = 3;
 			localized.coordenadas[1].posY = 4;
-			enviar_mensaje(codigoOperacion, &localized, socket_cliente);
+			enviar_mensaje(codigoOperacion, 4, 3, &localized, socket_cliente);
 			break;
 		case CATCH_POKEMON: ;
 			t_catchPokemon_msg catch;
@@ -82,12 +82,12 @@ int main(int argc, char *argv[]) {
 			catch.nombre_pokemon.nombre_lenght = 8;
 			catch.coordenadas.posX = 1;
 			catch.coordenadas.posY = 2;
-			enviar_mensaje(codigoOperacion, &catch, socket_cliente);
+			enviar_mensaje(codigoOperacion, 5, 0, &catch, socket_cliente);
 			break;
 		case CAUGHT_POKEMON: ;
 			t_caughtPokemon_msg caught;
 			caught.atrapado = 1;
-			enviar_mensaje(codigoOperacion, &caught, socket_cliente);
+			enviar_mensaje(codigoOperacion, 6, 5, &caught, socket_cliente);
 			break;
 	}
 
@@ -111,7 +111,7 @@ process_code stringACodigoProceso(const char* string)
 			if(!strcmp(string, conversionCodigoProceso[i].str))
 				return conversionCodigoProceso[i].process_code;
 		}
-		printf("[!] Error en el codigo de operacion");
+	printf("[!] Error en el codigo de operacion");
 }
 
 t_log* iniciar_logger(void)
