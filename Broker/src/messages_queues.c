@@ -8,56 +8,110 @@
 
 #include "messages_queues.h"
 
-
-void enqueue(void* new_message)
+t_queue* create_message_queue()
 {
-    t_message_queue *nuevo;
-    nuevo = malloc(sizeof(struct Message_queue));
-    nuevo->message = new_message;
-    nuevo->sig = NULL;
-
-    if (isEmpty()) {
-        raiz = nuevo;
-        fondo = nuevo;
-    } else {
-        fondo->sig = nuevo;
-        fondo = nuevo;
-    }
+	return queue_create();
 }
 
-//void* dequeue()
-//{
-//    if (!isEmpty()) {
-//        void* message = raiz->message;
-//        t_message_queue *aux = raiz;
-//
-//        if (raiz == fondo) {
-//            raiz = NULL;
-//            fondo = NULL;
-//        } else {
-//            raiz = raiz->sig;
-//        }
-//
-//        free(aux);
-//        return message;
-//    }
-//
-//    return NULL;
-//}
-
-void free_queue()
+void push_message_queue(t_queue* queue, t_data* data)
 {
-	t_message_queue *queue = raiz;
-	t_message_queue *aux;
-    while (queue != NULL) {
-        aux = queue;
-        queue = queue->sig;
-        free(aux);
-    }
+	queue_push(queue, (void*) data);
 }
 
-int isEmpty()
+t_data* pop_message_queue(t_queue* queue)
 {
-	return raiz == NULL;
+	return (t_data*) queue_pop(queue);
 }
+
+bool is_same_id(uint32_t data_id, uint32_t id)
+{
+	return data_id == id;
+}
+
+t_data* find_message_by_id(t_queue* queue, uint32_t id)
+{
+	t_link_element *element = queue->elements->head;
+	t_data* data = (t_data*) (queue->elements->head->data);
+
+	while(element != NULL && !is_same_id(data->ID, id)) {
+		element = element->next;
+		data = element == NULL ? NULL : element->data;
+	}
+
+	return data;
+}
+
+t_data* find_message_by_id_correlativo(t_queue* queue, uint32_t id)
+{
+	t_link_element *element = queue->elements->head;
+	t_data* data = (t_data*) (queue->elements->head->data);
+
+	while(element != NULL && !is_same_id(data->ID_correlativo, id)) {
+		element = element->next;
+		data = element == NULL ? NULL : element->data;
+	}
+
+	return data;
+}
+
+void remove_message_by_id(t_queue* queue, uint32_t id)
+{
+	t_link_element *element = queue->elements->head;
+	t_data* data = (t_data*) (queue->elements->head->data);
+	int position = 0;
+
+	while(element != NULL && !is_same_id(data->ID, id)) {
+		element = element->next;
+		data = element == NULL ? NULL : element->data;
+		position++;
+	}
+
+	if (data != NULL) {
+		data = (t_data*) list_remove(queue->elements, position);
+		element_destroyer((void*) data);
+	}
+}
+
+void remove_message_by_id_correlativo(t_queue* queue, uint32_t id)
+{
+	t_link_element *element = queue->elements->head;
+	t_data* data = (t_data*) (queue->elements->head->data);
+	int position = 0;
+
+	while(element != NULL && !is_same_id(data->ID_correlativo, id)) {
+		element = element->next;
+		data = element == NULL ? NULL : element->data;
+		position++;
+	}
+
+	if (data != NULL) {
+		data = (t_data*) list_remove(queue->elements, position);
+		element_destroyer((void*) data);
+	}
+}
+
+void element_destroyer(void* data)
+{
+	t_data* data_mq = malloc(sizeof(t_data*));
+	data_mq = (t_data*) data;
+	free(data_mq->message);
+	free(data_mq);
+	free(data);
+}
+
+int size_message_queue(t_queue* queue)
+{
+	return queue_size(queue);
+}
+
+int is_empty_message_queue(t_queue* queue)
+{
+	return queue_is_empty(queue);
+}
+
+void free_message_queue(t_queue* queue)
+{
+	queue_destroy_and_destroy_elements(queue, element_destroyer);
+}
+
 

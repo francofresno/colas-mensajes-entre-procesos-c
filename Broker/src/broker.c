@@ -13,16 +13,65 @@ int main(void) {
 
 	//t_config* config = leer_config();
 
-	int socket_servidor = iniciar_servidor(IP, PUERTO);
+//	int socket_servidor = iniciar_servidor(IP, PUERTO);
+//
+//	printf("Broker!");
+//	fflush(stdout);
 
-	printf("Broker!");
+	t_newPokemon_msg new1;
+	new1.nombre_pokemon.nombre = "PIKACHU";
+	new1.nombre_pokemon.nombre_lenght = strlen(new1.nombre_pokemon.nombre) + 1;
+	new1.coordenadas.posX = 6;
+	new1.coordenadas.posY = 2;
+	new1.cantidad_pokemons = 7;
+
+	t_newPokemon_msg new2;
+	new2.nombre_pokemon.nombre = "CHARMANDER";
+	new2.nombre_pokemon.nombre_lenght = strlen(new2.nombre_pokemon.nombre) + 1;
+	new2.coordenadas.posX = 6;
+	new2.coordenadas.posY = 2;
+	new2.cantidad_pokemons = 7;
+
+	t_newPokemon_msg new3;
+	new3.nombre_pokemon.nombre = "RAICHU";
+	new3.nombre_pokemon.nombre_lenght = strlen(new3.nombre_pokemon.nombre) + 1;
+	new3.coordenadas.posX = 6;
+	new3.coordenadas.posY = 2;
+	new3.cantidad_pokemons = 7;
+
+	t_data* n1 = malloc(sizeof(t_data*));
+	n1->ID = 1;
+	n1->ID_correlativo = 0;
+	n1->message = (void*) &new1;
+	t_data* n2 = malloc(sizeof(t_data*));
+	n2->ID = 2;
+	n2->ID_correlativo = 1;
+	n2->message = (void*) &new2;
+	t_data* n3 = malloc(sizeof(t_data*));
+	n3->ID = 3;
+	n3->ID_correlativo = 2;
+	n3->message = (void*) &new3;
+
+	t_queue* newq = create_message_queue();
+	push_message_queue(newq, n1);
+	push_message_queue(newq, n2);
+	push_message_queue(newq, n3);
+
+	t_data* data = find_message_by_id(newq, 2);
+
+	t_newPokemon_msg* new4 = malloc(sizeof(new4));
+	new4 = data->message;
+
+	printf("Cantidad en cola: %d\n", newq->elements->elements_count);
+	printf("ID: %d\n",data->ID);
+	printf("Nombre: %s\n",new4->nombre_pokemon.nombre);
 	fflush(stdout);
 
-	while(1) {
-		int socket_cliente = esperar_cliente(socket_servidor);
-		pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
-		pthread_detach(thread);
-	}
+//	while(1) {
+//		int socket_cliente = esperar_cliente(socket_servidor);
+//		pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
+//		pthread_detach(thread);
+//	}
 
 }
 

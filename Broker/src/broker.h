@@ -15,10 +15,11 @@
 #include<commons/string.h>
 #include<commons/config.h>
 #include<readline/readline.h>
-#include <pthread.h>
+#include<pthread.h>
 
 #include "nuestras-commons/conexion.h"
 #include "nuestras-commons/mensajes.h"
+#include "messages_queues.h"
 
 //#include "queues.h"
 

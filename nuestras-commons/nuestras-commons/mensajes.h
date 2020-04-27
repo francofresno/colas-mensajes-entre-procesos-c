@@ -7,17 +7,20 @@
  *********ESTRUCTURAS GENERALES**********
  ****************************************/
 
-typedef struct {
+typedef struct
+{
 	uint32_t nombre_lenght;
 	char* nombre;
 } t_nombrePokemon;
 
-typedef struct {
+typedef struct
+{
 	uint32_t posX;
 	uint32_t posY;
 } t_coordenadas;
 
-typedef struct {
+typedef struct
+{
 	int id_entrenador;
 	t_coordenadas coordenadas;
 	t_nombrePokemon pokemones;
