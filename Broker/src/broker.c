@@ -29,19 +29,12 @@ int main(void) {
 void serve_client(int* socket_cliente)
 {
 	int cod_op = recibir_codigo_operacion(*socket_cliente);
-	int id = recibir_id(*socket_cliente);
-	int id_correlativo = recibir_id(*socket_cliente);
-	void* mensaje_recibido = recibir_mensaje(cod_op, *socket_cliente);
-	process_request(cod_op, id, id_correlativo, mensaje_recibido);
-}
-
-void process_request(int cod_op, int id, int id_correlativo, void* mensaje_recibido)
-{
+	void* paqueteRecibido = recibir_paquete(cod_op, *socket_cliente);
 	switch(cod_op)
 	{
 		case NEW_POKEMON: ;
 			t_newPokemon_msg* estructuraNew = malloc(sizeof(estructuraNew));
-			estructuraNew = mensaje_recibido;
+			estructuraNew = paqueteRecibido;
 
 			printf("\n%s|","NEW");
 			printf("%d|",estructuraNew->nombre_pokemon.nombre_lenght);
@@ -53,7 +46,7 @@ void process_request(int cod_op, int id, int id_correlativo, void* mensaje_recib
 			break;
 		case APPEARED_POKEMON: ;
 			t_appearedPokemon_msg* estructuraAppeared = malloc(sizeof(estructuraAppeared));
-			estructuraAppeared = mensaje_recibido;
+			estructuraAppeared = paqueteRecibido;
 
 			printf("\n%s|","APPEARED");
 			printf("%d|",estructuraAppeared->nombre_pokemon.nombre_lenght);
@@ -64,7 +57,7 @@ void process_request(int cod_op, int id, int id_correlativo, void* mensaje_recib
 			break;
 		case GET_POKEMON: ;
 			t_getPokemon_msg* estructuraGet = malloc(sizeof(estructuraGet));
-			estructuraGet = mensaje_recibido;
+			estructuraGet = paqueteRecibido;
 
 			printf("\n%s|","GET");
 			printf("%d|",estructuraGet->nombre_pokemon.nombre_lenght);
@@ -73,7 +66,7 @@ void process_request(int cod_op, int id, int id_correlativo, void* mensaje_recib
 			break;
 		case LOCALIZED_POKEMON: ;
 			t_localizedPokemon_msg* estructuraLocalized = malloc(sizeof(estructuraLocalized));
-			estructuraLocalized = mensaje_recibido;
+			estructuraLocalized = paqueteRecibido;
 
 			printf("\n%s|","LOCALIZED");
 			printf("%d|",estructuraLocalized->nombre_pokemon.nombre_lenght);
@@ -89,7 +82,7 @@ void process_request(int cod_op, int id, int id_correlativo, void* mensaje_recib
 			break;
 		case CATCH_POKEMON: ;
 			t_catchPokemon_msg* estructuraCatch = malloc(sizeof(estructuraCatch));
-			estructuraCatch = mensaje_recibido;
+			estructuraCatch = paqueteRecibido;
 
 			printf("\n%s|","CATCH");
 			printf("%d|",estructuraCatch->nombre_pokemon.nombre_lenght);
@@ -100,7 +93,7 @@ void process_request(int cod_op, int id, int id_correlativo, void* mensaje_recib
 		break;
 		case CAUGHT_POKEMON: ;
 			t_caughtPokemon_msg* estructuraCaught = malloc(sizeof(estructuraCaught));
-			estructuraCaught = mensaje_recibido;
+			estructuraCaught = paqueteRecibido;
 
 			printf("\n%s|","CAUGHT");
 			printf("%d|",estructuraCaught->atrapado);

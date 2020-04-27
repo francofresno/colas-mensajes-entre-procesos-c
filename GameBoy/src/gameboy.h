@@ -22,11 +22,38 @@
 #define GAMEBOY_LOG "gameboy.log"
 #define GAMEBOY_NAME "gameboy"
 #define GAMEBOY_CONFIG "gameboy.config"
-#define IP "127.0.0.4"
-#define PUERTO "6014"
+
+const static struct {
+	op_code codigoOperacion;
+	const char* str;
+} conversionCodigoOp[] = {
+		{NEW_POKEMON, "NEW_POKEMON"},
+		{APPEARED_POKEMON, "APPEARED_POKEMON"},
+		{CATCH_POKEMON, "CATCH_POKEMON"},
+		{GET_POKEMON, "GET_POKEMON"},
+		{LOCALIZED_POKEMON, "LOCALIZED_POKEMON"},
+		{CAUGHT_POKEMON, "CAUGHT_POKEMON"}
+};
+
+typedef enum {
+			BROKER = 1,
+			TEAM = 2,
+			GAMECARD = 3
+} process_code;
+
+const static struct {
+	process_code process_code;
+	const char* str;
+} conversionCodigoProceso[] = {
+		{BROKER, "BROKER"},
+		{TEAM, "TEAM"},
+		{GAMECARD, "GAMECARD"}
+};
 
 t_log* iniciar_logger(void);
 t_config* leer_config(void);
 void terminar_programa(int socket, t_log* logger, t_config* config);
+op_code stringACodigoOperacion(const char* string);
+process_code stringACodigoProceso(const char* string);
 
 #endif /* GAMEBOY_H_ */
