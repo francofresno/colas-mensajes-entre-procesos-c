@@ -4,6 +4,20 @@
 #include <stdint.h>
 
 /****************************************
+ **********CODIGOS DE OPERACION**********
+ ****************************************/
+typedef enum {
+	NEW_POKEMON = 1,
+	APPEARED_POKEMON = 2,
+	CATCH_POKEMON = 3,
+	CAUGHT_POKEMON = 4,
+	GET_POKEMON = 5,
+	LOCALIZED_POKEMON = 6,
+	SUSCRIPCION = 7,
+	ERROR_CODIGO = 9
+} op_code;
+
+/****************************************
  *********ESTRUCTURAS GENERALES**********
  ****************************************/
 
@@ -76,7 +90,8 @@ typedef struct
 
 typedef struct
 {
-
+	uint32_t ID_proceso;
+	op_code tipo_cola; //uso op_code para definir tambien el tipo de cola para no tener una struct mas que tenga lo mismo
 } t_suscripcion_msg;
 
 #endif /* MENSAJES_H_ */

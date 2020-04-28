@@ -11,18 +11,6 @@
 
 	#include "mensajes.h"
 
-	// ---- Códigos de operación ---- //
-	typedef enum {
-		NEW_POKEMON = 1,
-		APPEARED_POKEMON = 2,
-		CATCH_POKEMON = 3,
-		CAUGHT_POKEMON = 4,
-		GET_POKEMON = 5,
-		LOCALIZED_POKEMON = 6,
-		ERROR_CODIGO = 9
-	} op_code;
-	// ---- END Códigos de operación ---- //
-
 	typedef struct
 	{
 		op_code codigo_operacion;
@@ -42,7 +30,7 @@
 	// Generales
 	void liberar_conexion(int socket);
 
-	void enviar_mensaje(op_code codigoOperacion, uint32_t id, uint32_t id_correlativo, void* new_pokemon_msg, int socket);
+	void enviar_mensaje(op_code codigoOperacion, uint32_t id, uint32_t id_correlativo, void* mensaje, int socket);
 	void* serializar_paquete(op_code codigoOperacion, uint32_t id, uint32_t id_correlativo, void* estructura, int* bytes);
 	void serializar_variable(void* a_enviar, void* a_serializar, int tamanio, int *offset);
 	void serializar_nombre(void* aEnviar, t_nombrePokemon nombrePokemon, int *offset);
