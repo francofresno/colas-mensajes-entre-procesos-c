@@ -55,6 +55,7 @@
 	void copiar_coordenadas(int socket, t_coordenadas* estructuraCoordenadas, void* stream, int* offset);
 	void copiar_variable(int socket, void* variable, void* stream, int* offset, int size);
 	t_newPokemon_msg* copiar_estructuraNew(int socket, void* stream, int* offset, t_newPokemon_msg* estructuraNew);
+	void enviar_id_respuesta(uint32_t id_msg, int socket_cliente);
 
 
 
