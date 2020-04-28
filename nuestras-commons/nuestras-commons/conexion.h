@@ -18,7 +18,8 @@
 		CATCH_POKEMON = 3,
 		CAUGHT_POKEMON = 4,
 		GET_POKEMON = 5,
-		LOCALIZED_POKEMON = 6
+		LOCALIZED_POKEMON = 6,
+		ERROR_CODIGO = 9
 	} op_code;
 	// ---- END Códigos de operación ---- //
 

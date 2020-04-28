@@ -38,11 +38,12 @@ const static struct {
 typedef enum {
 			BROKER = 1,
 			TEAM = 2,
-			GAMECARD = 3
+			GAMECARD = 3,
+			ERROR_PROCESO = 9
 } process_code;
 
 const static struct {
-	process_code process_code;
+	process_code codigoProceso;
 	const char* str;
 } conversionCodigoProceso[] = {
 		{BROKER, "BROKER"},
