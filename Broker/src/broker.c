@@ -12,67 +12,18 @@
 int main(void) {
 
 	//t_config* config = leer_config();
+	init_message_queues();
+	init_suscriber_lists();
 
-//	int socket_servidor = iniciar_servidor(IP, PUERTO);
-//
-//	printf("Broker!");
-//	fflush(stdout);
+	int socket_servidor = iniciar_servidor(IP, PUERTO);
 
-	t_newPokemon_msg new1;
-	new1.nombre_pokemon.nombre = "PIKACHU";
-	new1.nombre_pokemon.nombre_lenght = strlen(new1.nombre_pokemon.nombre) + 1;
-	new1.coordenadas.posX = 6;
-	new1.coordenadas.posY = 2;
-	new1.cantidad_pokemons = 7;
+	while(1) {
+		int socket_cliente = esperar_cliente(socket_servidor);
+		pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
+		pthread_detach(thread);
+	}
 
-	t_newPokemon_msg new2;
-	new2.nombre_pokemon.nombre = "CHARMANDER";
-	new2.nombre_pokemon.nombre_lenght = strlen(new2.nombre_pokemon.nombre) + 1;
-	new2.coordenadas.posX = 6;
-	new2.coordenadas.posY = 2;
-	new2.cantidad_pokemons = 7;
-
-	t_newPokemon_msg new3;
-	new3.nombre_pokemon.nombre = "RAICHU";
-	new3.nombre_pokemon.nombre_lenght = strlen(new3.nombre_pokemon.nombre) + 1;
-	new3.coordenadas.posX = 6;
-	new3.coordenadas.posY = 2;
-	new3.cantidad_pokemons = 7;
-
-	t_data* n1 = malloc(sizeof(t_data*));
-	n1->ID = 1;
-	n1->ID_correlativo = 0;
-	n1->message = (void*) &new1;
-	t_data* n2 = malloc(sizeof(t_data*));
-	n2->ID = 2;
-	n2->ID_correlativo = 1;
-	n2->message = (void*) &new2;
-	t_data* n3 = malloc(sizeof(t_data*));
-	n3->ID = 3;
-	n3->ID_correlativo = 2;
-	n3->message = (void*) &new3;
-
-	t_queue* newq = create_message_queue();
-	push_message_queue(newq, n1);
-	push_message_queue(newq, n2);
-	push_message_queue(newq, n3);
-
-	t_data* data = find_message_by_id(newq, 2);
-
-	t_newPokemon_msg* new4 = malloc(sizeof(new4));
-	new4 = data->message;
-
-	printf("Cantidad en cola: %d\n", newq->elements->elements_count);
-	printf("ID: %d\n",data->ID);
-	printf("Nombre: %s\n",new4->nombre_pokemon.nombre);
-	fflush(stdout);
-
-//	while(1) {
-//		int socket_cliente = esperar_cliente(socket_servidor);
-//		pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
-//		pthread_detach(thread);
-//	}
-
+	pthread_mutex_destroy(&mutex_id_counter);
 }
 
 void serve_client(int* socket_cliente)
@@ -80,89 +31,154 @@ void serve_client(int* socket_cliente)
 	int cod_op = recibir_codigo_operacion(*socket_cliente);
 	uint32_t id = recibir_id(*socket_cliente);
 	uint32_t id_correlativo = recibir_id(*socket_cliente);
-	void* paqueteRecibido = recibir_paquete(cod_op, *socket_cliente);
+	void* mensaje_recibido = recibir_paquete(cod_op, *socket_cliente);
+
+	process_request(cod_op, id, id_correlativo, mensaje_recibido, *socket_cliente);
+
+}
+
+void process_request(int cod_op, uint32_t id, uint32_t id_correlativo, void* mensaje_recibido, int socket_cliente)
+{
 	switch(cod_op)
 	{
+		case SUSCRIPCION: ;
+			t_suscripcion_msg* estructuraSuscripcion = malloc(sizeof(estructuraSuscripcion));
+			estructuraSuscripcion = mensaje_recibido;
+
+			suscribir(estructuraSuscripcion);
+
+			break;
 		case NEW_POKEMON: ;
 			t_newPokemon_msg* estructuraNew = malloc(sizeof(estructuraNew));
-			estructuraNew = paqueteRecibido;
+			estructuraNew = mensaje_recibido;
 
-			printf("\n%s|","NEW");
-			printf("%d|",id);
-			printf("%d|",id_correlativo);
-			printf("%d|",estructuraNew->nombre_pokemon.nombre_lenght);
-			printf("%s|",estructuraNew->nombre_pokemon.nombre);
-			printf("%d|",estructuraNew->coordenadas.posX);
-			printf("%d|",estructuraNew->coordenadas.posY);
-			printf("%d",estructuraNew->cantidad_pokemons);
+			uint32_t id_mensaje = generar_id();
+			push_message_queue(NEW_POKEMON_QUEUE, id_mensaje, 0, mensaje_recibido);
+			printf("Recibi un mensaje y genere el ID: %d\n", id_mensaje);
 			fflush(stdout);
+			enviar_id_respuesta(id_mensaje,socket_cliente);
+
 			break;
 		case APPEARED_POKEMON: ;
 			t_appearedPokemon_msg* estructuraAppeared = malloc(sizeof(estructuraAppeared));
-			estructuraAppeared = paqueteRecibido;
+			estructuraAppeared = mensaje_recibido;
 
-			printf("\n%s|","APPEARED");
-			printf("%d|",id);
-			printf("%d|",id_correlativo);
-			printf("%d|",estructuraAppeared->nombre_pokemon.nombre_lenght);
-			printf("%s|",estructuraAppeared->nombre_pokemon.nombre);
-			printf("%d|",estructuraAppeared->coordenadas.posX);
-			printf("%d|",estructuraAppeared->coordenadas.posY);
-			fflush(stdout);
+
+
 			break;
 		case GET_POKEMON: ;
 			t_getPokemon_msg* estructuraGet = malloc(sizeof(estructuraGet));
-			estructuraGet = paqueteRecibido;
+			estructuraGet = mensaje_recibido;
 
-			printf("\n%s|","GET");
-			printf("%d|",id);
-			printf("%d|",id_correlativo);
-			printf("%d|",estructuraGet->nombre_pokemon.nombre_lenght);
-			printf("%s|",estructuraGet->nombre_pokemon.nombre);
-			fflush(stdout);
+
+
 			break;
 		case LOCALIZED_POKEMON: ;
 			t_localizedPokemon_msg* estructuraLocalized = malloc(sizeof(estructuraLocalized));
-			estructuraLocalized = paqueteRecibido;
+			estructuraLocalized = mensaje_recibido;
 
-			printf("\n%s|","LOCALIZED");
-			printf("%d|",id);
-			printf("%d|",id_correlativo);
-			printf("%d|",estructuraLocalized->nombre_pokemon.nombre_lenght);
-			printf("%s|",estructuraLocalized->nombre_pokemon.nombre);
-			printf("%d|",estructuraLocalized->cantidad_coordenadas);
-			fflush(stdout);
-			for(int i = 0; i < estructuraLocalized->cantidad_coordenadas; i++)
-			{
-				printf("%d|",estructuraLocalized->coordenadas[i].posX);
-				printf("%d|",estructuraLocalized->coordenadas[i].posY);
-				fflush(stdout);
-			}
+
+
+
 			break;
 		case CATCH_POKEMON: ;
 			t_catchPokemon_msg* estructuraCatch = malloc(sizeof(estructuraCatch));
-			estructuraCatch = paqueteRecibido;
+			estructuraCatch = mensaje_recibido;
 
-			printf("\n%s|","CATCH");
-			printf("%d|",id);
-			printf("%d|",id_correlativo);
-			printf("%d|",estructuraCatch->nombre_pokemon.nombre_lenght);
-			printf("%s|",estructuraCatch->nombre_pokemon.nombre);
-			printf("%d|",estructuraCatch->coordenadas.posX);
-			printf("%d|",estructuraCatch->coordenadas.posY);
-			fflush(stdout);
-		break;
+
+
+
+			break;
 		case CAUGHT_POKEMON: ;
 			t_caughtPokemon_msg* estructuraCaught = malloc(sizeof(estructuraCaught));
-			estructuraCaught = paqueteRecibido;
+			estructuraCaught = mensaje_recibido;
 
-			printf("\n%s|","CAUGHT");
-			printf("%d|",id);
-			printf("%d|",id_correlativo);
-			printf("%d|",estructuraCaught->atrapado);
-			fflush(stdout);
-		break;
+
+
+			break;
 	}
+}
+
+void suscribir(t_suscripcion_msg* estructuraSuscripcion)
+{
+	t_subscriber* subscriber = malloc(sizeof(subscriber));
+	subscriber->ID_proceso = estructuraSuscripcion->ID_proceso;
+
+	switch(estructuraSuscripcion->tipo_cola)
+	{
+		case NEW_POKEMON: ;
+			list_add(NEW_POKEMON_SUBSCRIBERS, (void*) subscriber);
+			break;
+		case APPEARED_POKEMON: ;
+			list_add(APPEARED_POKEMON_SUBSCRIBERS, (void*) subscriber);
+			break;
+		case GET_POKEMON: ;
+			list_add(CATCH_POKEMON_SUBSCRIBERS, (void*) subscriber);
+			break;
+		case LOCALIZED_POKEMON: ;
+			list_add(CAUGHT_POKEMON_SUBSCRIBERS, (void*) subscriber);
+			break;
+		case CATCH_POKEMON: ;
+			list_add(GET_POKEMON_SUBSCRIBERS, (void*) subscriber);
+			break;
+		case CAUGHT_POKEMON: ;
+			list_add(LOCALIZED_POKEMON_SUBSCRIBERS, (void*) subscriber);
+			break;
+		case SUSCRIPCION:
+		case ERROR_CODIGO:
+		default:
+			break;
+	}
+}
+
+uint32_t generar_id()
+{
+	pthread_mutex_lock(&mutex_id_counter);
+	ID_COUNTER++;
+    pthread_mutex_unlock(&mutex_id_counter);
+	return ID_COUNTER;
+	//2147483647 es el numero maximo de un uint32_t, despues de eso imprime el complementario para llegar a 4294967296, que es el max de uint
+	//return (rand()%2147483647) + 1;
+}
+
+unsigned long mix(unsigned long a, unsigned long b, unsigned long c)
+{
+    a=a-b;  a=a-c;  a=a^(c >> 13);
+    b=b-c;  b=b-a;  b=b^(a << 8);
+    c=c-a;  c=c-b;  c=c^(b >> 13);
+    a=a-b;  a=a-c;  a=a^(c >> 12);
+    b=b-c;  b=b-a;  b=b^(a << 16);
+    c=c-a;  c=c-b;  c=c^(b >> 5);
+    a=a-b;  a=a-c;  a=a^(c >> 3);
+    b=b-c;  b=b-a;  b=b^(a << 10);
+    c=c-a;  c=c-b;  c=c^(b >> 15);
+    return c;
+}
+
+void setear_seed()
+{
+	unsigned long seed = mix(clock(), time(NULL), getpid());
+	srand (seed);
+}
+
+void init_message_queues()
+{
+	NEW_POKEMON_QUEUE = create_message_queue();
+	APPEARED_POKEMON_QUEUE = create_message_queue();
+	CATCH_POKEMON_QUEUE = create_message_queue();
+	CAUGHT_POKEMON_QUEUE = create_message_queue();
+	GET_POKEMON_QUEUE = create_message_queue();
+	LOCALIZED_POKEMON_QUEUE = create_message_queue();
+}
+
+void init_suscriber_lists()
+{
+	NEW_POKEMON_SUBSCRIBERS = list_create();
+	APPEARED_POKEMON_SUBSCRIBERS = list_create();
+	CATCH_POKEMON_SUBSCRIBERS = list_create();
+	CAUGHT_POKEMON_SUBSCRIBERS = list_create();
+	GET_POKEMON_SUBSCRIBERS = list_create();
+	LOCALIZED_POKEMON_SUBSCRIBERS = list_create();
 }
 
 t_log* iniciar_logger(void)
@@ -184,3 +200,4 @@ void terminar_programa(int socket_servidor, t_log* logger, t_config* config)
 	log_destroy(logger);
 	config_destroy(config);
 }
+

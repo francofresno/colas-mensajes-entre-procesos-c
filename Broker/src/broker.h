@@ -21,21 +21,42 @@
 #include "nuestras-commons/mensajes.h"
 #include "messages_queues.h"
 
-//#include "queues.h"
-
 #define BROKER_LOG "broker.log"
 #define BROKER_NAME "broker"
 #define BROKER_CONFIG "broker.config"
 #define IP "127.0.0.1"
 #define PUERTO "6011"
 
+uint32_t ID_COUNTER;
+pthread_mutex_t mutex_id_counter = PTHREAD_MUTEX_INITIALIZER;
 pthread_t thread;
 
+t_queue* NEW_POKEMON_QUEUE;
+t_queue* APPEARED_POKEMON_QUEUE;
+t_queue* CATCH_POKEMON_QUEUE;
+t_queue* CAUGHT_POKEMON_QUEUE;
+t_queue* GET_POKEMON_QUEUE;
+t_queue* LOCALIZED_POKEMON_QUEUE;
+t_list* NEW_POKEMON_SUBSCRIBERS;
+t_list* APPEARED_POKEMON_SUBSCRIBERS;
+t_list* CATCH_POKEMON_SUBSCRIBERS;
+t_list* CAUGHT_POKEMON_SUBSCRIBERS;
+t_list* GET_POKEMON_SUBSCRIBERS;
+t_list* LOCALIZED_POKEMON_SUBSCRIBERS;
+
+
+void init_message_queues();
+void init_suscriber_lists();
 t_log* iniciar_logger(void);
 t_config* leer_config(void);
+
 int esperar_cliente(int socket_servidor);
 void serve_client(int* socket_cliente);
-void process_request(int cod_op,int cliente_fd);
+void process_request(int cod_op, uint32_t id, uint32_t id_correlativo, void* paqueteRecibido, int socket_cliente);
+void suscribir(t_suscripcion_msg* estructuraSuscripcion);
+
+uint32_t generar_id();
+
 void terminar_programa(int socket, t_log* logger, t_config* config);
 
 #endif /* BROKER_H_ */

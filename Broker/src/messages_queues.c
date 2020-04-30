@@ -13,14 +13,31 @@ t_queue* create_message_queue()
 	return queue_create();
 }
 
-void push_message_queue(t_queue* queue, t_data* data)
+void push_message_queue(t_queue* queue, uint32_t ID, uint32_t ID_correlativo, void* message)
 {
+	t_data* data = malloc(sizeof(data));
+	data->suscribers_ack = list_create();
+	data->suscribers_sent = list_create();
+	data->ID = ID;
+	data->ID_correlativo = ID_correlativo;
+	data->message = message;
+
 	queue_push(queue, (void*) data);
 }
 
 t_data* pop_message_queue(t_queue* queue)
 {
 	return (t_data*) queue_pop(queue);
+}
+
+void inform_message_sent_to(t_data* data, t_subscriber* subscriber)
+{
+	list_add(data->suscribers_sent, (void*)subscriber);
+}
+
+void inform_message_ack_from(t_data* data, t_subscriber* subscriber)
+{
+	list_add(data->suscribers_ack, (void*)subscriber);
 }
 
 bool is_same_id(uint32_t data_id, uint32_t id)

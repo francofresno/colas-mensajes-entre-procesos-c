@@ -83,8 +83,10 @@ void enviar_mensaje(op_code codigoOperacion, uint32_t id, uint32_t id_correlativ
 {
 	int bytes;
 	void* paqueteAEnviar = serializar_paquete(codigoOperacion, id, id_correlativo, mensaje, &bytes);
-
+	printf("Voy a mandar %d bytes\n", bytes);
+	fflush(stdout);
 	send(socket, paqueteAEnviar, bytes, 0);
+	free(paqueteAEnviar);
 }
 
 void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_correlativo, void* estructura, int* bytes)
@@ -278,6 +280,7 @@ void* recibir_paquete(op_code codigoOperacion, int socket)
 			break;
 		default: printf("Error codigo op"); break;
 	}
+	free(stream);
 	return mensajeRecibido;
 }
 
@@ -294,7 +297,9 @@ int recibir_codigo_operacion(int socket_cliente)
 uint32_t recibir_id(int socket_cliente)
 {
 	int id;
-	recv(socket_cliente, &id, sizeof(uint32_t), MSG_WAITALL);
+	int status = recv(socket_cliente, &id, sizeof(uint32_t), MSG_WAITALL);
+	printf("Status es: %d\n", status);
+	fflush(stdout);
 	return id;
 }
 
@@ -328,7 +333,12 @@ void enviar_id_respuesta(uint32_t id_msg, int socket_cliente)
 	void* a_enviar = malloc(sizeof(uint32_t));
 	serializar_variable(a_enviar, &id_msg, sizeof(uint32_t), &offset);
 
-	send(socket_cliente, a_enviar, sizeof(uint32_t), 0);
+	int status = send(socket_cliente, a_enviar, sizeof(uint32_t), 0);
+	printf("Envie el ID: %d\n", id_msg);
+	fflush(stdout);
+	printf("Status es: %d\n", status);
+	fflush(stdout);
+	free(a_enviar);
 }
 
 /////////////////////
