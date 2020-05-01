@@ -25,7 +25,8 @@ typedef struct
 
 typedef struct
 {
-	int ID_proceso;
+	char* ip_proceso;
+	char* puerto_proceso;
 } t_subscriber;
 
 t_queue* create_message_queue();

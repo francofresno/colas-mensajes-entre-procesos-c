@@ -24,8 +24,6 @@
 #define BROKER_LOG "broker.log"
 #define BROKER_NAME "broker"
 #define BROKER_CONFIG "broker.config"
-#define IP "127.0.0.1"
-#define PUERTO "6011"
 
 uint32_t ID_COUNTER;
 pthread_mutex_t mutex_id_counter = PTHREAD_MUTEX_INITIALIZER;
@@ -44,7 +42,7 @@ t_list* CAUGHT_POKEMON_SUBSCRIBERS;
 t_list* GET_POKEMON_SUBSCRIBERS;
 t_list* LOCALIZED_POKEMON_SUBSCRIBERS;
 
-
+int init_server(t_config* config);
 void init_message_queues();
 void init_suscriber_lists();
 t_log* iniciar_logger(void);
@@ -52,8 +50,9 @@ t_config* leer_config(void);
 
 int esperar_cliente(int socket_servidor);
 void serve_client(int* socket_cliente);
-void process_request(int cod_op, uint32_t id, uint32_t id_correlativo, void* paqueteRecibido, int socket_cliente);
+void process_request(int cod_op, uint32_t id_correlativo, void* paqueteRecibido, int socket_cliente);
 void suscribir(t_suscripcion_msg* estructuraSuscripcion);
+void informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint32_t id_correlativo, t_list* suscriptores);
 
 uint32_t generar_id();
 

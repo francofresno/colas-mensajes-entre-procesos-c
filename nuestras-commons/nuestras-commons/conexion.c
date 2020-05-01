@@ -83,8 +83,6 @@ void enviar_mensaje(op_code codigoOperacion, uint32_t id, uint32_t id_correlativ
 {
 	int bytes;
 	void* paqueteAEnviar = serializar_paquete(codigoOperacion, id, id_correlativo, mensaje, &bytes);
-	printf("Voy a mandar %d bytes\n", bytes);
-	fflush(stdout);
 	send(socket, paqueteAEnviar, bytes, 0);
 	free(paqueteAEnviar);
 }
@@ -99,18 +97,21 @@ void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_corr
 	{
 		case SUSCRIPCION: ;
 			t_suscripcion_msg* estructuraSuscripcion = estructura;
-			*bytes += sizeof(uint32_t)*5;
+			*bytes += sizeof(uint32_t)*6 + estructuraSuscripcion->ip_lenght + estructuraSuscripcion->puerto_lenght;
 			a_enviar = malloc(sizeof(*bytes));
 			serializar_variable(a_enviar, &codigo_operacion, sizeof(uint32_t), &offset);
 			serializar_variable(a_enviar, &id, sizeof(uint32_t), &offset);
 			serializar_variable(a_enviar, &id_correlativo, sizeof(uint32_t), &offset);
 			serializar_variable(a_enviar, bytes, sizeof(uint32_t), &offset);
-			serializar_variable(a_enviar, &(estructuraSuscripcion->ID_proceso), sizeof(uint32_t), &offset);
+			serializar_variable(a_enviar, &(estructuraSuscripcion->ip_lenght), sizeof(uint32_t), &offset);
+			serializar_variable(a_enviar, estructuraSuscripcion->ip_proceso, estructuraSuscripcion->ip_lenght, &offset);
+			serializar_variable(a_enviar, &(estructuraSuscripcion->puerto_lenght), sizeof(uint32_t), &offset);
+			serializar_variable(a_enviar, estructuraSuscripcion->puerto_proceso, estructuraSuscripcion->puerto_lenght, &offset);
 			serializar_variable(a_enviar, &(estructuraSuscripcion->tipo_cola), sizeof(uint32_t), &offset);
 			break;
 		case NEW_POKEMON: ;
 			t_newPokemon_msg* estructuraNew = estructura;
-			*bytes += sizeof(uint32_t)*7 + estructuraNew->nombre_pokemon.nombre_lenght + 1;
+			*bytes += sizeof(uint32_t)*7 + estructuraNew->nombre_pokemon.nombre_lenght;
 			a_enviar = malloc(sizeof(*bytes));
 
 			serializar_variable(a_enviar, &codigo_operacion, sizeof(uint32_t), &offset);
@@ -223,6 +224,16 @@ void* recibir_paquete(op_code codigoOperacion, int socket)
 
 	switch(codigoOperacion)
 	{
+		case SUSCRIPCION: ;
+			t_suscripcion_msg* estructuraSuscripcion = malloc(sizeof(estructuraSuscripcion));
+			copiar_variable(socket, &(estructuraSuscripcion->ip_lenght), stream, &offset, sizeof(uint32_t));
+			copiar_variable(socket, estructuraSuscripcion->ip_proceso, stream, &offset, estructuraSuscripcion->ip_lenght);
+			copiar_variable(socket, &(estructuraSuscripcion->puerto_lenght), stream, &offset, sizeof(uint32_t));
+			copiar_variable(socket, estructuraSuscripcion->puerto_proceso, stream, &offset, estructuraSuscripcion->puerto_lenght);
+			copiar_variable(socket, &(estructuraSuscripcion->tipo_cola), stream, &offset, sizeof(int));
+
+			mensajeRecibido = estructuraSuscripcion;
+			break;
 		case NEW_POKEMON: ;
 			t_newPokemon_msg* estructuraNew = malloc(sizeof(estructuraNew));
 			estructuraNew->nombre_pokemon.nombre = malloc(sizeof(estructuraNew->nombre_pokemon.nombre));
@@ -297,9 +308,7 @@ int recibir_codigo_operacion(int socket_cliente)
 uint32_t recibir_id(int socket_cliente)
 {
 	int id;
-	int status = recv(socket_cliente, &id, sizeof(uint32_t), MSG_WAITALL);
-	printf("Status es: %d\n", status);
-	fflush(stdout);
+	recv(socket_cliente, &id, sizeof(uint32_t), MSG_WAITALL);
 	return id;
 }
 
@@ -334,10 +343,6 @@ void enviar_id_respuesta(uint32_t id_msg, int socket_cliente)
 	serializar_variable(a_enviar, &id_msg, sizeof(uint32_t), &offset);
 
 	int status = send(socket_cliente, a_enviar, sizeof(uint32_t), 0);
-	printf("Envie el ID: %d\n", id_msg);
-	fflush(stdout);
-	printf("Status es: %d\n", status);
-	fflush(stdout);
 	free(a_enviar);
 }
 
