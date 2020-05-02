@@ -8,12 +8,16 @@
 
 #include "messages_queues.h"
 
+/////////////////////////////////
+// ---- Colas de mensajes ---- //
+/////////////////////////////////
+
 t_queue* create_message_queue()
 {
 	return queue_create();
 }
 
-void push_message_queue(t_queue* queue, uint32_t ID, uint32_t ID_correlativo, void* message)
+void push_message_queue(t_queue* queue, uint32_t ID, uint32_t ID_correlativo, void* message, pthread_mutex_t mutex)
 {
 	t_data* data = malloc(sizeof(data));
 	data->suscribers_ack = list_create();
@@ -22,12 +26,17 @@ void push_message_queue(t_queue* queue, uint32_t ID, uint32_t ID_correlativo, vo
 	data->ID_correlativo = ID_correlativo;
 	data->message = message;
 
+	pthread_mutex_lock(&mutex);
 	queue_push(queue, (void*) data);
+	pthread_mutex_unlock(&mutex);
 }
 
-t_data* pop_message_queue(t_queue* queue)
+t_data* pop_message_queue(t_queue* queue, pthread_mutex_t mutex)
 {
-	return (t_data*) queue_pop(queue);
+	pthread_mutex_lock(&mutex);
+	t_data* data = (t_data*) queue_pop(queue);
+	pthread_mutex_unlock(&mutex);
+	return data;
 }
 
 void inform_message_sent_to(t_data* data, t_subscriber* subscriber)
@@ -131,4 +140,14 @@ void free_message_queue(t_queue* queue)
 	queue_destroy_and_destroy_elements(queue, element_destroyer);
 }
 
+/////////////////////////////////////
+// ---- Suscriptores de colas ---- //
+/////////////////////////////////////
+
+void subscribe_process(t_list* subscribers, t_subscriber* subscriber, pthread_mutex_t mutex)
+{
+	pthread_mutex_lock(&mutex);
+	list_add(subscribers, (void*) subscriber);
+	pthread_mutex_unlock(&mutex);
+}
 
