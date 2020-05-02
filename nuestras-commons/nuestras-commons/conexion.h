@@ -28,6 +28,7 @@
 
 	// Generales
 	void liberar_conexion(int socket);
+	void suscribirse_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket);
 
 	// Enviar mensaje
 	void enviar_mensaje(op_code codigoOperacion, uint32_t id, uint32_t id_correlativo, void* mensaje, int socket);

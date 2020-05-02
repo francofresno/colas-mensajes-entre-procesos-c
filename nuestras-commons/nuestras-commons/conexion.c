@@ -350,9 +350,9 @@ void enviar_id_respuesta(uint32_t id_msg, int socket_cliente)
 // ---- Otros ---- //
 /////////////////////
 
-void suscribirse_a_cola()
+void suscribirse_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket)
 {
-
+	enviar_mensaje(SUSCRIPCION, 0, 0, (void*) estructuraSuscripcion, socket);
 }
 
 void liberar_conexion(int socket)
