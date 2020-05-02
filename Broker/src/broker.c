@@ -16,6 +16,7 @@ int main(void) {
 	init_message_queues();
 	init_suscriber_lists();
 
+
 	while(1) {
 		int socket_cliente = esperar_cliente(socket_servidor);
 		pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
@@ -54,9 +55,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 			t_newPokemon_msg* estructuraNew = malloc(sizeof(estructuraNew));
 			estructuraNew = mensaje_recibido;
 
-			pthread_mutex_lock(&mutex_id_counter);
 			id_mensaje = generar_id();
-		    pthread_mutex_unlock(&mutex_id_counter);
 
 			push_message_queue(NEW_POKEMON_QUEUE, id_mensaje, 0, mensaje_recibido);
 			enviar_id_respuesta(id_mensaje,socket_cliente);
@@ -68,9 +67,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 			t_appearedPokemon_msg* estructuraAppeared = malloc(sizeof(estructuraAppeared));
 			estructuraAppeared = mensaje_recibido;
 
-			pthread_mutex_lock(&mutex_id_counter);
 			id_mensaje = generar_id();
-		    pthread_mutex_unlock(&mutex_id_counter);
 
 			push_message_queue(APPEARED_POKEMON_QUEUE, id_mensaje, id_correlativo, mensaje_recibido);
 			enviar_id_respuesta(id_mensaje,socket_cliente);
@@ -82,9 +79,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 			t_getPokemon_msg* estructuraGet = malloc(sizeof(estructuraGet));
 			estructuraGet = mensaje_recibido;
 
-			pthread_mutex_lock(&mutex_id_counter);
 			id_mensaje = generar_id();
-		    pthread_mutex_unlock(&mutex_id_counter);
 
 			push_message_queue(GET_POKEMON_QUEUE, id_mensaje, 0, mensaje_recibido);
 			enviar_id_respuesta(id_mensaje,socket_cliente);
@@ -96,9 +91,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 			t_localizedPokemon_msg* estructuraLocalized = malloc(sizeof(estructuraLocalized));
 			estructuraLocalized = mensaje_recibido;
 
-			pthread_mutex_lock(&mutex_id_counter);
 			id_mensaje = generar_id();
-		    pthread_mutex_unlock(&mutex_id_counter);
 
 			push_message_queue(LOCALIZED_POKEMON_QUEUE, id_mensaje, id_correlativo, mensaje_recibido);
 			enviar_id_respuesta(id_mensaje,socket_cliente);
@@ -110,9 +103,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 			t_catchPokemon_msg* estructuraCatch = malloc(sizeof(estructuraCatch));
 			estructuraCatch = mensaje_recibido;
 
-			pthread_mutex_lock(&mutex_id_counter);
 			id_mensaje = generar_id();
-		    pthread_mutex_unlock(&mutex_id_counter);
 
 			push_message_queue(CATCH_POKEMON_QUEUE, id_mensaje, 0, mensaje_recibido);
 			enviar_id_respuesta(id_mensaje,socket_cliente);
@@ -124,9 +115,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 			t_caughtPokemon_msg* estructuraCaught = malloc(sizeof(estructuraCaught));
 			estructuraCaught = mensaje_recibido;
 
-			pthread_mutex_lock(&mutex_id_counter);
 			id_mensaje = generar_id();
-		    pthread_mutex_unlock(&mutex_id_counter);
 
 			push_message_queue(CAUGHT_POKEMON_QUEUE, id_mensaje, id_correlativo, mensaje_recibido);
 			enviar_id_respuesta(id_mensaje,socket_cliente);
@@ -172,8 +161,11 @@ void suscribir(t_suscripcion_msg* estructuraSuscripcion)
 
 uint32_t generar_id()
 {
-	ID_COUNTER++;
-	return ID_COUNTER;
+	pthread_mutex_lock(&mutex_id_counter);
+	uint32_t id_generado = ++ID_COUNTER;
+	pthread_mutex_unlock(&mutex_id_counter);
+
+	return id_generado;
 	//2147483647 es el numero maximo de un uint32_t, despues de eso imprime el complementario para llegar a 4294967296, que es el max de uint
 	//return (rand()%2147483647) + 1;
 }
