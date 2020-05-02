@@ -57,7 +57,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 			id_mensaje = generar_id();
 
-			push_message_queue(NEW_POKEMON_QUEUE, mutex_new_queue,id_mensaje, 0, mensaje_recibido);
+			push_message_queue(NEW_POKEMON_QUEUE, id_mensaje, 0, mensaje_recibido, mutex_new_queue);
 			enviar_id_respuesta(id_mensaje,socket_cliente);
 
 			//informar_a_suscriptores(NEW_POKEMON, mensaje_recibido, id_mensaje, 0, NEW_POKEMON_SUBSCRIBERS, mutex_new_susc);
@@ -69,7 +69,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 			id_mensaje = generar_id();
 
-			push_message_queue(APPEARED_POKEMON_QUEUE, mutex_appeared_queue, id_mensaje, id_correlativo, mensaje_recibido);
+			push_message_queue(APPEARED_POKEMON_QUEUE, id_mensaje, id_correlativo, mensaje_recibido, mutex_appeared_queue);
 			enviar_id_respuesta(id_mensaje,socket_cliente);
 
 			//informar_a_suscriptores(APPEARED_POKEMON, mensaje_recibido, id_mensaje, id_correlativo, APPEARED_POKEMON_SUBSCRIBERS, mutex_appeared_susc);
@@ -81,7 +81,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 			id_mensaje = generar_id();
 
-			push_message_queue(GET_POKEMON_QUEUE, mutex_get_queue, id_mensaje, 0, mensaje_recibido);
+			push_message_queue(GET_POKEMON_QUEUE, id_mensaje, 0, mensaje_recibido, mutex_get_queue);
 			enviar_id_respuesta(id_mensaje,socket_cliente);
 
 			//informar_a_suscriptores(GET_POKEMON, mensaje_recibido, id_mensaje, 0, GET_POKEMON_SUBSCRIBERS, mutex_get_susc);
@@ -93,7 +93,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 			id_mensaje = generar_id();
 
-			push_message_queue(LOCALIZED_POKEMON_QUEUE, mutex_localized_queue, id_mensaje, id_correlativo, mensaje_recibido);
+			push_message_queue(LOCALIZED_POKEMON_QUEUE, id_mensaje, id_correlativo, mensaje_recibido, mutex_localized_queue);
 			enviar_id_respuesta(id_mensaje,socket_cliente);
 
 			//informar_a_suscriptores(LOCALIZED_POKEMON, mensaje_recibido, id_mensaje, id_correlativo, LOCALIZED_POKEMON_SUBSCRIBERS, mutex_localized_susc);
@@ -105,7 +105,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 			id_mensaje = generar_id();
 
-			push_message_queue(CATCH_POKEMON_QUEUE, mutex_catch_queue, id_mensaje, 0, mensaje_recibido);
+			push_message_queue(CATCH_POKEMON_QUEUE, id_mensaje, 0, mensaje_recibido, mutex_catch_queue);
 			enviar_id_respuesta(id_mensaje,socket_cliente);
 
 			//informar_a_suscriptores(CATCH_POKEMON, mensaje_recibido, id_mensaje, 0, CATCH_POKEMON_SUBSCRIBERS, mutex_catch_susc);
@@ -117,7 +117,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 			id_mensaje = generar_id();
 
-			push_message_queue(CAUGHT_POKEMON_QUEUE, mutex_caught_queue, id_mensaje, id_correlativo, mensaje_recibido);
+			push_message_queue(CAUGHT_POKEMON_QUEUE, id_mensaje, id_correlativo, mensaje_recibido, mutex_caught_queue);
 			enviar_id_respuesta(id_mensaje,socket_cliente);
 
 			//informar_a_suscriptores(CAUGHT_POKEMON, mensaje_recibido, id_mensaje, id_correlativo, CAUGHT_POKEMON_SUBSCRIBERS, mutex_caught_susc);

@@ -342,7 +342,7 @@ void enviar_id_respuesta(uint32_t id_msg, int socket_cliente)
 	void* a_enviar = malloc(sizeof(uint32_t));
 	serializar_variable(a_enviar, &id_msg, sizeof(uint32_t), &offset);
 
-	int status = send(socket_cliente, a_enviar, sizeof(uint32_t), 0);
+	send(socket_cliente, a_enviar, sizeof(uint32_t), 0);
 	free(a_enviar);
 }
 
