@@ -16,11 +16,12 @@ int main(void) {
 	init_message_queues();
 	init_suscriber_lists();
 
-
 	while(1) {
 		int socket_cliente = esperar_cliente(socket_servidor);
-		pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
-		pthread_detach(thread);
+		if(socket_cliente > 0) {
+			pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
+			pthread_detach(thread);
+		}
 	}
 
 	pthread_mutex_destroy(&mutex_id_counter);
@@ -29,16 +30,14 @@ int main(void) {
 
 void serve_client(int* socket_cliente)
 {
-	int cod_op = recibir_codigo_operacion(*socket_cliente);
-	recibir_id(*socket_cliente);
-	uint32_t id_correlativo = recibir_id(*socket_cliente);
-	void* mensaje_recibido = recibir_paquete(cod_op, *socket_cliente);
+	t_paquete* paquete_recibido = recibir_paquete(*socket_cliente);
 
-	process_request(cod_op, id_correlativo, mensaje_recibido, *socket_cliente);
+	process_request(paquete_recibido->codigo_operacion, paquete_recibido->id_correlativo, paquete_recibido->mensaje, *socket_cliente);
 }
 
 void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido, int socket_cliente)
 {
+	printf("ID corr: %d\n", id_correlativo);
 	uint32_t id_mensaje;
 	switch(cod_op)
 	{
@@ -54,6 +53,13 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 		case NEW_POKEMON: ;
 			t_newPokemon_msg* estructuraNew = malloc(sizeof(estructuraNew));
 			estructuraNew = mensaje_recibido;
+
+			printf("Nombre: %s\n",estructuraNew->nombre_pokemon.nombre);
+			printf("Long: %d\n",estructuraNew->nombre_pokemon.nombre_lenght);
+			printf("Cantidad: %d\n",estructuraNew->cantidad_pokemons);
+			printf("PosX: %d\n",estructuraNew->coordenadas.posX);
+			printf("PosY: %d\n",estructuraNew->coordenadas.posY);
+			fflush(stdout);
 
 			id_mensaje = generar_id();
 
