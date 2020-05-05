@@ -1,7 +1,7 @@
 #ifndef interfaz_h
 #define interfaz_h
 #include <stdio.h>
-#include "rutinas.h"
+#include "rutina.h"
 #include "cola.h"
 
 
