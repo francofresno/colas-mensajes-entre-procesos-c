@@ -370,14 +370,33 @@ uint32_t recibir_id(int socket_cliente)
 	return id;
 }
 
-/////////////////////
-// ---- Otros ---- //
-/////////////////////
+/////////////////////////////
+// ---- Suscripciones ---- //
+/////////////////////////////
 
 void suscribirse_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_servidor)
 {
 	enviar_mensaje(SUSCRIPCION, 0, 0, (void*) estructuraSuscripcion, socket_servidor);
 }
+
+void responder_a_suscripcion(uint32_t cantidad_a_enviar, t_paquete paquetes[], int socket_envio)
+{
+	// Envio la cantidad de paquetes que se enviaran
+	send(socket_envio, cantidad_a_enviar, sizeof(cantidad_a_enviar), 0);
+
+	if (cantidad_a_enviar > 0) {
+		// Recorro los mensajes y los envio 1 por 1
+		for (int i=0; i < cantidad_a_enviar; i++) {
+			t_paquete paquete = paquetes[i];
+			enviar_mensaje(paquete.codigo_operacion, paquete.id, paquete.id_correlativo, paquete.mensaje, socket_envio);
+		}
+	}
+}
+
+/////////////////////
+// ---- Otros ---- //
+/////////////////////
+
 
 void liberar_conexion(int socket)
 {

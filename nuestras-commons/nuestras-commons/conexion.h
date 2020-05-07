@@ -28,7 +28,6 @@
 
 	// Generales
 	void liberar_conexion(int un_socket);
-	void suscribirse_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_servidor);
 
 	// Enviar mensaje
 	void enviar_mensaje(op_code codigoOperacion, uint32_t id, uint32_t id_correlativo, void* mensaje, int un_socket);
@@ -46,5 +45,9 @@
 	// Respuestas
 	void enviar_id_respuesta(uint32_t id_msg, int socket_cliente);
 	uint32_t recibir_id(int socket_cliente);
+
+	// Suscripciones
+	void suscribirse_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_servidor);
+	void responder_a_suscripcion(uint32_t cantidad_a_enviar, t_paquete paquetes[], int socket_envio);
 
 #endif /* CONEXION_H_ */

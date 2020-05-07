@@ -67,8 +67,9 @@ t_config* leer_config(void);
 int esperar_cliente(int socket_servidor);
 void serve_client(int* socket_cliente);
 void process_request(int cod_op, uint32_t id_correlativo, void* paqueteRecibido, int socket_cliente);
-void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion);
-void informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint32_t id_correlativo, t_list* suscriptores, pthread_mutex_t mutex);
+void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscriptor);
+t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint32_t id_correlativo, t_list* suscriptores, pthread_mutex_t mutex);
+void responder_a_suscriptores_nuevos(op_code codigo, t_queue* queue, int socket_suscriptor);
 
 uint32_t generar_id();
 
