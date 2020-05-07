@@ -1,13 +1,16 @@
+/*
 #include <stdlib.h>
 #include "cola.h"
-#include "rutinas.h"
+#include "rutina.h"
 #include "interfaz.h"
 
-/*
+
  Funcion que se encarga de crear un nodo a partir de hilos de entrada
  Entrada hilo: hilo de tipo hilo
  Salida: retorna un nodo de tipo NodoHilo que la identifica
 */
+
+/*
 NodoHilo CrearNodo (pthread_t* hilo) {
     NodoHilo nodo = (NodoHilo *) malloc (sizeof (NodoHilo));
     nodo->hilo = hilo;
@@ -19,6 +22,8 @@ NodoHilo CrearNodo (pthread_t* hilo) {
  Funcion que se encarga eliminar o destruir el hilo perteneciente al nodo
  Entrada nodo: es rl nodo de tipo NodoHilo que queremos eliminar
 */
+
+/*
 void DestruirNodo (NodoHilo nodo) {
     nodo->hilo = NULL;
     nodo->anterior = nodo->siguiente = NULL;
@@ -41,6 +46,8 @@ queue_destroy(t_queue*);
  Entrada PID: identificador del hilo.
  Salida: un apuntador a hilo
 */
+
+/*
 pthread_t* consultarPID (Cola* cola, long PID) { //si ya hay un hilo con ese id lo devuelve, sino devuelve null
     cola->cabeza = cola->primero;
     while (cola->cabeza) {
@@ -73,6 +80,8 @@ void *queue_peek(t_queue *);
  Entrada cola: cola de prioridad del planificador
  Entrada PID: identificador del hilo
 */
+
+/*
 void Eliminarhilo (Cola* cola, long PID) {
     cola->cabeza = cola->primero;
     NodoHilo eliminado;
@@ -105,6 +114,8 @@ void Eliminarhilo (Cola* cola, long PID) {
  Entrada cola: cola de prioridad del planificador
  Salida: apuntador al hilo desplazado
 */
+
+/*
 pthread_t* DesplazarNodo (Cola* cola) {
     cola->ultimo->siguiente = cola->primero;
     cola->ultimo->siguiente->anterior = cola->ultimo;
@@ -126,6 +137,8 @@ Funcion que se encarga de construir el planificador de hilos a partir de un
          de entrada
  Salida: un apuntador al planificador de hilos
 */
+
+/*
 EstructuraColas* Construye(char* filename) {
     EstructuraColas* s = (EstructuraColas *) malloc (sizeof (EstructuraColas));
 
@@ -142,7 +155,7 @@ EstructuraColas* Construye(char* filename) {
         msg_readFile();
 
     while (config_get_array_value(filename,"r")) {
-        entrenador = pthread_create (& entrenador , NULL , hola , NULL ); //arreglar ese hola
+        entrenador = pthread_create (& entrenador , NULL ,  , NULL ); //arreglar ese hola
         queue_push(& (s->cola), &entrenador); //no sabemos si es un puntero en los paramentros #tipoDeDatoProblems
     }
 
@@ -153,3 +166,4 @@ EstructuraColas* Construye(char* filename) {
 }
 
 }
+*/

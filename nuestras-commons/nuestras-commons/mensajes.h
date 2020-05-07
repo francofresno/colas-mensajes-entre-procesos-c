@@ -35,11 +35,10 @@ typedef struct
 
 typedef struct
 {
-	int id_entrenador;
-	t_coordenadas coordenadas;
-	t_nombrePokemon pokemones;
-	uint32_t cantidad_pokemons;
-} t_entrenador;
+	uint32_t ID;
+	uint32_t ID_correlativo;
+} t_ids_respuesta;
+
 
 /****************************************
  *******ESTRUCTURAS DE LOS MENSAJES******

@@ -1,17 +1,11 @@
-#ifndef cola_h
+/* #ifndef cola_h
 #define cola_h
 
-typedef struct EstructuraColas {
-	Cola*  cola;
-    Cola*  enEjecucion;
-} EstructuraColas;
-
-EstructuraColas* Construye(char* filename); //esta en cola.c
 
 typedef struct NodoHilo {
 	pthread_t* hilo;
-	struct NodoHilo anterior;
-	struct NodoHilo siguiente;
+	NodoHilo* anterior;
+	NodoHilo* siguiente;
 } NodoHilo;
 
 typedef struct Cola {
@@ -19,6 +13,13 @@ typedef struct Cola {
 	NodoHilo cabeza;
 	NodoHilo ultimo;
 } Cola;
+
+typedef struct EstructuraColas {
+	Cola*  cola;
+    Cola*  enEjecucion;
+} EstructuraColas;
+
+EstructuraColas* Construye(char* filename); //esta en cola.c
 
 NodoHilo CrearNodo (pthread_t* hilo);
 
@@ -33,3 +34,5 @@ void Eliminarhilo (Cola* cola, long pid);
 pthread_t* DesplazarNodo (Cola* cola);
 
 #endif //cola_h
+
+*/

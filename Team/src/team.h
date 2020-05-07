@@ -15,10 +15,10 @@
 #include<commons/collections/queue.h>
 #include<commons/config.h>
 #include<readline/readline.h>
-#include <pthread.h>
+#include<pthread.h>
 
+#include "funcionesUtilesTeam.h"
 #include "nuestras-commons/conexion.h"
-#include "nuestras-commons/mensajes.h"
 
 // IP y PUERTO de team para iniciar servidor
 #define IP "127.0.0.2"
@@ -29,6 +29,15 @@
 #define TEAM_CONFIG "team.config"
 
 pthread_t thread;
+
+typedef struct
+{
+	uint32_t id_entrenador;
+	t_coordenadas* coordenadas;
+	t_list* pokemonesQuePosee;
+	t_list* pokemonesQueQuiere;
+	uint32_t cantidad_pokemons;
+} t_entrenador;
 
 t_log* iniciar_logger(void);
 t_config* leer_config(void);
