@@ -22,9 +22,9 @@
 #include<commons/config.h>
 
 // Mutex
-pthread_mutex_t mutex_id_counter = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_id_entrenadores = PTHREAD_MUTEX_INITIALIZER;
 
-uint32_t ID_COUNTER;
+uint32_t ID_ENTRENADORES;
 
 t_list* organizarPokemones(char**);
 

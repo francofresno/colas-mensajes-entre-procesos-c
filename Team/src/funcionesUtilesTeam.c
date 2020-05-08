@@ -37,7 +37,7 @@ t_queue* ponerEntrenadoresEnCola(t_config* config)
 
 		uint32_t id_entrenador = generar_id();
 
-		t_entrenador* entrenador = crear_entrenador(0 ,coords, pokemonesQueTiene, pokemonesQueDesea, list_size(pokemonesQueDesea));
+		t_entrenador* entrenador = crear_entrenador(id_entrenador ,coords, pokemonesQueTiene, pokemonesQueDesea, list_size(pokemonesQueDesea));
 
 
 		list_add(entrenadores, entrenador);
@@ -58,7 +58,7 @@ t_queue* ponerEntrenadoresEnCola(t_config* config)
 
 		pthread_create(&pthread_id[a],NULL,(void*)buscarPokemones,entrenador);
 
-		queue_push(hilosFuncionesEntrenadores, pthread_id[a]);
+		queue_push(hilosFuncionesEntrenadores, &pthread_id[a]);
 
 	}
 
@@ -67,7 +67,7 @@ t_queue* ponerEntrenadoresEnCola(t_config* config)
 
 t_entrenador* crear_entrenador(uint32_t id_entrenador, t_coordenadas* coordenadas, t_list* pokemonesQuePosee, t_list* pokemonesQueQuiere, uint32_t cantidad_pokemons)
 {
-	t_entrenador* entrenador=sizeof(entrenador);
+	t_entrenador* entrenador = malloc(sizeof(entrenador));
 
 	entrenador->id_entrenador = id_entrenador;
 	entrenador->coordenadas= coordenadas;
@@ -89,12 +89,12 @@ t_list* organizarPokemones(char** listaPokemones){ //tanto para pokemonesObjetiv
 		 t_list* listaDePokemonesDeEntrenadores = list_create();
 
 		while(listaPokemones[j]!= NULL){ //recorro los pokemones de cada entrenador separado por coma
-
-			char**pokemonesDeUnEntrenador= string_split(listaPokemones[j], '|'); //separo cada pokemon de un mismo entrenador separado por |
+			char* pipe = "|";
+			char**pokemonesDeUnEntrenador= string_split(listaPokemones[j], pipe); //separo cada pokemon de un mismo entrenador separado por |
 
 			while (pokemonesDeUnEntrenador[w]!= NULL){  //recorro todos y voy creando cada pokemon
 
-				t_nombrePokemon* pokemon = crearPokemon(pokemonesDeUnEntrenador[w]);
+				t_nombrePokemon* pokemon = crear_pokemon(pokemonesDeUnEntrenador[w]);
 
 				list_add(listaDePokemones, pokemon);
 
@@ -126,9 +126,9 @@ t_nombrePokemon* crear_pokemon(char* pokemon){
 
 uint32_t generar_id()
 {
-	pthread_mutex_lock(&mutex_id_counter);
-	uint32_t id_generado = ++ID_COUNTER;
-	pthread_mutex_unlock(&mutex_id_counter);
+	pthread_mutex_lock(&mutex_id_entrenadores);
+	uint32_t id_generado = ++ID_ENTRENADORES;
+	pthread_mutex_unlock(&mutex_id_entrenadores);
 
 	return id_generado;
 }
