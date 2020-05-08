@@ -67,7 +67,7 @@ t_queue* ponerEntrenadoresEnCola(t_config* config)
 
 t_entrenador* crear_entrenador(uint32_t id_entrenador, t_coordenadas* coordenadas, t_list* pokemonesQuePosee, t_list* pokemonesQueQuiere, uint32_t cantidad_pokemons)
 {
-	t_entrenador* entrenador;
+	t_entrenador* entrenador=sizeof(entrenador);
 
 	entrenador->id_entrenador = id_entrenador;
 	entrenador->coordenadas= coordenadas;
@@ -135,5 +135,5 @@ uint32_t generar_id()
 
 void buscarPokemones(t_entrenador* entrenador){
 
-	puts("Soy el entrenador con el id %d\n", entrenador->id_entrenador);
+	printf ("Soy el entrenador con el id %d\n", entrenador->id_entrenador);
 };

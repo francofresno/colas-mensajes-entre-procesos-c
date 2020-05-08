@@ -28,6 +28,15 @@ uint32_t ID_COUNTER;
 
 t_list* organizarPokemones(char**);
 
+typedef struct
+{
+	uint32_t id_entrenador;
+	t_coordenadas* coordenadas;
+	t_list* pokemonesQuePosee;
+	t_list* pokemonesQueQuiere;
+	uint32_t cantidad_pokemons;
+} t_entrenador;
+
 t_entrenador* crear_entrenador(uint32_t, t_coordenadas*, t_list*, t_list*, uint32_t);
 
 t_queue* ponerEntrenadoresEnCola(t_config*);
