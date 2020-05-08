@@ -8,17 +8,7 @@
 #ifndef TEAM_H_
 #define TEAM_H_
 
-#include<stdio.h>
-#include<stdlib.h>
-#include<commons/log.h>
-#include<commons/string.h>
-#include<commons/collections/queue.h>
-#include<commons/config.h>
-#include<readline/readline.h>
-#include<pthread.h>
-
 #include "funcionesUtilesTeam.h"
-#include "nuestras-commons/conexion.h"
 
 // IP y PUERTO de team para iniciar servidor
 #define IP "127.0.0.2"
