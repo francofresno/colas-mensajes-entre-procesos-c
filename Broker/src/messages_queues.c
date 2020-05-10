@@ -55,7 +55,7 @@ void inform_message_ack_from(t_data* data, t_subscriber* subscriber)
 	list_add(data->suscribers_ack, (void*)subscriber);
 }
 
-bool is_same_id(uint32_t data_id, uint32_t id)
+int is_same_id(uint32_t data_id, uint32_t id)
 {
 	return data_id == id;
 }

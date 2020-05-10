@@ -388,7 +388,6 @@ void responder_a_suscripcion(uint32_t cantidad_a_enviar, t_paquete paquetes[], i
 // ---- Otros ---- //
 /////////////////////
 
-
 void liberar_conexion(int socket)
 {
 	close(socket);

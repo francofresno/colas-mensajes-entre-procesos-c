@@ -98,8 +98,8 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscriptor)
 {
 	t_subscriber* subscriber = malloc(sizeof(subscriber));
-	subscriber->ip_proceso = estructuraSuscripcion->ip_proceso;
-	subscriber->puerto_proceso = estructuraSuscripcion->puerto_proceso;
+	subscriber->id_suscriptor = estructuraSuscripcion->id_proceso;
+	subscriber->socket_suscriptor = socket_suscriptor;
 
 	//TODO informar sent to
 	switch(estructuraSuscripcion->tipo_cola)
@@ -150,27 +150,23 @@ t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint
 	pthread_mutex_lock(&mutex);
 	for (int i=0; i < list_size(suscriptores); i++) {
 		t_subscriber* suscriptor = list_get(suscriptores, i);
-
-		int socket_suscriptor = crear_conexion(suscriptor->ip_proceso, suscriptor->puerto_proceso);
-		if (socket_suscriptor != -1) {
-			enviar_mensaje(codigo, id, id_correlativo, mensaje, socket_suscriptor);
+		if (enviar_mensaje(codigo, id, id_correlativo, mensaje, suscriptor->socket_suscriptor) > 0) {
 			list_add(suscriptores_informados, (void*)suscriptor);
-			liberar_conexion(socket_suscriptor);
+			liberar_conexion(suscriptor->socket_suscriptor);
 		}
-
 	}
 	pthread_mutex_unlock(&mutex);
 	return suscriptores_informados;
 }
 
-void responder_a_suscriptores_nuevos(op_code codigo, t_queue* queue, int socket_suscriptor)
+void responder_a_suscriptores_nuevos(op_code codigo, t_queue* message_queue, int socket_suscriptor)
 {
-	uint32_t cantidad_mensajes = size_message_queue(queue);
+	uint32_t cantidad_mensajes = size_message_queue(message_queue);
 	t_paquete paquetes[cantidad_mensajes];
 
 	for (int i=0; i < cantidad_mensajes; i++) {
-		t_data* data = get_message_by_index(queue, i); // TODO quizas quiera meter un mutex aca si en algun momento REMUEVO mensajes de la cola
-		t_paquete paquete;							   // list_get puede devolver null si no encuentra un element en un index y puedo tener problemas en respondera_a_suscripciones
+		t_data* data = get_message_by_index(message_queue, i); // TODO deberia meter un mutex aca si en algun momento REMUEVO mensajes de la cola
+		t_paquete paquete;
 		paquete.codigo_operacion = codigo;
 		paquete.id = data->ID;
 		paquete.id_correlativo = data->ID_correlativo;
@@ -245,30 +241,4 @@ void terminar_programa(int socket_servidor, t_log* logger, t_config* config)
 	log_destroy(logger);
 	config_destroy(config);
 }
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-unsigned long mix(unsigned long a, unsigned long b, unsigned long c)
-{
-    a=a-b;  a=a-c;  a=a^(c >> 13);
-    b=b-c;  b=b-a;  b=b^(a << 8);
-    c=c-a;  c=c-b;  c=c^(b >> 13);
-    a=a-b;  a=a-c;  a=a^(c >> 12);
-    b=b-c;  b=b-a;  b=b^(a << 16);
-    c=c-a;  c=c-b;  c=c^(b >> 5);
-    a=a-b;  a=a-c;  a=a^(c >> 3);
-    b=b-c;  b=b-a;  b=b^(a << 10);
-    c=c-a;  c=c-b;  c=c^(b >> 15);
-    return c;
-}
-
-void setear_seed()
-{
-	unsigned long seed = mix(clock(), time(NULL), getpid());
-	srand (seed);
-}
-
-//2147483647 es el numero maximo de un uint32_t, despues de eso imprime el complementario (en -) para llegar a 4294967296, que es el max de uint32
-//return (rand()%2147483647) + 1;
 

@@ -9,9 +9,8 @@
 #ifndef MESSAGES_QUEUES_H_
 #define MESSAGES_QUEUES_H_
 
-#include<stdio.h>
 #include<stdlib.h>
-#include <stdint.h>
+#include<stdint.h>
 #include<pthread.h>
 
 #include<commons/collections/queue.h>
@@ -27,8 +26,8 @@ typedef struct
 
 typedef struct
 {
-	char* ip_proceso;
-	char* puerto_proceso;
+	uint32_t id_suscriptor;
+	int socket_suscriptor;
 } t_subscriber;
 
 t_queue* create_message_queue();
