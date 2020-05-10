@@ -83,10 +83,7 @@ typedef struct
 
 typedef struct
 {
-	uint32_t ip_lenght;
-	uint32_t puerto_lenght;
-	char* ip_proceso;
-	char* puerto_proceso;
+	uint32_t id_proceso;
 	op_code tipo_cola; //uso op_code para definir tambien el tipo de cola para no tener una struct mas que tenga lo mismo
 } t_suscripcion_msg;
 
