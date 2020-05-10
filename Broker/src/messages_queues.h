@@ -19,7 +19,7 @@ typedef struct
 {
 	uint32_t ID;
 	uint32_t ID_correlativo;
-	t_list* suscribers_sent;
+	t_list* suscribers_informed;
 	t_list* suscribers_ack;
 	void* message;
 } t_data;
@@ -44,6 +44,7 @@ void element_destroyer_mq(void* data);
 int size_message_queue(t_queue* queue);
 int is_empty_message_queue(t_queue* queue);
 void free_message_queue(t_queue* queue);
+void add_new_informed_subscriber_mq(t_data* messages_in_queue[], uint32_t number_of_mensajes, t_subscriber* subscriber);
 
 void subscribe_process(t_list* subscribers, t_subscriber* subscriber, pthread_mutex_t mutex);
 void free_subscribers_list(t_list* subscribers);

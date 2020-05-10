@@ -106,27 +106,27 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 	{
 		case NEW_POKEMON: ;
 			subscribe_process(NEW_POKEMON_SUBSCRIBERS, subscriber, mutex_new_susc);
-			responder_a_suscriptores_nuevos(NEW_POKEMON, NEW_POKEMON_QUEUE, socket_suscriptor);
+			responder_a_suscriptor_nuevo(NEW_POKEMON, NEW_POKEMON_QUEUE, subscriber);
 			break;
 		case APPEARED_POKEMON: ;
 			subscribe_process(APPEARED_POKEMON_SUBSCRIBERS, subscriber, mutex_appeared_susc);
-			responder_a_suscriptores_nuevos(APPEARED_POKEMON, APPEARED_POKEMON_QUEUE, socket_suscriptor);
+			responder_a_suscriptor_nuevo(APPEARED_POKEMON, APPEARED_POKEMON_QUEUE, subscriber);
 			break;
 		case GET_POKEMON: ;
 			subscribe_process(GET_POKEMON_SUBSCRIBERS, subscriber, mutex_get_susc);
-			responder_a_suscriptores_nuevos(GET_POKEMON, GET_POKEMON_QUEUE, socket_suscriptor);
+			responder_a_suscriptor_nuevo(GET_POKEMON, GET_POKEMON_QUEUE, subscriber);
 			break;
 		case LOCALIZED_POKEMON: ;
 			subscribe_process(LOCALIZED_POKEMON_SUBSCRIBERS, subscriber, mutex_localized_susc);
-			responder_a_suscriptores_nuevos(LOCALIZED_POKEMON, LOCALIZED_POKEMON_QUEUE, socket_suscriptor);
+			responder_a_suscriptor_nuevo(LOCALIZED_POKEMON, LOCALIZED_POKEMON_QUEUE, subscriber);
 			break;
 		case CATCH_POKEMON: ;
 			subscribe_process(CATCH_POKEMON_SUBSCRIBERS, subscriber, mutex_catch_susc);
-			responder_a_suscriptores_nuevos(CATCH_POKEMON, CATCH_POKEMON_QUEUE, socket_suscriptor);
+			responder_a_suscriptor_nuevo(CATCH_POKEMON, CATCH_POKEMON_QUEUE, subscriber);
 			break;
 		case CAUGHT_POKEMON: ;
 			subscribe_process(CAUGHT_POKEMON_SUBSCRIBERS, subscriber, mutex_caught_susc);
-			responder_a_suscriptores_nuevos(CAUGHT_POKEMON, CAUGHT_POKEMON_QUEUE, socket_suscriptor);
+			responder_a_suscriptor_nuevo(CAUGHT_POKEMON, CAUGHT_POKEMON_QUEUE, subscriber);
 			break;
 		case SUSCRIPCION:
 		case ERROR_CODIGO:
@@ -152,17 +152,17 @@ t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint
 		t_subscriber* suscriptor = list_get(suscriptores, i);
 		if (enviar_mensaje(codigo, id, id_correlativo, mensaje, suscriptor->socket_suscriptor) > 0) {
 			list_add(suscriptores_informados, (void*)suscriptor);
-			liberar_conexion(suscriptor->socket_suscriptor);
 		}
 	}
 	pthread_mutex_unlock(&mutex);
 	return suscriptores_informados;
 }
 
-void responder_a_suscriptores_nuevos(op_code codigo, t_queue* message_queue, int socket_suscriptor)
+void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subscriber* subscriber)
 {
 	uint32_t cantidad_mensajes = size_message_queue(message_queue);
 	t_paquete paquetes[cantidad_mensajes];
+	t_data* mensajes_de_cola[cantidad_mensajes];
 
 	for (int i=0; i < cantidad_mensajes; i++) {
 		t_data* data = get_message_by_index(message_queue, i); // TODO deberia meter un mutex aca si en algun momento REMUEVO mensajes de la cola
@@ -172,9 +172,12 @@ void responder_a_suscriptores_nuevos(op_code codigo, t_queue* message_queue, int
 		paquete.id_correlativo = data->ID_correlativo;
 		paquete.mensaje = data->message;
 		paquetes[i] = paquete;
+		mensajes_de_cola[i] = data;
 	}
 
-	responder_a_suscripcion(cantidad_mensajes, paquetes, socket_suscriptor);
+	if (responder_a_suscripcion(cantidad_mensajes, paquetes, subscriber->socket_suscriptor) != -1) {
+		add_new_informed_subscriber_mq(mensajes_de_cola, cantidad_mensajes, subscriber);
+	}
 }
 
 int init_server(t_config* config)

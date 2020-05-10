@@ -70,6 +70,10 @@
 	 *  return: cantidad de bytes enviados o -1 en caso de falla
 	 */
 	int suscribirse_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_servidor);
-	void responder_a_suscripcion(uint32_t cantidad_a_enviar, t_paquete paquetes[], int socket_envio);
+	/*
+	 *  name: responder_a_suscripcion
+	 *  return: -1 en caso de falla o 0 en caso de éxito
+	 */
+	int responder_a_suscripcion(uint32_t cantidad_a_enviar, t_paquete paquetes[], int socket_envio);
 
 #endif /* CONEXION_H_ */

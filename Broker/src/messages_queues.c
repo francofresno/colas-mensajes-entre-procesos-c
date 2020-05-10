@@ -21,7 +21,7 @@ void push_message_queue(t_queue* queue, uint32_t ID, uint32_t ID_correlativo, vo
 {
 	t_data* data = malloc(sizeof(data));
 	data->suscribers_ack = list_create();
-	data->suscribers_sent = suscribers_sent;
+	data->suscribers_informed = suscribers_sent;
 	data->ID = ID;
 	data->ID_correlativo = ID_correlativo;
 	data->message = message;
@@ -47,7 +47,7 @@ t_data* get_message_by_index(t_queue* queue, int index)
 
 void inform_message_sent_to(t_data* data, t_subscriber* subscriber)
 {
-	list_add(data->suscribers_sent, (void*)subscriber);
+	list_add(data->suscribers_informed, (void*)subscriber);
 }
 
 void inform_message_ack_from(t_data* data, t_subscriber* subscriber)
@@ -126,7 +126,7 @@ void element_destroyer_mq(void* data)
 {
 	t_data* data_mq = (t_data*) data;
 	free_subscribers_list(data_mq->suscribers_ack);
-	free_subscribers_list(data_mq->suscribers_sent);
+	free_subscribers_list(data_mq->suscribers_informed);
 	free(data_mq->message);
 	free(data_mq);
 }
@@ -144,6 +144,12 @@ int is_empty_message_queue(t_queue* queue)
 void free_message_queue(t_queue* queue)
 {
 	queue_destroy_and_destroy_elements(queue, element_destroyer_mq);
+}
+
+void add_new_informed_subscriber_mq(t_data* messages_in_queue[], uint32_t number_of_mensajes, t_subscriber* subscriber) {
+	for (int i=0; i < number_of_mensajes; i++) {
+		list_add(messages_in_queue[i]->suscribers_informed, subscriber); //TODO mutex?
+	}
 }
 
 /////////////////////////////////////
