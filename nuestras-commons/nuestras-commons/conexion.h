@@ -65,7 +65,11 @@
 	/////////////////////////////
 	// ---- Suscripciones ---- //
 	/////////////////////////////
-	void suscribirse_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_servidor);
+	/*
+	 *  name: suscribirse_a_cola
+	 *  return: cantidad de bytes enviados o -1 en caso de falla
+	 */
+	int suscribirse_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_servidor);
 	void responder_a_suscripcion(uint32_t cantidad_a_enviar, t_paquete paquetes[], int socket_envio);
 
 #endif /* CONEXION_H_ */

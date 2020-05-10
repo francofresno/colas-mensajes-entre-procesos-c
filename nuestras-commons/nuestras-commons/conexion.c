@@ -365,9 +365,9 @@ uint32_t recibir_id(int socket_cliente)
 // ---- Suscripciones ---- //
 /////////////////////////////
 
-void suscribirse_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_servidor)
+int suscribirse_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_servidor)
 {
-	enviar_mensaje(SUSCRIPCION, 0, 0, (void*) estructuraSuscripcion, socket_servidor);
+	return enviar_mensaje(SUSCRIPCION, 0, 0, (void*) estructuraSuscripcion, socket_servidor);
 }
 
 void responder_a_suscripcion(uint32_t cantidad_a_enviar, t_paquete paquetes[], int socket_envio)
