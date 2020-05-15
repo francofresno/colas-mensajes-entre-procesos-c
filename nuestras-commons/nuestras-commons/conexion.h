@@ -10,6 +10,7 @@
 	#include<string.h>
 
 	#include "mensajes.h"
+	#include<commons/collections/list.h>
 
 	typedef struct
 	{
@@ -39,8 +40,8 @@
 	// ---- Envíos de mensajes ---- //
 	//////////////////////////////////
 	/*
-	 *  name: enviar_mensaje
-	 *  return: cantidad de bytes enviados o -1 en caso de falla
+	 *  @NAME: enviar_mensaje
+	 *  @RETURN: cantidad de bytes enviados o -1 en caso de falla
 	 */
 	int enviar_mensaje(op_code codigoOperacion, uint32_t id, uint32_t id_correlativo, void* mensaje, int un_socket);
 	void* serializar_paquete(op_code codigoOperacion, uint32_t id, uint32_t id_correlativo, void* estructura, uint32_t* bytes);
@@ -50,7 +51,12 @@
 	/////////////////////////////////////
 	// ---- Recepción de mensajes ---- //
 	/////////////////////////////////////
-	uint32_t recibir_cantidad_bytes(int socket_cliente);
+	/*
+	 *  @NAME: recibir_variable
+	 *  @RETURN: cantidad de bytes recibidos o -1 en caso de falla
+	 */
+	int recibir_variable(void* a_recibir, int tamanio, int socket_cliente);
+	uint32_t obtener_cantidad_bytes_a_recibir(int socket_cliente);
 	t_paquete* recibir_paquete(int socket_cliente);
 	void copiar_nombre(t_nombrePokemon* estructuraNombre, void* stream, int* offset);
 	void copiar_coordenadas(t_coordenadas* estructuraCoordenadas, void* stream, int* offset);
@@ -66,14 +72,11 @@
 	// ---- Suscripciones ---- //
 	/////////////////////////////
 	/*
-	 *  name: suscribirse_a_cola
-	 *  return: cantidad de bytes enviados o -1 en caso de falla
+	 *  @NAME: suscribirse_a_cola
+	 *  @RETURN: cantidad de bytes enviados o -1 en caso de falla
 	 */
 	int suscribirse_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_servidor);
-	/*
-	 *  name: responder_a_suscripcion
-	 *  return: -1 en caso de falla o 0 en caso de éxito
-	 */
-	int responder_a_suscripcion(uint32_t cantidad_a_enviar, t_paquete paquetes[], int socket_envio);
+	uint32_t respuesta_suscripcion_cantidad_paquetes(int socket_servidor);
+	t_list* respueta_suscripcion_obtener_paquetes(int socket_servidor, uint32_t* cant_paquetes_recibidos);
 
 #endif /* CONEXION_H_ */

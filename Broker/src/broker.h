@@ -70,6 +70,12 @@ void process_request(int cod_op, uint32_t id_correlativo, void* paqueteRecibido,
 void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscriptor);
 t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint32_t id_correlativo, t_list* suscriptores, pthread_mutex_t mutex);
 void responder_a_suscriptor_nuevo(op_code codigo, t_queue* queue, t_subscriber* subscriber);
+/*
+ *  @NAME: responder_a_suscripcion
+ *  @RETURN: -1 en caso de falla o 0 en caso de éxito
+ */
+int responder_a_suscripcion(uint32_t cantidad_a_enviar, t_paquete paquetes[], int socket_envio);
+void remover_suscriptor_si_es_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t tiempo, pthread_mutex_t mutex);
 
 uint32_t generar_id();
 

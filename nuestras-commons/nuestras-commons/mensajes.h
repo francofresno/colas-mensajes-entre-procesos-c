@@ -84,7 +84,8 @@ typedef struct
 typedef struct
 {
 	uint32_t id_proceso;
-	op_code tipo_cola; //uso op_code para definir tambien el tipo de cola para no tener una struct mas que tenga lo mismo
+	op_code tipo_cola;
+	uint32_t tiempo; // En segundos - 0: indeterminado
 } t_suscripcion_msg;
 
 #endif /* MENSAJES_H_ */
