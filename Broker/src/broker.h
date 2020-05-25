@@ -58,6 +58,12 @@ pthread_mutex_t mutex_localized_susc = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_catch_susc = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_caught_susc = PTHREAD_MUTEX_INITIALIZER;
 
+// Arrays
+t_queue* COLAS_MENSAJES[7];
+t_list* SUSCRIPTORES_MENSAJES[7];
+pthread_mutex_t MUTEX_COLAS[7];
+pthread_mutex_t MUTEX_SUSCRIPTORES[7];
+
 int init_server(t_config* config);
 void init_message_queues();
 void init_suscriber_lists();
@@ -74,7 +80,7 @@ void responder_a_suscriptor_nuevo(op_code codigo, t_queue* queue, t_subscriber* 
  *  @NAME: responder_a_suscripcion
  *  @RETURN: -1 en caso de falla o 0 en caso de éxito
  */
-int responder_a_suscripcion(uint32_t cantidad_a_enviar, t_paquete paquetes[], int socket_envio);
+int enviar_mensajes_encolados_a_suscriptor_nuevo(uint32_t cantidad_a_enviar, t_paquete paquetes[], int socket_envio);
 void remover_suscriptor_si_es_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t tiempo, pthread_mutex_t mutex);
 
 uint32_t generar_id();

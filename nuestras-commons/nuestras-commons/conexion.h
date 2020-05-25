@@ -57,10 +57,12 @@
 	 */
 	int recibir_variable(void* a_recibir, int tamanio, int socket_cliente);
 	uint32_t obtener_cantidad_bytes_a_recibir(int socket_cliente);
-	t_paquete* recibir_paquete(int socket_cliente);
+	t_paquete* recibir_paquete(int socket_cliente, char** nombre_recibido);
+	void deserializar_paquete(void* stream, t_paquete* paquete_recibido, int* offset, uint32_t bytes, char** nombre_recibido);
 	void copiar_nombre(t_nombrePokemon* estructuraNombre, void* stream, int* offset);
 	void copiar_coordenadas(t_coordenadas* estructuraCoordenadas, void* stream, int* offset);
 	void copiar_variable(void* variable, void* stream, int* offset, int size);
+	void free_paquete_recibido(char* nombre_recibido, t_paquete* paquete_recibido);
 
 	//////////////////////////////////////
 	// ---- Respuestas de mensajes ---- //

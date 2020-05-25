@@ -27,78 +27,33 @@ int main(void) {
 		}
 	}
 
-	//terminar_programa(int socket_servidor, t_log* logger, t_config* config);
 }
 
 void serve_client(int* socket_cliente)
 {
-	t_paquete* paquete_recibido = recibir_paquete(*socket_cliente);
+	char* nombre_recibido = NULL;
+	t_paquete* paquete_recibido = recibir_paquete(*socket_cliente, &nombre_recibido);
 
 	process_request(paquete_recibido->codigo_operacion, paquete_recibido->id_correlativo, paquete_recibido->mensaje, *socket_cliente);
 
-	free(paquete_recibido->mensaje); //TODO duda, libero?
-	free(paquete_recibido);
+	free_paquete_recibido(nombre_recibido, paquete_recibido);
 }
 
 void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido, int socket_cliente)
 {
-	uint32_t id_mensaje;
 	t_list* suscriptores_informados;
-	switch(cod_op)
-	{
-		case SUSCRIPCION: ;
-			suscribir_a_cola((t_suscripcion_msg*) mensaje_recibido, socket_cliente);
-			break;
-		case NEW_POKEMON: ;
-			id_mensaje = generar_id();
 
-			enviar_id_respuesta(id_mensaje,socket_cliente);
-			suscriptores_informados = informar_a_suscriptores(NEW_POKEMON, mensaje_recibido, id_mensaje, 0, NEW_POKEMON_SUBSCRIBERS, mutex_new_susc);
-			push_message_queue(NEW_POKEMON_QUEUE, id_mensaje, 0, mensaje_recibido, suscriptores_informados, mutex_new_queue);
+	if (cod_op == SUSCRIPCION) {
+		suscribir_a_cola((t_suscripcion_msg*) mensaje_recibido, socket_cliente);
+	} else {
+		uint32_t id_mensaje = generar_id();
+		enviar_id_respuesta(id_mensaje,socket_cliente);
 
-			printf("Me llego un mensaje NEW");
-			//TODO recibir ACK -> usar recv que se queda bloqueado hasta recibir algo
-			break;
-		case APPEARED_POKEMON: ;
-			id_mensaje = generar_id();
-
-			enviar_id_respuesta(id_mensaje,socket_cliente);
-			suscriptores_informados = informar_a_suscriptores(APPEARED_POKEMON, mensaje_recibido, id_mensaje, id_correlativo, APPEARED_POKEMON_SUBSCRIBERS, mutex_appeared_susc);
-			push_message_queue(APPEARED_POKEMON_QUEUE, id_mensaje, id_correlativo, mensaje_recibido, suscriptores_informados, mutex_appeared_queue);
-
-			break;
-		case GET_POKEMON: ;
-			id_mensaje = generar_id();
-
-			enviar_id_respuesta(id_mensaje,socket_cliente);
-			suscriptores_informados = informar_a_suscriptores(GET_POKEMON, mensaje_recibido, id_mensaje, 0, GET_POKEMON_SUBSCRIBERS, mutex_get_susc);
-			push_message_queue(GET_POKEMON_QUEUE, id_mensaje, 0, mensaje_recibido, suscriptores_informados, mutex_get_queue);
-
-			break;
-		case LOCALIZED_POKEMON: ;
-			id_mensaje = generar_id();
-
-			enviar_id_respuesta(id_mensaje,socket_cliente);
-			suscriptores_informados = informar_a_suscriptores(LOCALIZED_POKEMON, mensaje_recibido, id_mensaje, id_correlativo, LOCALIZED_POKEMON_SUBSCRIBERS, mutex_localized_susc);
-			push_message_queue(LOCALIZED_POKEMON_QUEUE, id_mensaje, id_correlativo, mensaje_recibido, suscriptores_informados, mutex_localized_queue);
-
-			break;
-		case CATCH_POKEMON: ;
-			id_mensaje = generar_id();
-
-			enviar_id_respuesta(id_mensaje,socket_cliente);
-			suscriptores_informados = informar_a_suscriptores(CATCH_POKEMON, mensaje_recibido, id_mensaje, 0, CATCH_POKEMON_SUBSCRIBERS, mutex_catch_susc);
-			push_message_queue(CATCH_POKEMON_QUEUE, id_mensaje, 0, mensaje_recibido, suscriptores_informados, mutex_catch_queue);
-
-			break;
-		case CAUGHT_POKEMON: ;
-			id_mensaje = generar_id();
-
-			enviar_id_respuesta(id_mensaje,socket_cliente);
-			suscriptores_informados = informar_a_suscriptores(CAUGHT_POKEMON, mensaje_recibido, id_mensaje, id_correlativo, CAUGHT_POKEMON_SUBSCRIBERS, mutex_caught_susc);
-			push_message_queue(CAUGHT_POKEMON_QUEUE, id_mensaje, id_correlativo, mensaje_recibido, suscriptores_informados, mutex_caught_queue);
-
-			break;
+		t_queue* queue = COLAS_MENSAJES[cod_op];
+		t_list* suscriptores = SUSCRIPTORES_MENSAJES[cod_op];
+		pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
+		suscriptores_informados = informar_a_suscriptores(cod_op, mensaje_recibido, id_mensaje, id_correlativo, suscriptores, mutex);
+		push_message_queue(queue, id_mensaje, id_correlativo, mensaje_recibido, suscriptores_informados, mutex);
 	}
 }
 
@@ -108,56 +63,13 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 	subscriber->id_suscriptor = estructuraSuscripcion->id_proceso;
 	subscriber->socket_suscriptor = socket_suscriptor;
 
-	/////////////////
-	t_newPokemon_msg* estructuraNew = malloc(sizeof(*estructuraNew));
-	estructuraNew->nombre_pokemon.nombre = "CHARMANDER";
-	estructuraNew->nombre_pokemon.nombre_lenght = strlen(estructuraNew->nombre_pokemon.nombre)+1;
-	estructuraNew->coordenadas.posX = 1;
-	estructuraNew->coordenadas.posY = 2;
-	estructuraNew->cantidad_pokemons = 1;
-	t_list* subscribers = list_create();
-	uint32_t id_mensaje = generar_id();
-	push_message_queue(NEW_POKEMON_QUEUE, id_mensaje, 0, (void*) estructuraNew, subscribers, mutex_new_queue);
-	/////////////////
+	t_list* suscriptores = SUSCRIPTORES_MENSAJES[estructuraSuscripcion->tipo_cola];
+	t_queue* queue = COLAS_MENSAJES[estructuraSuscripcion->tipo_cola];
+	pthread_mutex_t mutex = MUTEX_SUSCRIPTORES[estructuraSuscripcion->tipo_cola];
 
-	switch(estructuraSuscripcion->tipo_cola)
-	{
-		case NEW_POKEMON: ;
-			printf("Se suscribio en NEW el proceso ID: %d\n", estructuraSuscripcion->id_proceso);
-			subscribe_process(NEW_POKEMON_SUBSCRIBERS, subscriber, mutex_new_susc);
-			responder_a_suscriptor_nuevo(NEW_POKEMON, NEW_POKEMON_QUEUE, subscriber);
-			remover_suscriptor_si_es_temporal(NEW_POKEMON_SUBSCRIBERS, subscriber, estructuraSuscripcion->tiempo, mutex_new_susc);
-			break;
-		case APPEARED_POKEMON: ;
-			subscribe_process(APPEARED_POKEMON_SUBSCRIBERS, subscriber, mutex_appeared_susc);
-			responder_a_suscriptor_nuevo(APPEARED_POKEMON, APPEARED_POKEMON_QUEUE, subscriber);
-			remover_suscriptor_si_es_temporal(APPEARED_POKEMON_SUBSCRIBERS, subscriber, estructuraSuscripcion->tiempo, mutex_appeared_susc);
-			break;
-		case GET_POKEMON: ;
-			subscribe_process(GET_POKEMON_SUBSCRIBERS, subscriber, mutex_get_susc);
-			responder_a_suscriptor_nuevo(GET_POKEMON, GET_POKEMON_QUEUE, subscriber);
-			remover_suscriptor_si_es_temporal(GET_POKEMON_SUBSCRIBERS, subscriber, estructuraSuscripcion->tiempo, mutex_get_susc);
-			break;
-		case LOCALIZED_POKEMON: ;
-			subscribe_process(LOCALIZED_POKEMON_SUBSCRIBERS, subscriber, mutex_localized_susc);
-			responder_a_suscriptor_nuevo(LOCALIZED_POKEMON, LOCALIZED_POKEMON_QUEUE, subscriber);
-			remover_suscriptor_si_es_temporal(LOCALIZED_POKEMON_SUBSCRIBERS, subscriber, estructuraSuscripcion->tiempo, mutex_localized_susc);
-			break;
-		case CATCH_POKEMON: ;
-			subscribe_process(CATCH_POKEMON_SUBSCRIBERS, subscriber, mutex_catch_susc);
-			responder_a_suscriptor_nuevo(CATCH_POKEMON, CATCH_POKEMON_QUEUE, subscriber);
-			remover_suscriptor_si_es_temporal(CATCH_POKEMON_SUBSCRIBERS, subscriber, estructuraSuscripcion->tiempo, mutex_catch_susc);
-			break;
-		case CAUGHT_POKEMON: ;
-			subscribe_process(CAUGHT_POKEMON_SUBSCRIBERS, subscriber, mutex_caught_susc);
-			responder_a_suscriptor_nuevo(CAUGHT_POKEMON, CAUGHT_POKEMON_QUEUE, subscriber);
-			remover_suscriptor_si_es_temporal(CAUGHT_POKEMON_SUBSCRIBERS, subscriber, estructuraSuscripcion->tiempo, mutex_caught_susc);
-			break;
-		case SUSCRIPCION:
-		case ERROR_CODIGO:
-		default: //TODO
-			break;
-	}
+	subscribe_process(suscriptores, subscriber, mutex);
+	responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber);
+	remover_suscriptor_si_es_temporal(suscriptores, subscriber, estructuraSuscripcion->tiempo, mutex);
 }
 
 void remover_suscriptor_si_es_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t tiempo, pthread_mutex_t mutex)
@@ -212,13 +124,13 @@ void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subs
 		mensajes_encolados[i] = mensaje_encolado;
 	}
 
-	if (responder_a_suscripcion(cantidad_mensajes, paquetes, subscriber->socket_suscriptor) != -1) {
+	if (enviar_mensajes_encolados_a_suscriptor_nuevo(cantidad_mensajes, paquetes, subscriber->socket_suscriptor) != -1) {
 		printf("Respondi!\n");
 		add_new_informed_subscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber);
 	}
 }
 
-int responder_a_suscripcion(uint32_t cantidad_a_enviar, t_paquete paquetes[], int socket_envio)
+int enviar_mensajes_encolados_a_suscriptor_nuevo(uint32_t cantidad_a_enviar, t_paquete paquetes[], int socket_envio)
 {
 	// Envio la cantidad de paquetes que se enviaran
 	if(send(socket_envio, &cantidad_a_enviar, sizeof(cantidad_a_enviar), 0) < 0)
@@ -250,6 +162,20 @@ void init_message_queues()
 	CAUGHT_POKEMON_QUEUE = create_message_queue();
 	GET_POKEMON_QUEUE = create_message_queue();
 	LOCALIZED_POKEMON_QUEUE = create_message_queue();
+
+	COLAS_MENSAJES[1] = NEW_POKEMON_QUEUE;
+	COLAS_MENSAJES[2] = APPEARED_POKEMON_QUEUE;
+	COLAS_MENSAJES[3] = CATCH_POKEMON_QUEUE;
+	COLAS_MENSAJES[4] = CAUGHT_POKEMON_QUEUE;
+	COLAS_MENSAJES[5] = GET_POKEMON_QUEUE;
+	COLAS_MENSAJES[6] = LOCALIZED_POKEMON_QUEUE;
+
+	MUTEX_COLAS[1] = mutex_new_queue;
+	MUTEX_COLAS[2] = mutex_appeared_queue;
+	MUTEX_COLAS[3] = mutex_get_queue;
+	MUTEX_COLAS[4] = mutex_localized_queue;
+	MUTEX_COLAS[5] = mutex_catch_queue;
+	MUTEX_COLAS[6] = mutex_caught_queue;
 }
 
 void init_suscriber_lists()
@@ -260,6 +186,20 @@ void init_suscriber_lists()
 	CAUGHT_POKEMON_SUBSCRIBERS = list_create();
 	GET_POKEMON_SUBSCRIBERS = list_create();
 	LOCALIZED_POKEMON_SUBSCRIBERS = list_create();
+
+	SUSCRIPTORES_MENSAJES[1] = NEW_POKEMON_SUBSCRIBERS;
+	SUSCRIPTORES_MENSAJES[2] = APPEARED_POKEMON_SUBSCRIBERS;
+	SUSCRIPTORES_MENSAJES[3] = CATCH_POKEMON_SUBSCRIBERS;
+	SUSCRIPTORES_MENSAJES[4] = CAUGHT_POKEMON_SUBSCRIBERS;
+	SUSCRIPTORES_MENSAJES[5] = GET_POKEMON_SUBSCRIBERS;
+	SUSCRIPTORES_MENSAJES[6] = LOCALIZED_POKEMON_SUBSCRIBERS;
+
+	MUTEX_SUSCRIPTORES[1] = mutex_new_susc;
+	MUTEX_SUSCRIPTORES[2] = mutex_appeared_susc;
+	MUTEX_SUSCRIPTORES[3] = mutex_get_susc;
+	MUTEX_SUSCRIPTORES[4] = mutex_localized_susc;
+	MUTEX_SUSCRIPTORES[5] = mutex_catch_susc;
+	MUTEX_SUSCRIPTORES[6] = mutex_caught_susc;
 }
 
 t_log* iniciar_logger(void)

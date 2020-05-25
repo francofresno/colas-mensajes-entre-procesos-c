@@ -235,7 +235,7 @@ uint32_t obtener_cantidad_bytes_a_recibir(int socket_cliente)
 	return bytes;
 }
 
-t_paquete* recibir_paquete(int socket_cliente)
+t_paquete* recibir_paquete(int socket_cliente, char** nombre_recibido)
 {
 	uint32_t bytes = obtener_cantidad_bytes_a_recibir(socket_cliente);
 
@@ -244,85 +244,96 @@ t_paquete* recibir_paquete(int socket_cliente)
 	recv(socket_cliente, stream, bytes, MSG_WAITALL); //TODO check status
 
 	int offset = 0;
-	copiar_variable(&(paquete_recibido->codigo_operacion), stream, &offset, sizeof(paquete_recibido->codigo_operacion));
-	copiar_variable(&(paquete_recibido->id), stream, &offset, sizeof(paquete_recibido->id));
-	copiar_variable(&(paquete_recibido->id_correlativo), stream, &offset, sizeof(paquete_recibido->id_correlativo));
+	deserializar_paquete(stream, paquete_recibido, &offset, bytes, nombre_recibido);
+
+	free(stream);
+	return(paquete_recibido);
+}
+
+void deserializar_paquete(void* stream, t_paquete* paquete_recibido, int* offset, uint32_t bytes, char** nombre_recibido)
+{
+	copiar_variable(&(paquete_recibido->codigo_operacion), stream, offset, sizeof(paquete_recibido->codigo_operacion));
+	copiar_variable(&(paquete_recibido->id), stream, offset, sizeof(paquete_recibido->id));
+	copiar_variable(&(paquete_recibido->id_correlativo), stream, offset, sizeof(paquete_recibido->id_correlativo));
 
 	// Le resto a "bytes" los bytes que ya copie del stream
-	paquete_recibido->mensaje = malloc(bytes - offset);
+	paquete_recibido->mensaje = malloc(bytes - *offset);
 
 	switch(paquete_recibido->codigo_operacion)
 	{
 		case SUSCRIPCION: ;
 			t_suscripcion_msg* estSuscripcion = malloc(sizeof(*estSuscripcion));
 
-			copiar_variable(&(estSuscripcion->id_proceso), stream, &offset, sizeof(estSuscripcion->id_proceso));
-			copiar_variable(&(estSuscripcion->tipo_cola), stream, &offset, sizeof(estSuscripcion->tipo_cola));
-			copiar_variable(&(estSuscripcion->tiempo), stream, &offset, sizeof(estSuscripcion->tiempo));
+			copiar_variable(&(estSuscripcion->id_proceso), stream, offset, sizeof(estSuscripcion->id_proceso));
+			copiar_variable(&(estSuscripcion->tipo_cola), stream, offset, sizeof(estSuscripcion->tipo_cola));
+			copiar_variable(&(estSuscripcion->tiempo), stream, offset, sizeof(estSuscripcion->tiempo));
 
+			*nombre_recibido = NULL;
 			paquete_recibido->mensaje = estSuscripcion;
 			break;
 		case NEW_POKEMON: ;
 			t_newPokemon_msg* estructuraNew = malloc(sizeof(*estructuraNew));
 
-			copiar_nombre(&(estructuraNew->nombre_pokemon), stream, &offset);
-			copiar_coordenadas(&(estructuraNew->coordenadas), stream, &offset);
-			copiar_variable(&(estructuraNew->cantidad_pokemons), stream, &offset, sizeof(estructuraNew->cantidad_pokemons));
+			copiar_nombre(&(estructuraNew->nombre_pokemon), stream, offset);
+			copiar_coordenadas(&(estructuraNew->coordenadas), stream, offset);
+			copiar_variable(&(estructuraNew->cantidad_pokemons), stream, offset, sizeof(estructuraNew->cantidad_pokemons));
 
+			*nombre_recibido = estructuraNew->nombre_pokemon.nombre;
 			paquete_recibido->mensaje = estructuraNew;
-			printf("Recibi un new pkm \n");
 			break;
 		case APPEARED_POKEMON: ;
 			t_appearedPokemon_msg* estructuraAppeared = malloc(sizeof(*estructuraAppeared));
 
-			copiar_nombre(&(estructuraAppeared->nombre_pokemon), stream, &offset);
-			copiar_coordenadas(&(estructuraAppeared->coordenadas), stream, &offset);
+			copiar_nombre(&(estructuraAppeared->nombre_pokemon), stream, offset);
+			copiar_coordenadas(&(estructuraAppeared->coordenadas), stream, offset);
 
+			*nombre_recibido = estructuraAppeared->nombre_pokemon.nombre;
 			paquete_recibido->mensaje = estructuraAppeared;
 			break;
 		case GET_POKEMON: ;
 			t_getPokemon_msg* estructuraGet = malloc(sizeof(*estructuraGet));
 
-			copiar_nombre(&(estructuraGet->nombre_pokemon), stream, &offset);
+			copiar_nombre(&(estructuraGet->nombre_pokemon), stream, offset);
 
+			*nombre_recibido = estructuraGet->nombre_pokemon.nombre;
 			paquete_recibido->mensaje = estructuraGet;
 			break;
 		case LOCALIZED_POKEMON: ;
 			t_localizedPokemon_msg* estructuraLocalized = malloc(sizeof(*estructuraLocalized));
 
-			copiar_nombre(&(estructuraLocalized->nombre_pokemon), stream, &offset);
-			copiar_variable(&(estructuraLocalized->cantidad_coordenadas), stream, &offset, sizeof(estructuraLocalized->cantidad_coordenadas));
+			copiar_nombre(&(estructuraLocalized->nombre_pokemon), stream, offset);
+			copiar_variable(&(estructuraLocalized->cantidad_coordenadas), stream, offset, sizeof(estructuraLocalized->cantidad_coordenadas));
 			estructuraLocalized->coordenadas = malloc( 2 * (estructuraLocalized->cantidad_coordenadas) * sizeof(uint32_t) );
-			copiar_variable(estructuraLocalized->coordenadas, stream, &offset, 2 * (estructuraLocalized->cantidad_coordenadas) * sizeof(uint32_t));
+			copiar_variable(estructuraLocalized->coordenadas, stream, offset, 2 * (estructuraLocalized->cantidad_coordenadas) * sizeof(uint32_t));
 
+			*nombre_recibido = estructuraLocalized->nombre_pokemon.nombre;
 			paquete_recibido->mensaje = estructuraLocalized;
 			break;
 		case CATCH_POKEMON: ;
 			t_catchPokemon_msg* estructuraCatch = malloc(sizeof(*estructuraCatch));
 
-			copiar_nombre(&(estructuraCatch->nombre_pokemon), stream, &offset);
-			copiar_coordenadas(&(estructuraCatch->coordenadas), stream, &offset);
+			copiar_nombre(&(estructuraCatch->nombre_pokemon), stream, offset);
+			copiar_coordenadas(&(estructuraCatch->coordenadas), stream, offset);
 
+			*nombre_recibido = estructuraCatch->nombre_pokemon.nombre;
 			paquete_recibido->mensaje = estructuraCatch;
 			break;
 		case CAUGHT_POKEMON: ;
 			t_caughtPokemon_msg* estructuraCaught = malloc(sizeof(*estructuraCaught));
 
-			copiar_variable(&(estructuraCaught->atrapado), stream, &offset, sizeof(estructuraCaught->atrapado));
+			copiar_variable(&(estructuraCaught->atrapado), stream, offset, sizeof(estructuraCaught->atrapado));
 
+			*nombre_recibido = NULL;
 			paquete_recibido->mensaje = estructuraCaught;
 			break;
-		default: printf("Error codigo op"); break;
+		default: printf("Error codigo op\n"); break;
 	}
-	free(stream);
-	return(paquete_recibido);
 }
 
 void copiar_nombre(t_nombrePokemon* estructuraNombre, void* stream, int* offset)
 {
-	estructuraNombre->nombre = malloc(estructuraNombre->nombre_lenght);
-
 	copiar_variable(&(estructuraNombre->nombre_lenght), stream, offset, sizeof(estructuraNombre->nombre_lenght));
+	estructuraNombre->nombre = malloc(estructuraNombre->nombre_lenght);
 	copiar_variable(estructuraNombre->nombre, stream, offset, estructuraNombre->nombre_lenght);
 }
 
@@ -338,6 +349,14 @@ void copiar_variable(void* variable, void* stream, int* offset, int size)
 	*offset += size;
 }
 
+void free_paquete_recibido(char* nombre_recibido, t_paquete* paquete_recibido)
+{
+	if(nombre_recibido != NULL) {
+		free(nombre_recibido);
+	}
+	free(paquete_recibido->mensaje);
+	free(paquete_recibido);
+}
 
 /////////////////////////////////
 // ---- Respuesta mensaje ---- //
@@ -382,8 +401,13 @@ t_list* respueta_suscripcion_obtener_paquetes(int socket_servidor, uint32_t* can
 	*cant_paquetes_recibidos = cantidad_paquetes;
 
 	while (cantidad_paquetes > 0) {
-		t_paquete* paquete = recibir_paquete(socket_servidor);
-		list_add(mensajes, paquete);
+		char* nombre_recibido = NULL;
+
+
+
+		t_paquete* paquete_recibido = recibir_paquete(socket_servidor, &nombre_recibido);
+		list_add(mensajes, paquete_recibido);
+		free_paquete_recibido(nombre_recibido, paquete_recibido);
 		cantidad_paquetes--;
 	}
 
