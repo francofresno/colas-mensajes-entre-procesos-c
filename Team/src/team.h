@@ -18,6 +18,16 @@
 #define TEAM_NAME "team" // No estamos seguras porq cada proceso tema tiene su propio archivo de log
 #define TEAM_CONFIG "team.config"
 
+const static struct {
+	op_code codigoOperacion;
+	const char* str;
+} conversionCodigoOp[] = {
+
+		{CATCH_POKEMON, "CATCH_POKEMON"},
+		{GET_POKEMON, "GET_POKEMON"},
+
+};
+
 pthread_t thread;
 
 t_log* iniciar_logger(void);
