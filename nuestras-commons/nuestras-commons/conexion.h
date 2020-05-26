@@ -69,6 +69,7 @@
 	//////////////////////////////////////
 	void enviar_id_respuesta(uint32_t id_msg, int socket_cliente);
 	uint32_t recibir_id(int socket_cliente);
+	int informar_ack(int socket_server);
 
 	/////////////////////////////
 	// ---- Suscripciones ---- //

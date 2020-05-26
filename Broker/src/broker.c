@@ -11,10 +11,11 @@
 
 int main(void) {
 
-	t_config* config = leer_config();
-	int socket_servidor = init_server(config);
+	init_config();
+	init_logger();
 	init_message_queues();
 	init_suscriber_lists();
+	int socket_servidor = init_server();
 
 	printf("broker!\n");
 	fflush(stdout);
@@ -41,8 +42,6 @@ void serve_client(int* socket_cliente)
 
 void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido, int socket_cliente)
 {
-	t_list* suscriptores_informados;
-
 	if (cod_op == SUSCRIPCION) {
 		suscribir_a_cola((t_suscripcion_msg*) mensaje_recibido, socket_cliente);
 	} else {
@@ -52,7 +51,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 		t_queue* queue = COLAS_MENSAJES[cod_op];
 		t_list* suscriptores = SUSCRIPTORES_MENSAJES[cod_op];
 		pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
-		suscriptores_informados = informar_a_suscriptores(cod_op, mensaje_recibido, id_mensaje, id_correlativo, suscriptores, mutex);
+		t_list* suscriptores_informados = informar_a_suscriptores(cod_op, mensaje_recibido, id_mensaje, id_correlativo, suscriptores, mutex);
 		push_message_queue(queue, id_mensaje, id_correlativo, mensaje_recibido, suscriptores_informados, mutex);
 	}
 }
@@ -66,6 +65,8 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 	t_list* suscriptores = SUSCRIPTORES_MENSAJES[estructuraSuscripcion->tipo_cola];
 	t_queue* queue = COLAS_MENSAJES[estructuraSuscripcion->tipo_cola];
 	pthread_mutex_t mutex = MUTEX_SUSCRIPTORES[estructuraSuscripcion->tipo_cola];
+
+	// TODO chequear si susc ya esta suscripto
 
 	subscribe_process(suscriptores, subscriber, mutex);
 	responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber);
@@ -168,7 +169,7 @@ void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stre
 	free(a_enviar);
 }
 
-int init_server(t_config* config)
+int init_server()
 {
 	char* IP = config_get_string_value(config,"IP_BROKER");
 	char* PUERTO = config_get_string_value(config,"PUERTO_BROKER");
@@ -223,17 +224,15 @@ void init_suscriber_lists()
 	MUTEX_SUSCRIPTORES[6] = mutex_caught_susc;
 }
 
-t_log* iniciar_logger(void)
+void init_logger()
 {
-	//TODO catchear si == NULL
-	return log_create(BROKER_LOG, BROKER_NAME, true, LOG_LEVEL_INFO);
+	char* broker_log = config_get_string_value(config,"LOG_FILE");
+	logger = log_create(broker_log, BROKER_NAME, false, LOG_LEVEL_INFO);
 }
 
-t_config* leer_config(void)
+void init_config()
 {
-	//TODO catchear si == NULL
-	return config_create(BROKER_CONFIG);
-
+	config = config_create(BROKER_CONFIG);
 }
 
 void destroy_all_mutex()
@@ -253,7 +252,7 @@ void destroy_all_mutex()
 	pthread_mutex_destroy(&mutex_caught_susc);
 }
 
-void terminar_programa(int socket_servidor, t_log* logger, t_config* config)
+void terminar_programa(int socket_servidor, t_log* logger)
 {
 	destroy_all_mutex();
 	liberar_conexion(socket_servidor);

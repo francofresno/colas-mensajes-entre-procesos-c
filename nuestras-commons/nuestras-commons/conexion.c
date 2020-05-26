@@ -382,6 +382,19 @@ uint32_t recibir_id(int socket_cliente)
 	return id;
 }
 
+int informar_ack(int socket_server)
+{
+	int offset = 0;
+	uint32_t ack_code = 200;
+	void* a_enviar = malloc(sizeof(ack_code));
+	serializar_variable(a_enviar, &ack_code, sizeof(ack_code), &offset);
+
+	int status = send(socket_server, a_enviar, sizeof(ack_code), 0);
+	free(a_enviar);
+
+	return status;
+}
+
 /////////////////////////////
 // ---- Suscripciones ---- //
 /////////////////////////////

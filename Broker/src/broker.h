@@ -20,8 +20,8 @@
 #include "nuestras-commons/conexion.h"
 #include "nuestras-commons/mensajes.h"
 #include "messages_queues.h"
+#include "logger.h"
 
-#define BROKER_LOG "broker.log"
 #define BROKER_NAME "broker"
 #define BROKER_CONFIG "broker.config"
 
@@ -64,11 +64,15 @@ t_list* SUSCRIPTORES_MENSAJES[7];
 pthread_mutex_t MUTEX_COLAS[7];
 pthread_mutex_t MUTEX_SUSCRIPTORES[7];
 
-int init_server(t_config* config);
+// Loggers y config
+t_log* logger;
+t_config* config;
+
+int init_server();
 void init_message_queues();
 void init_suscriber_lists();
-t_log* iniciar_logger(void);
-t_config* leer_config(void);
+void init_logger();
+void init_config();
 
 int esperar_cliente(int socket_servidor);
 void serve_client(int* socket_cliente);
@@ -86,6 +90,6 @@ void remover_suscriptor_si_es_temporal(t_list* subscribers, t_subscriber* subscr
 
 uint32_t generar_id();
 
-void terminar_programa(int socket, t_log* logger, t_config* config);
+void terminar_programa(int socket, t_log* logger);
 
 #endif /* BROKER_H_ */
