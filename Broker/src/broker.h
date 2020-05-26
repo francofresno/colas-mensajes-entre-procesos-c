@@ -11,7 +11,6 @@
 
 #include<stdio.h>
 #include<stdlib.h>
-#include<commons/log.h>
 #include<commons/string.h>
 #include<commons/config.h>
 #include<readline/readline.h>
@@ -20,10 +19,7 @@
 #include "nuestras-commons/conexion.h"
 #include "nuestras-commons/mensajes.h"
 #include "messages_queues.h"
-
-#define BROKER_LOG "broker.log"
-#define BROKER_NAME "broker"
-#define BROKER_CONFIG "broker.config"
+#include "logger.h"
 
 uint32_t ID_COUNTER;
 pthread_t thread;
@@ -64,11 +60,16 @@ t_list* SUSCRIPTORES_MENSAJES[7];
 pthread_mutex_t MUTEX_COLAS[7];
 pthread_mutex_t MUTEX_SUSCRIPTORES[7];
 
+// Loggers y config
+t_log* logger;
+t_config* config;
+
+
 int init_server(t_config* config);
 void init_message_queues();
 void init_suscriber_lists();
-t_log* iniciar_logger(void);
-t_config* leer_config(void);
+void init_logger();
+void init_config();
 
 int esperar_cliente(int socket_servidor);
 void serve_client(int* socket_cliente);

@@ -11,10 +11,11 @@
 
 int main(void) {
 
-	t_config* config = leer_config();
-	int socket_servidor = init_server(config);
+	init_logger();
+	init_config();
 	init_message_queues();
 	init_suscriber_lists();
+	int socket_servidor = init_server(config);
 
 	printf("broker!\n");
 	fflush(stdout);
@@ -41,8 +42,6 @@ void serve_client(int* socket_cliente)
 
 void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido, int socket_cliente)
 {
-	t_list* suscriptores_informados;
-
 	if (cod_op == SUSCRIPCION) {
 		suscribir_a_cola((t_suscripcion_msg*) mensaje_recibido, socket_cliente);
 	} else {
@@ -52,8 +51,9 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 		t_queue* queue = COLAS_MENSAJES[cod_op];
 		t_list* suscriptores = SUSCRIPTORES_MENSAJES[cod_op];
 		pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
-		suscriptores_informados = informar_a_suscriptores(cod_op, mensaje_recibido, id_mensaje, id_correlativo, suscriptores, mutex);
+		t_list* suscriptores_informados = informar_a_suscriptores(cod_op, mensaje_recibido, id_mensaje, id_correlativo, suscriptores, mutex);
 		push_message_queue(queue, id_mensaje, id_correlativo, mensaje_recibido, suscriptores_informados, mutex);
+		log_nuevo_mensaje(id_mensaje, cod_op, logger);
 	}
 }
 
@@ -68,6 +68,8 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 	pthread_mutex_t mutex = MUTEX_SUSCRIPTORES[estructuraSuscripcion->tipo_cola];
 
 	subscribe_process(suscriptores, subscriber, mutex);
+	log_nuevo_suscriptor(estructuraSuscripcion, logger);
+
 	responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber);
 	remover_suscriptor_si_es_temporal(suscriptores, subscriber, estructuraSuscripcion->tiempo, mutex);
 }
@@ -98,9 +100,11 @@ t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint
 		t_subscriber* suscriptor = list_get(suscriptores, i);
 		if (enviar_mensaje(codigo, id, id_correlativo, mensaje, suscriptor->socket_suscriptor) > 0) {
 			list_add(suscriptores_informados, (void*)suscriptor);
+			log_mensaje_a_suscriptor(suscriptor->id_suscriptor, id, logger);
 		}
 	}
 	pthread_mutex_unlock(&mutex);
+	//TODO: ACK
 	return suscriptores_informados;
 }
 
@@ -134,6 +138,7 @@ void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subs
 	enviar_mensajes_encolados(cantidad_mensajes, tamanio_stream, paquetes_serializados, tamanio_paquetes, mensajes_encolados, subscriber);
 
 	// TODO: liberar paquetes
+	// TODO: AKC
 }
 
 void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stream, void** paquetes_serializados, int* tamanio_paquetes, t_enqueued_message** mensajes_encolados, t_subscriber* subscriber)
@@ -173,6 +178,16 @@ int init_server(t_config* config)
 	char* IP = config_get_string_value(config,"IP_BROKER");
 	char* PUERTO = config_get_string_value(config,"PUERTO_BROKER");
 	return iniciar_servidor(IP, PUERTO);
+}
+
+void init_logger()
+{
+	logger = log_create("broker.log", "broker", true, LOG_LEVEL_INFO);
+}
+
+void init_config()
+{
+	config = config_create("broker.config");
 }
 
 void init_message_queues()
@@ -221,19 +236,6 @@ void init_suscriber_lists()
 	MUTEX_SUSCRIPTORES[4] = mutex_localized_susc;
 	MUTEX_SUSCRIPTORES[5] = mutex_catch_susc;
 	MUTEX_SUSCRIPTORES[6] = mutex_caught_susc;
-}
-
-t_log* iniciar_logger(void)
-{
-	//TODO catchear si == NULL
-	return log_create(BROKER_LOG, BROKER_NAME, true, LOG_LEVEL_INFO);
-}
-
-t_config* leer_config(void)
-{
-	//TODO catchear si == NULL
-	return config_create(BROKER_CONFIG);
-
 }
 
 void destroy_all_mutex()
