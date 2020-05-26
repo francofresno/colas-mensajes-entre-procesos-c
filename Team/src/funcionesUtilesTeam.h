@@ -88,6 +88,10 @@ uint32_t generar_id();
 
 algoritmo_code stringACodigoAlgoritmo(const char* string);
 
+op_code stringACodigoOperacion(const char* string);
+
+process_code stringACodigoProceso(const char* string);
+
 void planificarSegunFifo(t_list* listaDeEntrenadores);
 
 #endif /* FUNCIONESUTILESTEAM_H_ */

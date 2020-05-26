@@ -7,6 +7,12 @@
 
 #include "funcionesUtilesTeam.h"
 
+/*
+  ============================================================================
+ 	 	 	 	 	 	 	 	 HITO 2
+  ============================================================================
+*/
+
 t_list* ponerEntrenadoresEnLista(t_config* config) {
 	t_list *entrenadores = list_create(); //Creamos la lista de entrenadores
 
@@ -238,5 +244,31 @@ algoritmo_code stringACodigoAlgoritmo(const char* string) {
 			return conversionAlgoritmo[i].codigo_algoritmo;
 	}
 	return ERROR_CODIGO_ALGORITMO;
+}
+
+/*
+  ============================================================================
+ 	 	 	 	 	 	 	 	 HITO 3
+  ============================================================================
+*/
+
+op_code stringACodigoOperacion(const char* string)
+{
+	for(int i = 0; i < sizeof(conversionCodigoOp) / sizeof(conversionCodigoOp[0]); i++)
+	{
+		if(!strcmp(string, conversionCodigoOp[i].str))
+			return conversionCodigoOp[i].codigoOperacion;
+	}
+	return ERROR_CODIGO;
+}
+
+process_code stringACodigoProceso(const char* string)
+{
+	for(int i = 0; i < sizeof(conversionCodigoProceso) / sizeof(conversionCodigoProceso[0]); i++)
+	{
+		if(!strcmp(string, conversionCodigoProceso[i].str))
+			return conversionCodigoProceso[i].codigoProceso;
+	}
+	return ERROR_PROCESO;
 }
 
