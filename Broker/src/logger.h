@@ -10,6 +10,7 @@
 #define LOGGER_H_
 
 #include<commons/log.h>
+#include "nuestras-commons/mensajes.h"
 #include "messages_queues.h"
 
 void log_nuevo_suscriptor(t_suscripcion_msg* suscripcion_msg, t_log* logger);

@@ -1,0 +1,9 @@
+[INFO] 12:41:36:630 broker/(7627:7648): El mensaje id 1 ha llegado a la cola id: 1
+[INFO] 12:41:36:631 broker/(7627:7649): El mensaje id 2 ha llegado a la cola id: 1
+[INFO] 12:41:36:631 broker/(7627:7650): El proceso id: 1 se ha suscripto a la cola id: 1
+[INFO] 12:42:39:755 broker/(7778:7782): El mensaje id 1 ha llegado a la cola id: 1
+[INFO] 12:42:39:755 broker/(7778:7783): El mensaje id 2 ha llegado a la cola id: 1
+[INFO] 12:42:39:755 broker/(7778:7784): El proceso id: 1 se ha suscripto a la cola id: 1
+[INFO] 12:52:33:387 broker/(8505:8526): El mensaje id 1 ha llegado a la cola id: 1
+[INFO] 12:52:33:391 broker/(8505:8527): El mensaje id 2 ha llegado a la cola id: 1
+[INFO] 12:52:33:391 broker/(8505:8528): El proceso id: 1 se ha suscripto a la cola id: 1

@@ -137,7 +137,9 @@ void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subs
 
 	enviar_mensajes_encolados(cantidad_mensajes, tamanio_stream, paquetes_serializados, tamanio_paquetes, mensajes_encolados, subscriber);
 
-	// TODO: liberar paquetes
+	for (int i=0; i < cantidad_mensajes; i++) {
+		free(paquetes_serializados[i]);
+	}
 	// TODO: AKC
 }
 
@@ -182,7 +184,7 @@ int init_server(t_config* config)
 
 void init_logger()
 {
-	logger = log_create("broker.log", "broker", true, LOG_LEVEL_INFO);
+	logger = log_create("broker.log", "broker", false, LOG_LEVEL_INFO);
 }
 
 void init_config()
