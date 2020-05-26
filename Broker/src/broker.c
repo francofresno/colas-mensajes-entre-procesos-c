@@ -53,6 +53,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 		pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
 		t_list* suscriptores_informados = informar_a_suscriptores(cod_op, mensaje_recibido, id_mensaje, id_correlativo, suscriptores, mutex);
 		push_message_queue(queue, id_mensaje, id_correlativo, mensaje_recibido, suscriptores_informados, mutex);
+		log_nuevo_mensaje(id_mensaje, cod_op, logger);
 	}
 }
 
@@ -71,6 +72,7 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 	subscribe_process(suscriptores, subscriber, mutex);
 	responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber);
 	remover_suscriptor_si_es_temporal(suscriptores, subscriber, estructuraSuscripcion->tiempo, mutex);
+	log_nuevo_suscriptor(estructuraSuscripcion->id_proceso, estructuraSuscripcion->tipo_cola, logger);
 }
 
 void remover_suscriptor_si_es_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t tiempo, pthread_mutex_t mutex)

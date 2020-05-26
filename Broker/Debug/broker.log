@@ -1,0 +1,13 @@
+[INFO] 14:07:35:268 broker/(13161:13182): El mensaje id 1 ha llegado a la cola id: 1
+[INFO] 14:07:35:268 broker/(13161:13183): El mensaje id 2 ha llegado a la cola id: 1
+[INFO] 14:07:35:268 broker/(13161:13184): El proceso id: 1 se ha suscripto a la cola id: 1
+[INFO] 14:08:41:484 broker/(13314:13335): El mensaje id 1 ha llegado a la cola id: 1
+[INFO] 14:08:41:484 broker/(13314:13336): El mensaje id 2 ha llegado a la cola id: 1
+[INFO] 14:08:41:485 broker/(13314:13337): El proceso id: 1 se ha suscripto a la cola id: 1
+[INFO] 14:08:50:593 broker/(13375:13377): El mensaje id 1 ha llegado a la cola id: 1
+[INFO] 14:08:50:593 broker/(13375:13378): El mensaje id 2 ha llegado a la cola id: 1
+[INFO] 14:08:50:594 broker/(13375:13379): El proceso id: 1 se ha suscripto a la cola id: 1
+[INFO] 14:08:58:412 broker/(13415:13417): El mensaje id 1 ha llegado a la cola id: 1
+[INFO] 14:08:58:412 broker/(13415:13418): El mensaje id 2 ha llegado a la cola id: 1
+[INFO] 14:08:58:413 broker/(13415:13419): El proceso id: 1 se ha suscripto a la cola id: 1
+[INFO] 14:09:00:175 broker/(13415:13421): El mensaje id 3 ha llegado a la cola id: 1
