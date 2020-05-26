@@ -11,11 +11,13 @@
 
 int main(void) {
 
-	init_logger();
+
 	init_config();
+	init_logger();
 	init_message_queues();
 	init_suscriber_lists();
-	int socket_servidor = init_server(config);
+	int socket_servidor = init_server();
+
 
 	printf("broker!\n");
 	fflush(stdout);
@@ -67,11 +69,13 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 	t_queue* queue = COLAS_MENSAJES[estructuraSuscripcion->tipo_cola];
 	pthread_mutex_t mutex = MUTEX_SUSCRIPTORES[estructuraSuscripcion->tipo_cola];
 
+	// TODO chequear si susc ya esta suscripto
+
 	subscribe_process(suscriptores, subscriber, mutex);
-	log_nuevo_suscriptor(estructuraSuscripcion, logger);
 
 	responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber);
 	remover_suscriptor_si_es_temporal(suscriptores, subscriber, estructuraSuscripcion->tiempo, mutex);
+	log_nuevo_suscriptor(estructuraSuscripcion->id_proceso, estructuraSuscripcion->tipo_cola, logger);
 }
 
 void remover_suscriptor_si_es_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t tiempo, pthread_mutex_t mutex)
@@ -175,21 +179,11 @@ void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stre
 	free(a_enviar);
 }
 
-int init_server(t_config* config)
+int init_server()
 {
 	char* IP = config_get_string_value(config,"IP_BROKER");
 	char* PUERTO = config_get_string_value(config,"PUERTO_BROKER");
 	return iniciar_servidor(IP, PUERTO);
-}
-
-void init_logger()
-{
-	logger = log_create("broker.log", "broker", false, LOG_LEVEL_INFO);
-}
-
-void init_config()
-{
-	config = config_create("broker.config");
 }
 
 void init_message_queues()
@@ -240,6 +234,18 @@ void init_suscriber_lists()
 	MUTEX_SUSCRIPTORES[6] = mutex_caught_susc;
 }
 
+void init_logger()
+{
+	char* broker_log = config_get_string_value(config,"LOG_FILE");
+	logger = log_create(broker_log, BROKER_NAME, false, LOG_LEVEL_INFO);
+}
+
+void init_config()
+{
+	config = config_create(BROKER_CONFIG);
+}
+
+
 void destroy_all_mutex()
 {
 	pthread_mutex_destroy(&mutex_id_counter);
@@ -257,7 +263,7 @@ void destroy_all_mutex()
 	pthread_mutex_destroy(&mutex_caught_susc);
 }
 
-void terminar_programa(int socket_servidor, t_log* logger, t_config* config)
+void terminar_programa(int socket_servidor, t_log* logger)
 {
 	destroy_all_mutex();
 	liberar_conexion(socket_servidor);

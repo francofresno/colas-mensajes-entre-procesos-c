@@ -8,10 +8,10 @@
 
 #include "logger.h"
 
-void log_nuevo_suscriptor(t_suscripcion_msg* suscripcion_msg, t_log* logger)
+void log_nuevo_suscriptor(uint32_t id_proceso, op_code cola, t_log* logger)
 {
 	char log_msg[100];
-	sprintf(log_msg, "El proceso id: %d se ha suscripto a la cola id: %d",suscripcion_msg->id_proceso, suscripcion_msg->tipo_cola);
+	sprintf(log_msg, "El proceso id: %d se ha suscripto a la cola id: %d",id_proceso, cola);
 	log_info(logger,log_msg);
 }
 

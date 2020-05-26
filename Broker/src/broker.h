@@ -21,6 +21,9 @@
 #include "messages_queues.h"
 #include "logger.h"
 
+#define BROKER_NAME "broker"
+#define BROKER_CONFIG "broker.config"
+
 uint32_t ID_COUNTER;
 pthread_t thread;
 
@@ -65,7 +68,7 @@ t_log* logger;
 t_config* config;
 
 
-int init_server(t_config* config);
+int init_server();
 void init_message_queues();
 void init_suscriber_lists();
 void init_logger();
@@ -87,6 +90,6 @@ void remover_suscriptor_si_es_temporal(t_list* subscribers, t_subscriber* subscr
 
 uint32_t generar_id();
 
-void terminar_programa(int socket, t_log* logger, t_config* config);
+void terminar_programa(int socket, t_log* logger);
 
 #endif /* BROKER_H_ */
