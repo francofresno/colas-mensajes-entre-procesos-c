@@ -69,6 +69,7 @@
 	//////////////////////////////////////
 	void enviar_id_respuesta(uint32_t id_msg, int socket_cliente);
 	uint32_t recibir_id(int socket_cliente);
+	int informar_ack(int socket_server);
 
 	/////////////////////////////
 	// ---- Suscripciones ---- //
@@ -78,7 +79,6 @@
 	 *  @RETURN: cantidad de bytes enviados o -1 en caso de falla
 	 */
 	int suscribirse_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_servidor);
-	uint32_t respuesta_suscripcion_cantidad_paquetes(int socket_servidor);
 	t_list* respueta_suscripcion_obtener_paquetes(int socket_servidor, uint32_t* cant_paquetes_recibidos);
 
 #endif /* CONEXION_H_ */

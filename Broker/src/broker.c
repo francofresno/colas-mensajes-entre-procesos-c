@@ -11,10 +11,13 @@
 
 int main(void) {
 
-	t_config* config = leer_config();
-	int socket_servidor = init_server(config);
+
+	init_config();
+	init_logger();
 	init_message_queues();
 	init_suscriber_lists();
+	int socket_servidor = init_server();
+
 
 	printf("broker!\n");
 	fflush(stdout);
@@ -41,8 +44,6 @@ void serve_client(int* socket_cliente)
 
 void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido, int socket_cliente)
 {
-	t_list* suscriptores_informados;
-
 	if (cod_op == SUSCRIPCION) {
 		suscribir_a_cola((t_suscripcion_msg*) mensaje_recibido, socket_cliente);
 	} else {
@@ -52,8 +53,9 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 		t_queue* queue = COLAS_MENSAJES[cod_op];
 		t_list* suscriptores = SUSCRIPTORES_MENSAJES[cod_op];
 		pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
-		suscriptores_informados = informar_a_suscriptores(cod_op, mensaje_recibido, id_mensaje, id_correlativo, suscriptores, mutex);
+		t_list* suscriptores_informados = informar_a_suscriptores(cod_op, mensaje_recibido, id_mensaje, id_correlativo, suscriptores, mutex);
 		push_message_queue(queue, id_mensaje, id_correlativo, mensaje_recibido, suscriptores_informados, mutex);
+		log_nuevo_mensaje(id_mensaje, cod_op, logger);
 	}
 }
 
@@ -67,9 +69,13 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 	t_queue* queue = COLAS_MENSAJES[estructuraSuscripcion->tipo_cola];
 	pthread_mutex_t mutex = MUTEX_SUSCRIPTORES[estructuraSuscripcion->tipo_cola];
 
+	// TODO chequear si susc ya esta suscripto
+
 	subscribe_process(suscriptores, subscriber, mutex);
+
 	responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber);
 	remover_suscriptor_si_es_temporal(suscriptores, subscriber, estructuraSuscripcion->tiempo, mutex);
+	log_nuevo_suscriptor(estructuraSuscripcion->id_proceso, estructuraSuscripcion->tipo_cola, logger);
 }
 
 void remover_suscriptor_si_es_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t tiempo, pthread_mutex_t mutex)
@@ -98,56 +104,82 @@ t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint
 		t_subscriber* suscriptor = list_get(suscriptores, i);
 		if (enviar_mensaje(codigo, id, id_correlativo, mensaje, suscriptor->socket_suscriptor) > 0) {
 			list_add(suscriptores_informados, (void*)suscriptor);
+			log_mensaje_a_suscriptor(suscriptor->id_suscriptor, id, logger);
 		}
 	}
 	pthread_mutex_unlock(&mutex);
+	//TODO: ACK
 	return suscriptores_informados;
 }
 
 void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subscriber* subscriber)
 {
 	uint32_t cantidad_mensajes = size_message_queue(message_queue);
-	t_paquete paquetes[cantidad_mensajes];
-	t_enqueued_message* mensajes_encolados[cantidad_mensajes];
 
 	printf("Cantidad de mensajes en cola: %d\n", cantidad_mensajes);
 	fflush(stdout);
 
+	void* paquetes_serializados[cantidad_mensajes];
+	int tamanio_paquetes[cantidad_mensajes];
+	uint32_t tamanio_stream = 0;
+	t_enqueued_message* mensajes_encolados[cantidad_mensajes];
+
 	for (int i=0; i < cantidad_mensajes; i++) {
+		uint32_t bytes;
 		t_enqueued_message* mensaje_encolado = get_message_by_index(message_queue, i); // TODO deberia meter un mutex aca si en algun momento REMUEVO mensajes de la cola
-		t_paquete paquete;
-		paquete.codigo_operacion = codigo;
-		paquete.id = mensaje_encolado->ID;
-		paquete.id_correlativo = mensaje_encolado->ID_correlativo;
-		paquete.mensaje = mensaje_encolado->message;
-		paquetes[i] = paquete;
+		void* a_enviar = serializar_paquete(codigo, mensaje_encolado->ID, mensaje_encolado->ID_correlativo, mensaje_encolado->message, &bytes);
+		bytes += sizeof(bytes);
+
+		paquetes_serializados[i] = a_enviar;
+		tamanio_paquetes[i] = bytes;
+		tamanio_stream += bytes;
 		mensajes_encolados[i] = mensaje_encolado;
+
+		printf("Codigo: %d\n", codigo);
+		printf("Bytes: %d\n", tamanio_stream);
 	}
 
-	if (enviar_mensajes_encolados_a_suscriptor_nuevo(cantidad_mensajes, paquetes, subscriber->socket_suscriptor) != -1) {
+	enviar_mensajes_encolados(cantidad_mensajes, tamanio_stream, paquetes_serializados, tamanio_paquetes, mensajes_encolados, subscriber);
+
+	for (int i=0; i < cantidad_mensajes; i++) {
+		free(paquetes_serializados[i]);
+	}
+	// TODO: AKC
+}
+
+void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stream, void** paquetes_serializados, int* tamanio_paquetes, t_enqueued_message** mensajes_encolados, t_subscriber* subscriber)
+{
+	void* a_enviar;
+	int bytes_a_enviar = sizeof(cantidad_mensajes) + sizeof(tamanio_stream);
+	if (cantidad_mensajes > 0) {
+		a_enviar = malloc(tamanio_stream + sizeof(uint32_t)*2);
+		int offset = 0;
+		memcpy(a_enviar + offset, &cantidad_mensajes, sizeof(cantidad_mensajes));
+		offset += sizeof(cantidad_mensajes);
+		memcpy(a_enviar + offset, &tamanio_stream, sizeof(tamanio_stream));
+		offset += sizeof(tamanio_stream);
+
+		for (int i=0; i < cantidad_mensajes; i++ ) {
+			memcpy(a_enviar + offset, paquetes_serializados[i], tamanio_paquetes[i]);
+			offset += tamanio_paquetes[i];
+		}
+		bytes_a_enviar += tamanio_stream;
+
+	} else {
+		a_enviar = malloc(sizeof(cantidad_mensajes));
+		memcpy(a_enviar, &cantidad_mensajes, sizeof(cantidad_mensajes));
+		memcpy(a_enviar + sizeof(cantidad_mensajes), &tamanio_stream, sizeof(tamanio_stream));
+	}
+
+	if (send(subscriber->socket_suscriptor, a_enviar, bytes_a_enviar, 0) > 0) {
 		printf("Respondi!\n");
 		add_new_informed_subscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber);
 	}
+
+	free(a_enviar);
 }
 
-int enviar_mensajes_encolados_a_suscriptor_nuevo(uint32_t cantidad_a_enviar, t_paquete paquetes[], int socket_envio)
-{
-	// Envio la cantidad de paquetes que se enviaran
-	if(send(socket_envio, &cantidad_a_enviar, sizeof(cantidad_a_enviar), 0) < 0)
-		return -1;
-
-	if (cantidad_a_enviar > 0) {
-		// Recorro los mensajes y los envio 1 por 1
-		for (int i=0; i < cantidad_a_enviar; i++) {
-			t_paquete paquete = paquetes[i];
-			if(enviar_mensaje(paquete.codigo_operacion, paquete.id, paquete.id_correlativo, paquete.mensaje, socket_envio) < 0)
-				return -1;
-		}
-	}
-	return 0;
-}
-
-int init_server(t_config* config)
+int init_server()
 {
 	char* IP = config_get_string_value(config,"IP_BROKER");
 	char* PUERTO = config_get_string_value(config,"PUERTO_BROKER");
@@ -202,18 +234,17 @@ void init_suscriber_lists()
 	MUTEX_SUSCRIPTORES[6] = mutex_caught_susc;
 }
 
-t_log* iniciar_logger(void)
+void init_logger()
 {
-	//TODO catchear si == NULL
-	return log_create(BROKER_LOG, BROKER_NAME, true, LOG_LEVEL_INFO);
+	char* broker_log = config_get_string_value(config,"LOG_FILE");
+	logger = log_create(broker_log, BROKER_NAME, false, LOG_LEVEL_INFO);
 }
 
-t_config* leer_config(void)
+void init_config()
 {
-	//TODO catchear si == NULL
-	return config_create(BROKER_CONFIG);
-
+	config = config_create(BROKER_CONFIG);
 }
+
 
 void destroy_all_mutex()
 {
@@ -232,7 +263,7 @@ void destroy_all_mutex()
 	pthread_mutex_destroy(&mutex_caught_susc);
 }
 
-void terminar_programa(int socket_servidor, t_log* logger, t_config* config)
+void terminar_programa(int socket_servidor, t_log* logger)
 {
 	destroy_all_mutex();
 	liberar_conexion(socket_servidor);

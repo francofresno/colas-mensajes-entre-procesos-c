@@ -11,7 +11,6 @@
 
 #include<stdio.h>
 #include<stdlib.h>
-#include<commons/log.h>
 #include<commons/string.h>
 #include<commons/config.h>
 #include<readline/readline.h>
@@ -20,8 +19,8 @@
 #include "nuestras-commons/conexion.h"
 #include "nuestras-commons/mensajes.h"
 #include "messages_queues.h"
+#include "logger.h"
 
-#define BROKER_LOG "broker.log"
 #define BROKER_NAME "broker"
 #define BROKER_CONFIG "broker.config"
 
@@ -64,11 +63,16 @@ t_list* SUSCRIPTORES_MENSAJES[7];
 pthread_mutex_t MUTEX_COLAS[7];
 pthread_mutex_t MUTEX_SUSCRIPTORES[7];
 
-int init_server(t_config* config);
+// Loggers y config
+t_log* logger;
+t_config* config;
+
+
+int init_server();
 void init_message_queues();
 void init_suscriber_lists();
-t_log* iniciar_logger(void);
-t_config* leer_config(void);
+void init_logger();
+void init_config();
 
 int esperar_cliente(int socket_servidor);
 void serve_client(int* socket_cliente);
@@ -77,14 +81,15 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint32_t id_correlativo, t_list* suscriptores, pthread_mutex_t mutex);
 void responder_a_suscriptor_nuevo(op_code codigo, t_queue* queue, t_subscriber* subscriber);
 /*
- *  @NAME: responder_a_suscripcion
+ *  @NAME: enviar_mensajes_encolados_a_suscriptor_nuevo
  *  @RETURN: -1 en caso de falla o 0 en caso de éxito
  */
-int enviar_mensajes_encolados_a_suscriptor_nuevo(uint32_t cantidad_a_enviar, t_paquete paquetes[], int socket_envio);
+void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stream, void** paquetes_serializados,
+		int* tamanio_paquetes, t_enqueued_message** mensajes_encolados, t_subscriber* subscriber);
 void remover_suscriptor_si_es_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t tiempo, pthread_mutex_t mutex);
 
 uint32_t generar_id();
 
-void terminar_programa(int socket, t_log* logger, t_config* config);
+void terminar_programa(int socket, t_log* logger);
 
 #endif /* BROKER_H_ */

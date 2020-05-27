@@ -280,6 +280,7 @@ void deserializar_paquete(void* stream, t_paquete* paquete_recibido, int* offset
 
 			*nombre_recibido = estructuraNew->nombre_pokemon.nombre;
 			paquete_recibido->mensaje = estructuraNew;
+
 			break;
 		case APPEARED_POKEMON: ;
 			t_appearedPokemon_msg* estructuraAppeared = malloc(sizeof(*estructuraAppeared));
@@ -289,6 +290,7 @@ void deserializar_paquete(void* stream, t_paquete* paquete_recibido, int* offset
 
 			*nombre_recibido = estructuraAppeared->nombre_pokemon.nombre;
 			paquete_recibido->mensaje = estructuraAppeared;
+
 			break;
 		case GET_POKEMON: ;
 			t_getPokemon_msg* estructuraGet = malloc(sizeof(*estructuraGet));
@@ -326,7 +328,7 @@ void deserializar_paquete(void* stream, t_paquete* paquete_recibido, int* offset
 			*nombre_recibido = NULL;
 			paquete_recibido->mensaje = estructuraCaught;
 			break;
-		default: printf("Error codigo op\n"); break;
+		default: printf("\n[!] Error en el codigo de operacion al deserializar paquete.\n"); break;
 	}
 }
 
@@ -380,6 +382,19 @@ uint32_t recibir_id(int socket_cliente)
 	return id;
 }
 
+int informar_ack(int socket_server)
+{
+	int offset = 0;
+	uint32_t ack_code = 200;
+	void* a_enviar = malloc(sizeof(ack_code));
+	serializar_variable(a_enviar, &ack_code, sizeof(ack_code), &offset);
+
+	int status = send(socket_server, a_enviar, sizeof(ack_code), 0);
+	free(a_enviar);
+
+	return status;
+}
+
 /////////////////////////////
 // ---- Suscripciones ---- //
 /////////////////////////////
@@ -389,29 +404,47 @@ int suscribirse_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_serv
 	return enviar_mensaje(SUSCRIPCION, 0, 0, (void*) estructuraSuscripcion, socket_servidor);
 }
 
-uint32_t respuesta_suscripcion_cantidad_paquetes(int socket_servidor)
+int respuesta_suscripcion_cantidad_y_tamanio(uint32_t* cantidad_paquetes, uint32_t* tamanio_stream, int socket_servidor)
 {
-	return obtener_cantidad_bytes_a_recibir(socket_servidor);
+	void* recibido = malloc(sizeof(uint32_t)*2);
+	int status = recv(socket_servidor, recibido, sizeof(uint32_t)*2, MSG_WAITALL);
+	memcpy(cantidad_paquetes, recibido, sizeof(uint32_t));
+	memcpy(tamanio_stream, recibido + sizeof(uint32_t), sizeof(uint32_t));
+	free(recibido);
+	return status;
 }
 
 t_list* respueta_suscripcion_obtener_paquetes(int socket_servidor, uint32_t* cant_paquetes_recibidos)
 {
-	t_list* mensajes = list_create();
-	uint32_t cantidad_paquetes = respuesta_suscripcion_cantidad_paquetes(socket_servidor);
+	t_list* paquetes = list_create();
+	uint32_t cantidad_paquetes;
+	uint32_t tamanio_stream;
+
+	respuesta_suscripcion_cantidad_y_tamanio(&cantidad_paquetes, &tamanio_stream, socket_servidor);
 	*cant_paquetes_recibidos = cantidad_paquetes;
 
-	while (cantidad_paquetes > 0) {
-		char* nombre_recibido = NULL;
+	if (cantidad_paquetes > 0) {
+		void* stream = malloc(tamanio_stream);
+		recv(socket_servidor, stream, tamanio_stream, MSG_WAITALL);
 
+		int offset = 0;
+		while (cantidad_paquetes > 0) {
+			char* nombre_recibido = NULL;
+			t_paquete* paquete_recibido = malloc(sizeof(*paquete_recibido));
+			uint32_t bytes;
+			memcpy(&bytes, stream + offset, sizeof(bytes));
+			offset += sizeof(bytes);
 
+			deserializar_paquete(stream, paquete_recibido, &offset, bytes, &nombre_recibido);
 
-		t_paquete* paquete_recibido = recibir_paquete(socket_servidor, &nombre_recibido);
-		list_add(mensajes, paquete_recibido);
-		free_paquete_recibido(nombre_recibido, paquete_recibido);
-		cantidad_paquetes--;
+			list_add(paquetes, (void*) paquete_recibido);
+			//free_paquete_recibido(nombre_recibido, paquete_recibido); TODO: preguntar, al hacer free del paquete no llega bien el cod op
+			cantidad_paquetes--;
+		}
+		free(stream);
 	}
 
-	return mensajes;
+	return paquetes;
 }
 
 /////////////////////
