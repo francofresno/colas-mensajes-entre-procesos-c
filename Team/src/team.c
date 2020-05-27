@@ -24,7 +24,6 @@ int main(void) {
 			printf("La cantidad de pokemones del entrenador de la posicion %d es %d\n", b, entrenador->cantidad_pokemons);
 		}
 
-//
 //	char* ipBroker = config_get_string_value(config, "IP_BROKER");
 //	char* puertoBroker = config_get_string_value(config, "PUERTO_BROKER");
 
