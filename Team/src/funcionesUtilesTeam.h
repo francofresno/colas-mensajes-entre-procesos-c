@@ -12,6 +12,7 @@
 #include<stdlib.h>
 #include<commons/log.h>
 #include<commons/string.h>
+#include<string.h>
 #include "nuestras-commons/conexion.h"
 
 
@@ -20,9 +21,6 @@
 #include<commons/collections/list.h>
 #include<commons/collections/queue.h>
 #include<commons/config.h>
-
-// Mutex
-pthread_mutex_t mutex_id_entrenadores = PTHREAD_MUTEX_INITIALIZER;
 
 uint32_t ID_ENTRENADORES;
 
@@ -76,22 +74,28 @@ const static struct {
 
 };
 
+void ponerEntrenadoresEnLista(t_config*);
+
+void crearHilosEntrenadores();
+
 t_entrenador* crear_entrenador(uint32_t, t_coordenadas*, t_list*, t_list*, uint32_t, status_code);
 
-t_queue* ponerEntrenadoresEnCola(t_config*);
+t_list* organizarPokemones(char**);
+
+uint32_t generar_id();
 
 t_nombrePokemon* crear_pokemon(char*);
 
 void buscarPokemones();
 
-uint32_t generar_id();
+void gestionarPokemones(t_entrenador*);
 
-algoritmo_code stringACodigoAlgoritmo(const char* string);
+void planificarSegun(t_config*);
 
-op_code stringACodigoOperacion(const char* string);
+void planificarSegunFifo();
 
-process_code stringACodigoProceso(const char* string);
+algoritmo_code stringACodigoAlgoritmo(const char*);
 
-void planificarSegunFifo(t_list* listaDeEntrenadores);
+
 
 #endif /* FUNCIONESUTILESTEAM_H_ */

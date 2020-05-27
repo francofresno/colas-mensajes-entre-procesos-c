@@ -7,14 +7,18 @@
 
 #include "funcionesUtilesTeam.h"
 
+t_list* entrenadores;
+t_list* hilosEntrenadores;
+
+pthread_mutex_t mutex_id_entrenadores = PTHREAD_MUTEX_INITIALIZER;
 /*
   ============================================================================
  	 	 	 	 	 	 	 	 HITO 2
   ============================================================================
 */
 
-t_list* ponerEntrenadoresEnLista(t_config* config) {
-	t_list *entrenadores = list_create(); //Creamos la lista de entrenadores
+void ponerEntrenadoresEnLista(t_config* config) {
+	entrenadores = list_create(); //Creamos la lista de entrenadores
 
 	t_coordenadas* coords = malloc(sizeof(t_coordenadas));
 	char** coordenadasEntrenadores = config_get_array_value(config,
@@ -30,58 +34,59 @@ t_list* ponerEntrenadoresEnLista(t_config* config) {
 
 	int i = 0, j = 0;
 
+	t_list* listaDePokemonesDeEntrenadores = organizarPokemones(pokemonesDeEntrenadores);
+	t_list* listaDePokemonesObjetivoDeEntrenadores = organizarPokemones(pokemonesObjetivoDeEntrenadores);
+
 	while (coordenadasEntrenadores[i] != NULL) {
 
-		coords->posX = atoi(coordenadasEntrenadores[i]);
-		coords->posY = atoi(coordenadasEntrenadores[i + 2]);
+		coords->posX = atoi(&coordenadasEntrenadores[i][0]);
+		coords->posY = atoi(&coordenadasEntrenadores[i][2]);
 
-		t_list* pokemonesQueTiene = (t_list*) list_get(
-				organizarPokemones(pokemonesDeEntrenadores), j);
-		t_list* pokemonesQueDesea = (t_list*) list_get(
-				organizarPokemones(pokemonesObjetivoDeEntrenadores), j);
+		t_list* pokemonesQueTiene = (t_list*) list_get(listaDePokemonesDeEntrenadores, j);
+		t_list* pokemonesQueDesea = (t_list*) list_get(listaDePokemonesObjetivoDeEntrenadores, j);
+
+
+		//TODO OBJETIVOS GLOBALES DEL TEMA --> VARIABLE GLOBAL.
 
 		uint32_t id_entrenador = generar_id();
 
 		t_entrenador* entrenador = crear_entrenador(id_entrenador, coords,
 				pokemonesQueTiene, pokemonesQueDesea,
-				list_size(pokemonesQueDesea), NEW);
+				list_size(pokemonesQueTiene), NEW);
 
 		list_add(entrenadores, entrenador);
 
 		j++;
-		i += 3;
+		i++;
 
 	}
-
-	return entrenadores;				//retornar listaDeEntrenadores
 }
 
-t_list* crearHilosEntrenadores(t_list* listaEntrenadores) {
+void crearHilosEntrenadores() {
 
-	t_list *hilosFuncionesEntrenadores = list_create();
+	hilosEntrenadores = list_create();
 
-	int cantidadEntrenadores = list_size(listaEntrenadores);
+	int cantidadEntrenadores = list_size(entrenadores);
 
 	pthread_t pthread_id[cantidadEntrenadores];
 
 	for (int a = 0; a < cantidadEntrenadores; a++) {
 
-		t_entrenador* entrenador = (t_entrenador*) list_get(listaEntrenadores,
-				a);
+		t_entrenador* entrenador = (t_entrenador*) list_get(entrenadores, a);
 
 		pthread_create(&pthread_id[a], NULL, (void*) gestionarPokemones, entrenador);
 
-		list_add(hilosFuncionesEntrenadores, &pthread_id[a]);
+		list_add(hilosEntrenadores, &pthread_id[a]);
 	}
 
-	return hilosFuncionesEntrenadores;
 }
+
 
 t_entrenador* crear_entrenador(uint32_t id_entrenador,
 		t_coordenadas* coordenadas, t_list* pokemonesQuePosee,
 		t_list* pokemonesQueQuiere, uint32_t cantidad_pokemons,
 		status_code estado) {
-	t_entrenador* entrenador = malloc(sizeof(entrenador));
+	t_entrenador* entrenador = malloc(sizeof(t_entrenador));
 
 	entrenador->id_entrenador = id_entrenador;
 	entrenador->coordenadas = coordenadas;
@@ -97,18 +102,17 @@ t_list* organizarPokemones(char** listaPokemones) { //tanto para pokemonesObjeti
 
 	int j = 0, w = 0;
 
-	t_list* listaDePokemones = list_create();
-
 	t_list* listaDePokemonesDeEntrenadores = list_create();
 
 	while (listaPokemones[j] != NULL) { //recorro los pokemones de cada entrenador separado por coma
-		char* pipe = "|";
-		char**pokemonesDeUnEntrenador = string_split(listaPokemones[j], pipe); //separo cada pokemon de un mismo entrenador separado por |
+		char pipe = '|';
+		char**pokemonesDeUnEntrenador = string_split(listaPokemones[j], &pipe); //separo cada pokemon de un mismo entrenador separado por |
+
+		t_list* listaDePokemones = list_create();
 
 		while (pokemonesDeUnEntrenador[w] != NULL) { //recorro todos y voy creando cada pokemon
 
-			t_nombrePokemon* pokemon = crear_pokemon(
-					pokemonesDeUnEntrenador[w]);
+			t_nombrePokemon* pokemon = crear_pokemon(pokemonesDeUnEntrenador[w]);
 
 			list_add(listaDePokemones, pokemon);
 
@@ -116,9 +120,9 @@ t_list* organizarPokemones(char** listaPokemones) { //tanto para pokemonesObjeti
 		}
 
 		list_add(listaDePokemonesDeEntrenadores, listaDePokemones);
-		list_clean(listaDePokemones);
 
 		j++;
+		w=0;
 	}
 
 	return listaDePokemonesDeEntrenadores;
@@ -130,7 +134,7 @@ t_nombrePokemon* crear_pokemon(char* pokemon) {
 	t_nombrePokemon* nuevoPokemon = malloc(sizeof(t_nombrePokemon));
 
 	nuevoPokemon->nombre_lenght = strlen(pokemon) + 1;
-	nuevoPokemon->nombre = (pokemon);
+	nuevoPokemon->nombre = pokemon;
 
 	return nuevoPokemon;
 
@@ -153,8 +157,7 @@ void gestionarPokemones(t_entrenador* entrenador){
 	printf("Soy el entrenador con el id %d\n", entrenador->id_entrenador);
 }
 
-
-void planificarSegun(t_config* config, t_list* listaDeEntrenadores) {
+void planificarSegun(t_config* config) {
 
 	char* algoritmoPlanificacion = config_get_string_value(config,
 			"ALGORITMO_PLANIFICACION");
@@ -165,7 +168,7 @@ void planificarSegun(t_config* config, t_list* listaDeEntrenadores) {
 
 	case FIFO:
 
-		planificarSegunFifo(listaDeEntrenadores);
+		planificarSegunFifo(entrenadores);
 
 		break;
 
@@ -202,21 +205,21 @@ void planificarSegun(t_config* config, t_list* listaDeEntrenadores) {
 
 }
 
-void planificarSegunFifo(t_list* listaDeEntrenadores) {
+void planificarSegunFifo() {
 
 	t_estructuraCola estructura_cola;
 
-	while (!list_is_empty(listaDeEntrenadores)) {
+	while (!list_is_empty(entrenadores)) {
 
-		int tamanio = list_size(listaDeEntrenadores);
+		int tamanio = list_size(entrenadores);
 
 		for (int b = 0; b < tamanio; b++) {
 
-			t_entrenador* entrenador = (t_entrenador*) list_get(listaDeEntrenadores, b);
+			t_entrenador* entrenador = (t_entrenador*) list_get(entrenadores, b);
 
 			if (entrenador->estado == READY) {
 
-				list_remove(listaDeEntrenadores, b);
+				list_remove(entrenadores, b);
 
 				entrenador->estado = EXEC;
 				queue_push(estructura_cola.colaEnEjecucion, entrenador);
@@ -252,23 +255,7 @@ algoritmo_code stringACodigoAlgoritmo(const char* string) {
   ============================================================================
 */
 
-op_code stringACodigoOperacion(const char* string)
-{
-	for(int i = 0; i < sizeof(conversionCodigoOp) / sizeof(conversionCodigoOp[0]); i++)
-	{
-		if(!strcmp(string, conversionCodigoOp[i].str))
-			return conversionCodigoOp[i].codigoOperacion;
-	}
-	return ERROR_CODIGO;
-}
 
-process_code stringACodigoProceso(const char* string)
-{
-	for(int i = 0; i < sizeof(conversionCodigoProceso) / sizeof(conversionCodigoProceso[0]); i++)
-	{
-		if(!strcmp(string, conversionCodigoProceso[i].str))
-			return conversionCodigoProceso[i].codigoProceso;
-	}
-	return ERROR_PROCESO;
-}
+
+
 

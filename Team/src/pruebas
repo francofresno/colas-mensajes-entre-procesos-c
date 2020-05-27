@@ -1,0 +1,29 @@
+
+
+//	return EXIT_SUCCESS;
+
+
+// Mas mierda
+//	socket_cliente = crear_conexion (ipBroker, puertoBroker);
+//
+//			case GET_POKEMON: ;
+//				t_getPokemon_msg estructuraGet;
+//				estructuraGet.nombre_pokemon.nombre = argv[3];
+//				estructuraGet.nombre_pokemon.nombre_lenght = strlen(estructuraGet.nombre_pokemon.nombre)+1;
+//				status = enviar_mensaje(codigoOperacion, 0, 0, &estructuraGet, socket_cliente); //id y id correlativo??
+//				break;
+//			case CATCH_POKEMON: ;
+//				t_catchPokemon_msg estructuraCatch;
+//				estructuraCatch.nombre_pokemon.nombre = argv[3];
+//				estructuraCatch.nombre_pokemon.nombre_lenght = strlen(estructuraCatch.nombre_pokemon.nombre)+1;
+//				estructuraCatch.coordenadas.posX = atoi(argv[4]);
+//				estructuraCatch.coordenadas.posY = atoi(argv[5]);
+//				status = enviar_mensaje(codigoOperacion, 0, 0, &estructuraCatch, socket_cliente);
+//				break;
+//			case ERROR_CODIGO: printf("[!] Error en el codigo de operacion\n"); return -1; break;
+//			default: printf("[!] Error desconocido en el codigo de operacion\n"); return -1;
+//		}
+//
+//	if(status > 0){
+//		uint32_t id_respuesta = recibir_id(socket_cliente);
+//	} //TODO guardarlo en lista
