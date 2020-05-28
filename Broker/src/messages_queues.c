@@ -171,6 +171,9 @@ void unsubscribe_process(t_list* subscribers, t_subscriber* subscriber, pthread_
 
 int get_index_of_subscriber(t_list* subscribers, t_subscriber* subscriber)
 {
+	if (subscribers->head == NULL)
+		return -1;
+
 	t_link_element *element = subscribers->head;
 	t_subscriber* subscriber_listed = (t_subscriber*) (subscribers->head->data);
 
@@ -187,9 +190,20 @@ int get_index_of_subscriber(t_list* subscribers, t_subscriber* subscriber)
 	return -1;
 }
 
+int isSubscriber(t_list* subscribers, t_subscriber* subscriber)
+{
+	return get_index_of_subscriber(subscribers, subscriber) != -1;
+}
+
 void add_new_informed_subscriber_to_mq(t_enqueued_message* messages_in_queue[], uint32_t number_of_mensajes, t_subscriber* subscriber) {
 	for (int i=0; i < number_of_mensajes; i++) {
 		list_add(messages_in_queue[i]->suscribers_informed, subscriber); //TODO mutex?
+	}
+}
+
+void add_new_ack_suscriber_to_mq(t_enqueued_message* messages_in_queue[], uint32_t number_of_mensajes, t_subscriber* subscriber) {
+	for (int i=0; i < number_of_mensajes; i++) {
+		list_add(messages_in_queue[i]->suscribers_ack, subscriber); //TODO mutex?
 	}
 }
 

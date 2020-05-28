@@ -79,7 +79,7 @@ void serve_client(int* socket_cliente);
 void process_request(int cod_op, uint32_t id_correlativo, void* paqueteRecibido, int socket_cliente);
 void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscriptor);
 t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint32_t id_correlativo, t_list* suscriptores, pthread_mutex_t mutex);
-void responder_a_suscriptor_nuevo(op_code codigo, t_queue* queue, t_subscriber* subscriber);
+t_enqueued_message** responder_a_suscriptor_nuevo(op_code codigo, t_queue* queue, t_subscriber* subscriber);
 /*
  *  @NAME: enviar_mensajes_encolados_a_suscriptor_nuevo
  *  @RETURN: -1 en caso de falla o 0 en caso de éxito
@@ -87,6 +87,7 @@ void responder_a_suscriptor_nuevo(op_code codigo, t_queue* queue, t_subscriber* 
 void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stream, void** paquetes_serializados,
 		int* tamanio_paquetes, t_enqueued_message** mensajes_encolados, t_subscriber* subscriber);
 void remover_suscriptor_si_es_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t tiempo, pthread_mutex_t mutex);
+void recibir_ack(t_enqueued_message** mensajes_encolados, int cantidad_mensajes, t_subscriber* subscriber);
 
 uint32_t generar_id();
 

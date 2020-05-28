@@ -68,14 +68,20 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 	t_list* suscriptores = SUSCRIPTORES_MENSAJES[estructuraSuscripcion->tipo_cola];
 	t_queue* queue = COLAS_MENSAJES[estructuraSuscripcion->tipo_cola];
 	pthread_mutex_t mutex = MUTEX_SUSCRIPTORES[estructuraSuscripcion->tipo_cola];
+	t_enqueued_message** mensajes_encolados;
 
-	// TODO chequear si susc ya esta suscripto
+	if (isSubscriber(suscriptores, subscriber)) {
+		mensajes_encolados = responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber);
+	} else {
+		subscribe_process(suscriptores, subscriber, mutex);
 
-	subscribe_process(suscriptores, subscriber, mutex);
+		mensajes_encolados = responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber);
+		remover_suscriptor_si_es_temporal(suscriptores, subscriber, estructuraSuscripcion->tiempo, mutex);
+		log_nuevo_suscriptor(estructuraSuscripcion->id_proceso, estructuraSuscripcion->tipo_cola, logger);
+	}
 
-	responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber);
-	remover_suscriptor_si_es_temporal(suscriptores, subscriber, estructuraSuscripcion->tiempo, mutex);
-	log_nuevo_suscriptor(estructuraSuscripcion->id_proceso, estructuraSuscripcion->tipo_cola, logger);
+	recibir_ack(mensajes_encolados, size_message_queue(queue), subscriber);
+
 }
 
 void remover_suscriptor_si_es_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t tiempo, pthread_mutex_t mutex)
@@ -112,7 +118,7 @@ t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint
 	return suscriptores_informados;
 }
 
-void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subscriber* subscriber)
+t_enqueued_message** responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subscriber* subscriber)
 {
 	uint32_t cantidad_mensajes = size_message_queue(message_queue);
 
@@ -122,7 +128,7 @@ void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subs
 	void* paquetes_serializados[cantidad_mensajes];
 	int tamanio_paquetes[cantidad_mensajes];
 	uint32_t tamanio_stream = 0;
-	t_enqueued_message* mensajes_encolados[cantidad_mensajes];
+	t_enqueued_message** mensajes_encolados = (t_enqueued_message**)malloc(cantidad_mensajes * sizeof(t_enqueued_message*));
 
 	for (int i=0; i < cantidad_mensajes; i++) {
 		uint32_t bytes;
@@ -144,7 +150,8 @@ void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subs
 	for (int i=0; i < cantidad_mensajes; i++) {
 		free(paquetes_serializados[i]);
 	}
-	// TODO: AKC
+
+	return mensajes_encolados;
 }
 
 void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stream, void** paquetes_serializados, int* tamanio_paquetes, t_enqueued_message** mensajes_encolados, t_subscriber* subscriber)
@@ -177,6 +184,18 @@ void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stre
 	}
 
 	free(a_enviar);
+}
+
+void recibir_ack(t_enqueued_message** mensajes_encolados, int cantidad_mensajes, t_subscriber* subscriber) {
+	uint32_t response_status = 0;
+	int status = recv(subscriber->socket_suscriptor, &response_status, sizeof(response_status), MSG_WAITALL);
+
+	if(status > 0 && response_status == 200) {
+		add_new_ack_suscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber);
+	}
+
+	free(mensajes_encolados);
+
 }
 
 int init_server()
