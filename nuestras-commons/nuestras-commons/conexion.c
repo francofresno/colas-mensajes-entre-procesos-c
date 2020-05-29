@@ -5,7 +5,7 @@
 // ---- Cliente ---- //
 ///////////////////////
 
-int crear_conexion(char *ip, char* puerto)
+int crear_conexion(char *ip, char* puerto, t_log* logger)
 {
 	struct addrinfo hints;
 	struct addrinfo *server_info;
@@ -20,7 +20,7 @@ int crear_conexion(char *ip, char* puerto)
 	int socket_cliente = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol);
 
 	if(connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen) == -1)
-		printf("error\n");
+		log_error(logger, "Error de conexion.");
 
 	freeaddrinfo(server_info);
 
@@ -414,7 +414,7 @@ int respuesta_suscripcion_cantidad_y_tamanio(uint32_t* cantidad_paquetes, uint32
 	return status;
 }
 
-t_list* respueta_suscripcion_obtener_paquetes(int socket_servidor, uint32_t* cant_paquetes_recibidos)
+t_list* respuesta_suscripcion_obtener_paquetes(int socket_servidor, uint32_t* cant_paquetes_recibidos)
 {
 	t_list* paquetes = list_create();
 	uint32_t cantidad_paquetes;

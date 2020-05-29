@@ -6,3 +6,5 @@
 [INFO] 12:35:39:135 broker/(6634:6663): El mensaje id 4 ha llegado a la cola id: 1
 [INFO] 12:38:06:410 broker/(6634:6820): El mensaje id 5 ha llegado a la cola id: 1
 [INFO] 12:38:14:218 broker/(6634:6825): El mensaje id 6 ha llegado a la cola id: 1
+[INFO] 20:49:16:574 broker/(16382:16414): El mensaje id 1 ha llegado a la cola id: 1
+[INFO] 20:49:36:747 broker/(16382:16427): El mensaje id 2 ha llegado a la cola id: 1

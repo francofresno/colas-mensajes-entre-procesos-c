@@ -10,10 +10,17 @@
 int main(int argc, char *argv[])
 {
 	t_config* config = leer_config();
+	t_log* logger = iniciar_logger();
 	char* ip;
 	char* puerto;
+	process_code codigoProceso;
+	op_code codigoOperacion;
+	int status = 0;
 
-	process_code codigoProceso = stringACodigoProceso(argv[1]);
+	if(strcmp(argv[1], "SUSCRIPTOR") == 0)
+		codigoProceso = BROKER;
+	else
+		codigoProceso = stringACodigoProceso(argv[1]);
 
 	switch(codigoProceso)
 	{
@@ -29,12 +36,16 @@ int main(int argc, char *argv[])
 			ip = config_get_string_value(config, "IP_GAMECARD");
 			puerto = config_get_string_value(config, "PUERTO_GAMECARD");
 			break;
-		case ERROR_PROCESO: printf("[!] Error en el codigo de proceso\n"); return -1; break;
-		default: printf("[!] Error desconocido en el codigo de proceso\n"); return -1;
+		case ERROR_PROCESO: log_error(logger, "Error en el codigo de proceso."); return -1; break;
+		default: log_error(logger, "Error desconocido en el codigo de proceso."); return -1; break;
 	}
 
-	int socket_cliente = crear_conexion (ip, puerto);
-	op_code codigoOperacion = stringACodigoOperacion(argv[2]);
+	int socket_cliente = crear_conexion(ip, puerto, logger);
+
+	if(strcmp(argv[1], "SUSCRIPTOR") == 0)
+		codigoOperacion = SUSCRIPCION;
+	else
+		codigoOperacion = stringACodigoOperacion(argv[2]);
 
 	switch(codigoOperacion)
 	{
@@ -45,7 +56,7 @@ int main(int argc, char *argv[])
 			estructuraNew.coordenadas.posX = atoi(argv[4]);
 			estructuraNew.coordenadas.posY = atoi(argv[5]);
 			estructuraNew.cantidad_pokemons = atoi(argv[6]);
-			enviar_mensaje(codigoOperacion, 1, 0, &estructuraNew, socket_cliente);
+			status = enviar_mensaje(codigoOperacion, 1, 0, &estructuraNew, socket_cliente);
 			break;
 		case APPEARED_POKEMON: ;
 			t_appearedPokemon_msg estructuraAppeared;
@@ -53,13 +64,13 @@ int main(int argc, char *argv[])
 			estructuraAppeared.nombre_pokemon.nombre_lenght = strlen(estructuraAppeared.nombre_pokemon.nombre)+1;
 			estructuraAppeared.coordenadas.posX = atoi(argv[4]);
 			estructuraAppeared.coordenadas.posY = atoi(argv[5]);
-			enviar_mensaje(codigoOperacion, 2, 1, &estructuraAppeared, socket_cliente);
+			status = enviar_mensaje(codigoOperacion, 2, atoi(argv[6]), &estructuraAppeared, socket_cliente);
 			break;
 		case GET_POKEMON: ;
 			t_getPokemon_msg estructuraGet;
 			estructuraGet.nombre_pokemon.nombre = argv[3];
 			estructuraGet.nombre_pokemon.nombre_lenght = strlen(estructuraGet.nombre_pokemon.nombre)+1;
-			enviar_mensaje(codigoOperacion, 3, 0, &estructuraGet, socket_cliente);
+			status = enviar_mensaje(codigoOperacion, atoi(argv[4]), 0, &estructuraGet, socket_cliente);
 			break;
 		case LOCALIZED_POKEMON: ;
 			t_localizedPokemon_msg estructuraLocalized;
@@ -74,7 +85,7 @@ int main(int argc, char *argv[])
 				estructuraLocalized.coordenadas[i].posY = atoi(argv[j+1]);
 				j+=2;
 			}
-			enviar_mensaje(codigoOperacion, 4, 3, &estructuraLocalized, socket_cliente);
+			status = enviar_mensaje(codigoOperacion, 4, 3, &estructuraLocalized, socket_cliente);
 			break;
 		case CATCH_POKEMON: ;
 			t_catchPokemon_msg estructuraCatch;
@@ -82,16 +93,57 @@ int main(int argc, char *argv[])
 			estructuraCatch.nombre_pokemon.nombre_lenght = strlen(estructuraCatch.nombre_pokemon.nombre)+1;
 			estructuraCatch.coordenadas.posX = atoi(argv[4]);
 			estructuraCatch.coordenadas.posY = atoi(argv[5]);
-			enviar_mensaje(codigoOperacion, 5, 0, &estructuraCatch, socket_cliente);
+			status = enviar_mensaje(codigoOperacion, atoi(argv[6]), 0, &estructuraCatch, socket_cliente);
 			break;
 		case CAUGHT_POKEMON: ;
 			t_caughtPokemon_msg estructuraCaught;
-			estructuraCaught.atrapado = atoi(argv[3]);
-			enviar_mensaje(codigoOperacion, 6, 5, &estructuraCaught, socket_cliente);
+			estructuraCaught.atrapado = atoi(argv[4]);
+			status = enviar_mensaje(codigoOperacion, 6, atoi(argv[3]), &estructuraCaught, socket_cliente);
 			break;
-		case ERROR_CODIGO: printf("[!] Error en el codigo de operacion\n"); return -1; break;
-		default: printf("[!] Error desconocido en el codigo de operacion\n"); return -1;
+		case SUSCRIPCION: ;
+			t_suscripcion_msg estructuraSuscripcion;
+			estructuraSuscripcion.id_proceso = atoi(config_get_string_value(config, "ID_PROCESO"));
+			estructuraSuscripcion.tipo_cola = stringACodigoOperacion(argv[2]);
+			estructuraSuscripcion.tiempo = atoi(argv[3]);
+			status = suscribirse_a_cola(&estructuraSuscripcion, socket_cliente);
+			break;
+		case ERROR_CODIGO: log_error(logger, "Error en el codigo de operacion."); return -1; break;
+		default: log_error(logger, "Error desconocido en el codigo de operacion."); return -1; break;
 	}
+
+	if (status > 0) {
+			if(codigoOperacion == SUSCRIPCION)
+			{
+				uint32_t cant_paquetes;
+				t_list* paquetes = respuesta_suscripcion_obtener_paquetes(socket_cliente, &cant_paquetes);
+				log_info(logger, "Se realizo la suscripcion a una cola de tipo: %s.", argv[2]);
+
+				for(int i=0; i < cant_paquetes; i++)
+				{
+					t_paquete* paquete_recibido = list_get(paquetes, i);
+					log_info(logger, "Recepcion de mensaje en cola\nCODIGO DE OPERACION: %s.\nID: %d.\nID CORRELATIVO: %d.",
+							argv[2],
+							paquete_recibido->id,
+							paquete_recibido->id_correlativo
+					);
+				}
+				while(1) {
+					char* nombre_recibido = NULL;
+					t_paquete* paquete_recibido = recibir_paquete(socket_cliente, &nombre_recibido);
+					log_info(logger, "Recepcion de mensaje nuevo\nCODIGO DE OPERACION: %s.\nID: %d.\nID CORRELATIVO: %d.",
+							argv[2],
+							paquete_recibido->id,
+							paquete_recibido->id_correlativo
+					);
+					//  int status_ack = informar_ack(socket_broker);
+					//  printf("Informe ACK con status: %d\n", status_ack);
+				}
+			} else
+			{
+				uint32_t id_respuesta = recibir_id(socket_cliente);
+			}
+	} else
+		log_error(logger, "Error al enviar al mensaje o suscribirse a la cola.");
 
 	return EXIT_SUCCESS;
 }
@@ -119,7 +171,7 @@ process_code stringACodigoProceso(const char* string)
 t_log* iniciar_logger(void)
 {
 	//TODO catchear si == NULL
-	return log_create(GAMEBOY_LOG, GAMEBOY_NAME, true, LOG_LEVEL_INFO);
+	return log_create(GAMEBOY_LOG, GAMEBOY_NAME, false, LOG_LEVEL_INFO);
 }
 
 t_config* leer_config(void)
@@ -133,6 +185,6 @@ t_config* leer_config(void)
 void terminar_programa(int conexion, t_log* logger, t_config* config)
 {
 	config_destroy(config);
-//	log_destroy(logger);
+	log_destroy(logger);
 	liberar_conexion(conexion);
 }

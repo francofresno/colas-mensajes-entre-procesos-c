@@ -80,7 +80,7 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 		log_nuevo_suscriptor(estructuraSuscripcion->id_proceso, estructuraSuscripcion->tipo_cola, logger);
 	}
 
-	recibir_ack(mensajes_encolados, size_message_queue(queue), subscriber);
+//	recibir_ack(mensajes_encolados, size_message_queue(queue), subscriber);
 
 }
 

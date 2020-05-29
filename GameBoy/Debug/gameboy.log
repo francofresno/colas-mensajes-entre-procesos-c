@@ -1,0 +1,17 @@
+[INFO] 21:04:37:874 gameboy/(17334:17334): Se realizo la suscripcion a una cola de tipo: NEW_POKEMON.
+[INFO] 21:04:37:874 gameboy/(17334:17334): Recepcion de mensaje en cola
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 1.
+ID CORRELATIVO: 0.
+[INFO] 21:04:37:874 gameboy/(17334:17334): Recepcion de mensaje en cola
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 2.
+ID CORRELATIVO: 0.
+[INFO] 21:04:37:874 gameboy/(17334:17334): Recepcion de mensaje en cola
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 3.
+ID CORRELATIVO: 0.
+[INFO] 21:06:30:406 gameboy/(17334:17334): Recepcion de mensaje nuevo
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 4.
+ID CORRELATIVO: 0.

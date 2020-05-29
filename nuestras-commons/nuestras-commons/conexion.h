@@ -8,9 +8,11 @@
 	#include<sys/socket.h>
 	#include<netdb.h>
 	#include<string.h>
+#include<commons/log.h>
 
 	#include "mensajes.h"
 	#include<commons/collections/list.h>
+
 
 	typedef struct
 	{
@@ -23,7 +25,7 @@
 	///////////////////////
 	// ---- Cliente ---- //
 	///////////////////////
-	int crear_conexion(char *ip, char* puerto);
+	int crear_conexion(char *ip, char* puerto, t_log* logger);
 
 	//////////////////////
 	// ---- Server ---- //
@@ -79,6 +81,6 @@
 	 *  @RETURN: cantidad de bytes enviados o -1 en caso de falla
 	 */
 	int suscribirse_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_servidor);
-	t_list* respueta_suscripcion_obtener_paquetes(int socket_servidor, uint32_t* cant_paquetes_recibidos);
+	t_list* respuesta_suscripcion_obtener_paquetes(int socket_servidor, uint32_t* cant_paquetes_recibidos);
 
 #endif /* CONEXION_H_ */
