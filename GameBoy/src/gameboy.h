@@ -54,8 +54,11 @@ const static struct {
 
 t_log* iniciar_logger(void);
 t_config* leer_config(void);
-void terminar_programa(int socket, t_log* logger, t_config* config);
-op_code stringACodigoOperacion(const char* string);
-process_code stringACodigoProceso(const char* string);
+void terminar_programa(int, t_log*, t_config*);
+op_code stringACodigoOperacion(const char*);
+process_code stringACodigoProceso(const char*);
+void chequearSiEsSuscripcion(const char*, const char*, op_code*, process_code*);
+int asignarDatosConexion(t_config*, char**, char**, process_code);
+void recepcionMensajesDeCola(t_log*, int, const char*);
 
 #endif /* GAMEBOY_H_ */

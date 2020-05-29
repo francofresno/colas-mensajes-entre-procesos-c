@@ -1,17 +1,218 @@
-[INFO] 21:04:37:874 gameboy/(17334:17334): Se realizo la suscripcion a una cola de tipo: NEW_POKEMON.
-[INFO] 21:04:37:874 gameboy/(17334:17334): Recepcion de mensaje en cola
+[INFO] 19:08:27:679 gameboy/(5671:5671): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:08:29:124 gameboy/(5676:5676): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:15:22:573 gameboy/(5884:5884): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:15:25:216 gameboy/(5887:5887): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:17:01:491 gameboy/(5981:5981): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:17:03:277 gameboy/(5986:5986): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:17:17:499 gameboy/(5989:5989): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:17:20:179 gameboy/(5993:5993): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:25:23:42 gameboy/(6190:6190): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:25:25:270 gameboy/(6193:6193): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:27:18:863 gameboy/(6276:6276): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:27:24:395 gameboy/(6279:6279): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:30:20:503 gameboy/(6407:6407): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:30:25:363 gameboy/(6410:6410): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:43:31:101 gameboy/(6754:6754): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:43:41:380 gameboy/(6758:6758): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:44:16:890 gameboy/(6764:6764): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:47:49:134 gameboy/(6954:6954): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:47:58:951 gameboy/(6965:6965): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 19:50:27:770 gameboy/(6993:6993): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:00:13:862 gameboy/(7578:7578): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:00:18:758 gameboy/(7580:7580): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:00:22:512 gameboy/(7582:7582): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:00:22:515 gameboy/(7582:7582): Se realizo la suscripcion a una cola de tipo: NEW_POKEMON.
+[INFO] 20:00:22:515 gameboy/(7582:7582): Recepcion de mensaje en cola
 CODIGO DE OPERACION: NEW_POKEMON.
 ID: 1.
 ID CORRELATIVO: 0.
-[INFO] 21:04:37:874 gameboy/(17334:17334): Recepcion de mensaje en cola
+[INFO] 20:00:22:515 gameboy/(7582:7582): Recepcion de mensaje en cola
 CODIGO DE OPERACION: NEW_POKEMON.
 ID: 2.
 ID CORRELATIVO: 0.
-[INFO] 21:04:37:874 gameboy/(17334:17334): Recepcion de mensaje en cola
+[INFO] 20:01:32:221 gameboy/(7590:7590): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:01:32:221 gameboy/(7590:7590): Se realizo la suscripcion a una cola de tipo: NEW_POKEMON.
+[INFO] 20:02:08:746 gameboy/(7660:7660): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:02:08:747 gameboy/(7660:7660): Se realizo la suscripcion a una cola de tipo: NEW_POKEMON.
+[INFO] 20:02:33:810 gameboy/(7663:7663): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:02:34:838 gameboy/(7665:7665): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:02:37:869 gameboy/(7667:7667): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:02:37:870 gameboy/(7667:7667): Se realizo la suscripcion a una cola de tipo: NEW_POKEMON.
+[INFO] 20:02:37:871 gameboy/(7667:7667): Recepcion de mensaje en cola
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 1.
+ID CORRELATIVO: 0.
+[INFO] 20:02:37:871 gameboy/(7667:7667): Recepcion de mensaje en cola
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 2.
+ID CORRELATIVO: 0.
+[INFO] 20:05:28:311 gameboy/(7967:7967): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:05:32:839 gameboy/(7969:7969): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:05:33:372 gameboy/(7971:7971): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:05:50:974 gameboy/(7973:7973): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:05:50:975 gameboy/(7973:7973): Se realizo la suscripcion a una cola de tipo: NEW_POKEMON.
+[INFO] 20:05:50:975 gameboy/(7973:7973): Recepcion de mensaje en cola
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 1.
+ID CORRELATIVO: 0.
+[INFO] 20:05:50:975 gameboy/(7973:7973): Recepcion de mensaje en cola
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 2.
+ID CORRELATIVO: 0.
+[INFO] 20:05:50:975 gameboy/(7973:7973): Recepcion de mensaje en cola
 CODIGO DE OPERACION: NEW_POKEMON.
 ID: 3.
 ID CORRELATIVO: 0.
-[INFO] 21:06:30:406 gameboy/(17334:17334): Recepcion de mensaje nuevo
+[INFO] 20:07:26:114 gameboy/(8146:8146): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:07:26:120 gameboy/(7973:7973): Recepcion de mensaje nuevo
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 4.
+ID CORRELATIVO: 0.
+[INFO] 20:27:45:190 gameboy/(8651:8651): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:27:49:490 gameboy/(8653:8653): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:27:50:373 gameboy/(8655:8655): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:28:04:28 gameboy/(8659:8659): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:28:04:29 gameboy/(8659:8659): Se realizo la suscripcion a una cola de tipo: NEW_POKEMON.
+[INFO] 20:28:04:29 gameboy/(8659:8659): Recepcion de mensaje en cola
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 1.
+ID CORRELATIVO: 0.
+[INFO] 20:28:04:29 gameboy/(8659:8659): Recepcion de mensaje en cola
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 2.
+ID CORRELATIVO: 0.
+[INFO] 20:28:04:29 gameboy/(8659:8659): Recepcion de mensaje en cola
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 3.
+ID CORRELATIVO: 0.
+[INFO] 20:36:45:939 gameboy/(8883:8883): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:36:50:411 gameboy/(8886:8886): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:36:52:0 gameboy/(8888:8888): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:36:52:1 gameboy/(8888:8888): Se realizo la suscripcion a una cola de tipo: NEW_POKEMON.
+[INFO] 20:36:52:1 gameboy/(8888:8888): Recepcion de mensaje en cola
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 1.
+ID CORRELATIVO: 0.
+[INFO] 20:36:52:1 gameboy/(8888:8888): Recepcion de mensaje en cola
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 2.
+ID CORRELATIVO: 0.
+[INFO] 20:38:12:210 gameboy/(9031:9031): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:38:12:224 gameboy/(8888:8888): Recepcion de mensaje nuevo
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 3.
+ID CORRELATIVO: 0.
+[INFO] 20:41:58:473 gameboy/(9173:9173): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:41:59:440 gameboy/(9176:9176): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:42:00:123 gameboy/(9179:9179): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:42:02:213 gameboy/(9184:9184): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:42:02:229 gameboy/(9184:9184): Se realizo la suscripcion a una cola de tipo: NEW_POKEMON.
+[INFO] 20:42:02:229 gameboy/(9184:9184): Recepcion de mensaje en cola
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 1.
+ID CORRELATIVO: 0.
+[INFO] 20:42:02:229 gameboy/(9184:9184): Recepcion de mensaje en cola
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 2.
+ID CORRELATIVO: 0.
+[INFO] 20:42:02:229 gameboy/(9184:9184): Recepcion de mensaje en cola
+CODIGO DE OPERACION: NEW_POKEMON.
+ID: 3.
+ID CORRELATIVO: 0.
+[INFO] 20:42:22:905 gameboy/(9214:9214): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 20:42:22:922 gameboy/(9184:9184): Recepcion de mensaje nuevo
 CODIGO DE OPERACION: NEW_POKEMON.
 ID: 4.
 ID CORRELATIVO: 0.

@@ -11,41 +11,27 @@ int main(int argc, char *argv[])
 {
 	t_config* config = leer_config();
 	t_log* logger = iniciar_logger();
+
+	if(leer_config() == NULL || iniciar_logger() == NULL)
+		return -1;
+
 	char* ip;
 	char* puerto;
 	process_code codigoProceso;
 	op_code codigoOperacion;
 	int status = 0;
 
-	if(strcmp(argv[1], "SUSCRIPTOR") == 0)
-		codigoProceso = BROKER;
-	else
-		codigoProceso = stringACodigoProceso(argv[1]);
+	chequearSiEsSuscripcion(argv[1], argv[2], &codigoOperacion, &codigoProceso);
 
-	switch(codigoProceso)
-	{
-		case BROKER:
-			ip = config_get_string_value(config, "IP_BROKER");
-			puerto = config_get_string_value(config, "PUERTO_BROKER");
-			break;
-		case TEAM:
-			ip = config_get_string_value(config, "IP_TEAM");
-			puerto = config_get_string_value(config, "PUERTO_TEAM");
-			break;
-		case GAMECARD:
-			ip = config_get_string_value(config, "IP_GAMECARD");
-			puerto = config_get_string_value(config, "PUERTO_GAMECARD");
-			break;
-		case ERROR_PROCESO: log_error(logger, "Error en el codigo de proceso."); return -1; break;
-		default: log_error(logger, "Error desconocido en el codigo de proceso."); return -1; break;
-	}
+	if(asignarDatosConexion(config, &ip, &puerto, codigoProceso) == -1)
+		return -1;
 
-	int socket_cliente = crear_conexion(ip, puerto, logger);
+	int socket_cliente = crear_conexion(ip, puerto);
 
-	if(strcmp(argv[1], "SUSCRIPTOR") == 0)
-		codigoOperacion = SUSCRIPCION;
-	else
-		codigoOperacion = stringACodigoOperacion(argv[2]);
+	if(socket_cliente == -1)
+		return -1;
+
+	log_info(logger, "Conexión con un proceso\nIP: %s\nPUERTO: %s", ip, puerto);
 
 	switch(codigoOperacion)
 	{
@@ -107,44 +93,22 @@ int main(int argc, char *argv[])
 			estructuraSuscripcion.tiempo = atoi(argv[3]);
 			status = suscribirse_a_cola(&estructuraSuscripcion, socket_cliente);
 			break;
-		case ERROR_CODIGO: log_error(logger, "Error en el codigo de operacion."); return -1; break;
-		default: log_error(logger, "Error desconocido en el codigo de operacion."); return -1; break;
+		case ERROR_CODIGO: return -1; break;
+		default: return -1; break;
 	}
 
-	if (status > 0) {
-			if(codigoOperacion == SUSCRIPCION)
-			{
-				uint32_t cant_paquetes;
-				t_list* paquetes = respuesta_suscripcion_obtener_paquetes(socket_cliente, &cant_paquetes);
-				log_info(logger, "Se realizo la suscripcion a una cola de tipo: %s.", argv[2]);
+	if (status > 0)
+	{
+		if(codigoOperacion == SUSCRIPCION)
+			recepcionMensajesDeCola(logger, socket_cliente, argv[2]);
+		else
+		{
+			uint32_t id_respuesta = recibir_id(socket_cliente);
+			id_respuesta++;
+		}
+	}
 
-				for(int i=0; i < cant_paquetes; i++)
-				{
-					t_paquete* paquete_recibido = list_get(paquetes, i);
-					log_info(logger, "Recepcion de mensaje en cola\nCODIGO DE OPERACION: %s.\nID: %d.\nID CORRELATIVO: %d.",
-							argv[2],
-							paquete_recibido->id,
-							paquete_recibido->id_correlativo
-					);
-				}
-				while(1) {
-					char* nombre_recibido = NULL;
-					t_paquete* paquete_recibido = recibir_paquete(socket_cliente, &nombre_recibido);
-					log_info(logger, "Recepcion de mensaje nuevo\nCODIGO DE OPERACION: %s.\nID: %d.\nID CORRELATIVO: %d.",
-							argv[2],
-							paquete_recibido->id,
-							paquete_recibido->id_correlativo
-					);
-					//  int status_ack = informar_ack(socket_broker);
-					//  printf("Informe ACK con status: %d\n", status_ack);
-				}
-			} else
-			{
-				uint32_t id_respuesta = recibir_id(socket_cliente);
-			}
-	} else
-		log_error(logger, "Error al enviar al mensaje o suscribirse a la cola.");
-
+	terminar_programa(socket_cliente, logger, config);
 	return EXIT_SUCCESS;
 }
 
@@ -168,15 +132,82 @@ process_code stringACodigoProceso(const char* string)
 	return ERROR_PROCESO;
 }
 
+void chequearSiEsSuscripcion(const char* argumento1, const char* argumento2, op_code* codigoOperacion, process_code* codigoProceso)
+{
+	if(strcmp(argumento1, "SUSCRIPTOR") == 0)
+	{
+		*codigoProceso = BROKER;
+		*codigoOperacion = SUSCRIPCION;
+	}
+	else
+	{
+		*codigoProceso = stringACodigoProceso(argumento1);
+		*codigoOperacion = stringACodigoOperacion(argumento2);
+	}
+}
+
+int asignarDatosConexion(t_config* config, char** ip, char** puerto, process_code codigoProceso)
+{
+	switch(codigoProceso)
+	{
+		case BROKER:
+			*ip = config_get_string_value(config, "IP_BROKER");
+			*puerto = config_get_string_value(config, "PUERTO_BROKER");
+			break;
+		case TEAM:
+			*ip = config_get_string_value(config, "IP_TEAM");
+			*puerto = config_get_string_value(config, "PUERTO_TEAM");
+			break;
+		case GAMECARD:
+			*ip = config_get_string_value(config, "IP_GAMECARD");
+			*puerto = config_get_string_value(config, "PUERTO_GAMECARD");
+			break;
+		case ERROR_PROCESO: return -1; break;
+		default: return -1; break;
+	}
+	return 0;
+}
+
+void recepcionMensajesDeCola(t_log* logger, int socket_cliente, const char* argumento2)
+{
+	uint32_t cant_paquetes;
+	t_list* paquetes = respuesta_suscripcion_obtener_paquetes(socket_cliente, &cant_paquetes);
+	log_info(logger, "Se realizo la suscripcion a una cola de tipo: %s.", argumento2);
+
+	for(int i=0; i < cant_paquetes; i++)
+	{
+		t_paquete* paquete_recibido = list_get(paquetes, i);
+		log_info(logger, "Recepcion de mensaje en cola\nCODIGO DE OPERACION: %s.\nID: %d.\nID CORRELATIVO: %d.",
+				argumento2,
+				paquete_recibido->id,
+				paquete_recibido->id_correlativo
+		);
+		free(paquete_recibido);
+	}
+
+	free(paquetes);
+
+	while(1)
+	{
+		char* nombre_recibido = NULL;
+		t_paquete* paquete_recibido = recibir_paquete(socket_cliente, &nombre_recibido);
+		log_info(logger, "Recepcion de mensaje nuevo\nCODIGO DE OPERACION: %s.\nID: %d.\nID CORRELATIVO: %d.",
+				argumento2,
+				paquete_recibido->id,
+				paquete_recibido->id_correlativo
+		);
+		informar_ack(socket_cliente);
+		free(paquete_recibido);
+	}
+}
+
 t_log* iniciar_logger(void)
 {
-	//TODO catchear si == NULL
 	return log_create(GAMEBOY_LOG, GAMEBOY_NAME, false, LOG_LEVEL_INFO);
 }
 
 t_config* leer_config(void)
 {
-	//TODO catchear si == NULL
 	return config_create(GAMEBOY_CONFIG);
 }
 
