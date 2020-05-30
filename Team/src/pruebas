@@ -1,8 +1,52 @@
 
+ ============================================================================
+ 	 	 	 	 	 	 		PRUEBAS
+ ============================================================================
 
-//	return EXIT_SUCCESS;
 
+// 1. Poner entrenadores en lista.
 
+void pruebaPonerEntrenadoresEnLista(t_list* entrenadores){
+
+	int tamanio = list_size(entrenadores);
+
+	for (int b = 0; b < tamanio; b++) {
+		t_entrenador* entrenador = (t_entrenador*) list_get(entrenadores, b);
+		printf("La cantidad de pokemones del entrenador de la posicion %d es %d\n", b, entrenador->cantidad_pokemons);
+	}
+}
+
+// 2. Planificar según Fifo
+
+planificarSegunFifo();
+
+	int tamanio = list_size(entrenadores);
+
+		for (int b = 0; b < tamanio; b++) {
+			t_entrenador* entrenador = (t_entrenador*) list_get(entrenadores, b);
+			printf("El estado del entrenador de la posicion %d es %d y su id es: %d\n", b, entrenador->estado, entrenador->id_entrenador);
+		}
+
+		for (int b = 0; b < tamanio; b+=2) {
+			t_entrenador* entrenador = (t_entrenador*) list_get(entrenadores, b);
+			entrenador->estado = READY;
+			printf("El estado del entrenador de la posicion %d es %d\n", b, entrenador->estado);
+		}
+
+planificarSegunFifo();
+
+// 3. Objetivo Team cargado
+
+int tamanioObjTeam = list_size(objetivoTeam);
+
+	printf("el TAmaño de objteam es %d\n", tamanioObjTeam);
+
+	for(int a=0; a< tamanioObjTeam ; a++){
+		t_nombrePokemon* pokemon = (t_nombrePokemon*) list_get(objetivoTeam, a);
+		printf("El pokemon de la posicion %d del objetivo team se llama %s\n", a, pokemon->nombre);
+	}
+	
+	
 // Mas mierda
 //	socket_cliente = crear_conexion (ipBroker, puertoBroker);
 //

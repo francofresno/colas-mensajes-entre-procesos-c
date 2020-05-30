@@ -90,6 +90,14 @@ void buscarPokemones();
 
 void gestionarPokemones(t_entrenador*);
 
+void hacerObjetivoTeam(t_list*,t_list*);
+
+t_list* aplanarDobleLista(t_list*);
+
+void contiene(t_list*, t_list*);
+
+int sonIguales(t_nombrePokemon*, t_nombrePokemon*);
+
 void planificarSegun(t_config*);
 
 void planificarSegunFifo();

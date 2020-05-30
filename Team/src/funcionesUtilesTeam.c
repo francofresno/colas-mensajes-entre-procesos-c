@@ -9,6 +9,7 @@
 
 t_list* entrenadores;
 t_list* hilosEntrenadores;
+t_list* objetivoTeam;
 
 pthread_mutex_t mutex_id_entrenadores = PTHREAD_MUTEX_INITIALIZER;
 /*
@@ -45,9 +46,6 @@ void ponerEntrenadoresEnLista(t_config* config) {
 		t_list* pokemonesQueTiene = (t_list*) list_get(listaDePokemonesDeEntrenadores, j);
 		t_list* pokemonesQueDesea = (t_list*) list_get(listaDePokemonesObjetivoDeEntrenadores, j);
 
-
-		//TODO OBJETIVOS GLOBALES DEL TEMA --> VARIABLE GLOBAL.
-
 		uint32_t id_entrenador = generar_id();
 
 		t_entrenador* entrenador = crear_entrenador(id_entrenador, coords,
@@ -60,6 +58,9 @@ void ponerEntrenadoresEnLista(t_config* config) {
 		i++;
 
 	}
+
+	//TODO OBJETIVOS GLOBALES DEL TEMA --> VARIABLE GLOBAL.
+	hacerObjetivoTeam(listaDePokemonesDeEntrenadores, listaDePokemonesObjetivoDeEntrenadores);
 }
 
 void crearHilosEntrenadores() {
@@ -150,11 +151,71 @@ uint32_t generar_id() {
 
 void buscarPokemones(t_entrenador* entrenador) {
 
-	printf("El estado del entrenador es: %d\n", entrenador->estado);
+	entrenador->estado = FINISHED;
+	printf("El estado del entrenador de id %d es: %d\n", entrenador->id_entrenador, entrenador->estado);
 }
 
 void gestionarPokemones(t_entrenador* entrenador){
 	printf("Soy el entrenador con el id %d\n", entrenador->id_entrenador);
+}
+
+void hacerObjetivoTeam(t_list* listaPokemonesTieneEntrenadores, t_list* listaPokemonesDeseaEntrenadores){ //Siempre Despues de Usar estas Listas
+
+	 t_list* listaGrande = list_create();
+	 t_list* listaMini = list_create();
+
+	 listaGrande = aplanarDobleLista(listaPokemonesDeseaEntrenadores);
+	 listaMini = aplanarDobleLista(listaPokemonesTieneEntrenadores);
+
+	 contiene(listaGrande, listaMini);
+
+}
+
+t_list* aplanarDobleLista(t_list* lista){
+
+	t_list* listaAplanada = list_create();
+
+	int tamanioListaSuprema = list_size(lista);
+
+		for(int b=0; b<tamanioListaSuprema ;b++){
+
+			 int tamanioSubLista = list_size(list_get(lista, b));  //aca esta el error
+
+			 for(int a=0; a<tamanioSubLista; a++){
+
+				 list_add(listaAplanada, (t_nombrePokemon*)list_get(list_get(lista, b), a));
+			 }
+		}
+
+	return listaAplanada;
+}
+
+void contiene(t_list* listaA, t_list* listaB){ 		//listaGrande A lista chica B
+
+	objetivoTeam = list_create();
+
+	int a = list_size(listaA);
+
+	for(int i=0; i < a; i++){
+
+		int b = list_size(listaB);
+		int j=0;
+
+		while((j < b) && (sonIguales(list_get(listaB,j), list_get(listaA, i))!=0)){
+			j++;
+		}
+
+		if(j==b){
+			list_add(objetivoTeam, (t_nombrePokemon*)list_get(listaA, i));
+		}else{
+			list_remove(listaB, j);
+		}
+
+	}
+}
+
+int sonIguales(t_nombrePokemon* pokemon1, t_nombrePokemon* pokemon2){
+	return strcmp(pokemon1->nombre, pokemon2->nombre);					//retorna un 0 si cumple
 }
 
 void planificarSegun(t_config* config) {
@@ -205,35 +266,35 @@ void planificarSegun(t_config* config) {
 
 }
 
-void planificarSegunFifo() {
+void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 
-	t_estructuraCola estructura_cola;
+	t_estructuraCola* estructura_cola = malloc(sizeof(t_estructuraCola));
 
-	while (!list_is_empty(entrenadores)) {
+	estructura_cola->colaListos = queue_create();
+	estructura_cola->colaEnEjecucion = queue_create();
+	estructura_cola->colaBloqueados= queue_create();
+	estructura_cola->colaFinalizados = queue_create();
 
-		int tamanio = list_size(entrenadores);
+	int tamanio = list_size(entrenadores);
 
-		for (int b = 0; b < tamanio; b++) {
+	for (int b = 0; b < tamanio; b++) {
 
-			t_entrenador* entrenador = (t_entrenador*) list_get(entrenadores, b);
+		t_entrenador* entrenador = (t_entrenador*) list_get(entrenadores, b);
 
-			if (entrenador->estado == READY) {
+		if (entrenador->estado == READY) {
 
-				list_remove(entrenadores, b);
+			entrenador->estado = EXEC;
+			queue_push(estructura_cola->colaEnEjecucion, entrenador);
+			buscarPokemones(entrenador); //Buscar pokemones cambia el estado a finalizado o bloqueado.
 
-				entrenador->estado = EXEC;
-				queue_push(estructura_cola.colaEnEjecucion, entrenador);
-				buscarPokemones(entrenador); //Buscar pokemones cambia el estado a finalizado o bloqueado.
+			if (entrenador->estado == FINISHED) {
+				queue_pop(estructura_cola->colaEnEjecucion);
+				queue_push(estructura_cola->colaFinalizados, entrenador);
+			}
 
-				if (entrenador->estado == FINISHED) {
-					queue_pop(estructura_cola.colaEnEjecucion);
-					queue_push(estructura_cola.colaFinalizados, entrenador);
-				}
-
-				if (entrenador->estado == BLOCKED){
-					queue_pop(estructura_cola.colaEnEjecucion);
-					queue_push(estructura_cola.colaBloqueados, entrenador);
-				}
+			if (entrenador->estado == BLOCKED){
+				queue_pop(estructura_cola->colaEnEjecucion);
+				queue_push(estructura_cola->colaBloqueados, entrenador);
 			}
 		}
 	}

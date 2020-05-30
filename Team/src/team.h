@@ -42,6 +42,12 @@ void process_request(int, uint32_t, void*, int);
 
 op_code stringACodigoOperacion(const char*);
 
+void enviarMensajeGetABroker();
+
+t_list* eliminarRepetidos();
+
+void enviarMensajeGet(t_nombrePokemon*);
+
 //void terminar_programa(int socket, t_log* logger, t_config* config);
 
 #endif /* TEAM_H_ */

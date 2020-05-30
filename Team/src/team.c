@@ -4,11 +4,12 @@
  Author      : Fran and Co
  Description : Proceso Team
  ============================================================================
- */
+*/
 
 #include "team.h"
 
 extern t_list* entrenadores;
+extern t_list* objetivoTeam;
 //extern t_list* hilosEntrenadores;
 
 int main(void) {
@@ -17,15 +18,10 @@ int main(void) {
 
 	ponerEntrenadoresEnLista(config);
 
-		int tamanio = list_size(entrenadores);
+	char* ipBroker = config_get_string_value(config, "IP_BROKER");
+	char* puertoBroker = config_get_string_value(config, "PUERTO_BROKER");
 
-		for (int b = 0; b < tamanio; b++) {
-			t_entrenador* entrenador = (t_entrenador*) list_get(entrenadores, b);
-			printf("La cantidad de pokemones del entrenador de la posicion %d es %d\n", b, entrenador->cantidad_pokemons);
-		}
-
-//	char* ipBroker = config_get_string_value(config, "IP_BROKER");
-//	char* puertoBroker = config_get_string_value(config, "PUERTO_BROKER");
+	enviarMensajeGetABroker();
 
 ////	op_code codigoOperacion;
 ////	int socket_cliente;
@@ -34,16 +30,16 @@ int main(void) {
 //
 //	fflush(stdout);
 //
-//	int socket_servidor = iniciar_servidor(IP, PUERTO);
-//
-//	while(1) {
-//
-//		int socket_cliente = esperar_cliente(socket_servidor);
-//		if(socket_cliente > 0) {
-//			pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
-//			pthread_detach(thread);
-//		}
-//	}
+	int socket_servidor = iniciar_servidor(IP, PUERTO);
+
+	while(1) {
+
+		int socket_cliente = esperar_cliente(socket_servidor);
+		if(socket_cliente > 0) {
+			pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
+			pthread_detach(thread);
+		}
+	}
 
 
 	return EXIT_SUCCESS;
@@ -110,4 +106,42 @@ op_code stringACodigoOperacion(const char* string)
 	return ERROR_CODIGO;
 }
 
+void enviarMensajeGetABroker(){
 
+	t_list* objetivoTeamSinRepe = list_create();
+	objetivoTeamSinRepe = eliminarRepetidos();
+
+	int tamanioObjTeamSinRepetidos = list_size(objetivoTeamSinRepe);
+
+	for(int a=0; a< tamanioObjTeamSinRepetidos ; a++){
+		t_nombrePokemon* pokemon = (t_nombrePokemon*) list_get(objetivoTeamSinRepe, a);
+		enviarMensajeGet(pokemon);
+	}
+}
+
+t_list* eliminarRepetidos(){
+
+	int a = list_size(objetivoTeam);
+	t_list* objetivoTeamSinRepetidos = list_create();
+	int c=0;
+
+	for(int i=0; i < a; i++){
+
+		int k=0;
+		while((k<c) && (sonIguales(list_get(objetivoTeamSinRepetidos,k), list_get(objetivoTeam, i))!=0)){
+			k++;
+		}
+
+		if(k==c){
+			list_add(objetivoTeamSinRepetidos, (t_nombrePokemon*)list_get(objetivoTeam, i));
+			c++;
+			t_nombrePokemon* pokemon = (t_nombrePokemon*)list_get(objetivoTeam, i);
+		}
+	}
+
+	return objetivoTeamSinRepetidos;
+}
+
+void enviarMensajeGet(t_nombrePokemon* pokemon){
+	printf("El pokemon de la lista sin repe es: %s\n", pokemon->nombre);
+}
