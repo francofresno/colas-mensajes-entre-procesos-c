@@ -19,7 +19,8 @@ int crear_conexion(char *ip, char* puerto)
 
 	int socket_cliente = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol);
 
-	connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen);
+	if(connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen) == -1)
+		printf("error\n");
 
 	freeaddrinfo(server_info);
 
@@ -99,7 +100,7 @@ void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_corr
 			t_suscripcion_msg* estSuscripcion = estructura;
 			*bytes += sizeof(estSuscripcion->id_proceso)
 					+ sizeof(estSuscripcion->tipo_cola)
-					+ sizeof(estSuscripcion->tiempo);
+					+ sizeof(estSuscripcion->temporal);
 			a_enviar = malloc(*bytes + sizeof(*bytes));
 
 			serializar_variable(a_enviar, bytes, sizeof(uint32_t), &offset);
@@ -108,7 +109,7 @@ void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_corr
 			serializar_variable(a_enviar, &id_correlativo, sizeof(id_correlativo), &offset);
 			serializar_variable(a_enviar, &(estSuscripcion->id_proceso), sizeof(estSuscripcion->id_proceso), &offset);
 			serializar_variable(a_enviar, &(estSuscripcion->tipo_cola), sizeof(estSuscripcion->tipo_cola), &offset);
-			serializar_variable(a_enviar, &(estSuscripcion->tiempo), sizeof(estSuscripcion->tiempo), &offset);
+			serializar_variable(a_enviar, &(estSuscripcion->temporal), sizeof(estSuscripcion->temporal), &offset);
 			break;
 		case NEW_POKEMON: ;
 			t_newPokemon_msg* estNew = estructura;
@@ -204,7 +205,7 @@ void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_corr
 			serializar_variable(a_enviar, &id_correlativo, sizeof(id_correlativo), &offset);
 			serializar_variable(a_enviar, &(estCaught->atrapado), sizeof(estCaught->atrapado), &offset);
 			break;
-		default: printf("\n[!] Error en el codigo de operacion al serializar paquete.\n"); break; //TODO esto tiene que ir a un log
+		default: printf("\n[!] Error en el codigo de operacion al serializar paquete.\n"); break;
 	}
 
 	return a_enviar;
@@ -240,7 +241,12 @@ t_paquete* recibir_paquete(int socket_cliente, char** nombre_recibido)
 
 	t_paquete* paquete_recibido = malloc(sizeof(*paquete_recibido));
 	void* stream = malloc(bytes);
-	recv(socket_cliente, stream, bytes, MSG_WAITALL); //TODO check status
+	int status = recv(socket_cliente, stream, bytes, MSG_WAITALL);
+
+	if (status < 0) {
+		free(stream);
+		return NULL;
+	}
 
 	int offset = 0;
 	deserializar_paquete(stream, paquete_recibido, &offset, bytes, nombre_recibido);
@@ -265,7 +271,7 @@ void deserializar_paquete(void* stream, t_paquete* paquete_recibido, int* offset
 
 			copiar_variable(&(estSuscripcion->id_proceso), stream, offset, sizeof(estSuscripcion->id_proceso));
 			copiar_variable(&(estSuscripcion->tipo_cola), stream, offset, sizeof(estSuscripcion->tipo_cola));
-			copiar_variable(&(estSuscripcion->tiempo), stream, offset, sizeof(estSuscripcion->tiempo));
+			copiar_variable(&(estSuscripcion->temporal), stream, offset, sizeof(estSuscripcion->temporal));
 
 			*nombre_recibido = NULL;
 			paquete_recibido->mensaje = estSuscripcion;
@@ -403,6 +409,12 @@ int suscribirse_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_serv
 	return enviar_mensaje(SUSCRIPCION, 0, 0, (void*) estructuraSuscripcion, socket_servidor);
 }
 
+int desuscribirse_de_cola(int socket_servidor)
+{
+	uint32_t codigo = 408;
+	return send(socket_servidor, &codigo, sizeof(codigo), 0);
+}
+
 int respuesta_suscripcion_cantidad_y_tamanio(uint32_t* cantidad_paquetes, uint32_t* tamanio_stream, int socket_servidor)
 {
 	void* recibido = malloc(sizeof(uint32_t)*2);
@@ -413,7 +425,7 @@ int respuesta_suscripcion_cantidad_y_tamanio(uint32_t* cantidad_paquetes, uint32
 	return status;
 }
 
-t_list* respuesta_suscripcion_obtener_paquetes(int socket_servidor, uint32_t* cant_paquetes_recibidos)
+t_list* respueta_suscripcion_obtener_paquetes(int socket_servidor, uint32_t* cant_paquetes_recibidos)
 {
 	t_list* paquetes = list_create();
 	uint32_t cantidad_paquetes;

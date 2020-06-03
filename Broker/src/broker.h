@@ -26,6 +26,7 @@
 
 uint32_t ID_COUNTER;
 pthread_t thread;
+pthread_t thread_child;
 
 // Colas de mensajes y listas de suscriptores
 t_queue* NEW_POKEMON_QUEUE;
@@ -67,6 +68,12 @@ pthread_mutex_t MUTEX_SUSCRIPTORES[7];
 t_log* logger;
 t_config* config;
 
+struct thread_args {
+	t_list* suscriptores_informados;
+	t_enqueued_message** mensajes_encolados;
+	t_queue* queue;
+};
+
 
 int init_server();
 void init_message_queues();
@@ -79,15 +86,17 @@ void serve_client(int* socket_cliente);
 void process_request(int cod_op, uint32_t id_correlativo, void* paqueteRecibido, int socket_cliente);
 void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscriptor);
 t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint32_t id_correlativo, t_list* suscriptores, pthread_mutex_t mutex);
-t_enqueued_message** responder_a_suscriptor_nuevo(op_code codigo, t_queue* queue, t_subscriber* subscriber);
+void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subscriber* subscriber,
+		uint32_t cantidad_mensajes, t_enqueued_message* mensajes_encolados[]);
 /*
  *  @NAME: enviar_mensajes_encolados_a_suscriptor_nuevo
  *  @RETURN: -1 en caso de falla o 0 en caso de éxito
  */
 void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stream, void** paquetes_serializados,
-		int* tamanio_paquetes, t_enqueued_message** mensajes_encolados, t_subscriber* subscriber);
+		int* tamanio_paquetes, t_enqueued_message* mensajes_encolados[], t_subscriber* subscriber);
 void remover_suscriptor_si_es_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t tiempo, pthread_mutex_t mutex);
-void recibir_ack(t_enqueued_message** mensajes_encolados, int cantidad_mensajes, t_subscriber* subscriber);
+void recibir_ack(t_enqueued_message* mensajes_encolados[], uint32_t cantidad_mensajes, t_subscriber* subscriber);
+void recibir_multiples_ack(op_code codigo, uint32_t id, t_list* suscriptores_informados);
 
 uint32_t generar_id();
 
