@@ -64,9 +64,10 @@ t_list* SUSCRIPTORES_MENSAJES[7];
 pthread_mutex_t MUTEX_COLAS[7];
 pthread_mutex_t MUTEX_SUSCRIPTORES[7];
 
-// Loggers y config
-t_log* logger;
-t_config* config;
+// Config y constants obtenidas de config
+t_config* CONFIG;
+t_log* LOGGER;
+void* MEMORY;
 
 struct thread_args {
 	t_list* suscriptores_informados;
@@ -80,6 +81,7 @@ void init_message_queues();
 void init_suscriber_lists();
 void init_logger();
 void init_config();
+void init_memory();
 
 int esperar_cliente(int socket_servidor);
 void serve_client(int* socket_cliente);

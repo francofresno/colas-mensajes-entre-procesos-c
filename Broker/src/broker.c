@@ -12,6 +12,7 @@
 int main(void) {
 
 	init_config();
+	init_memory();
 	init_logger();
 	init_message_queues();
 	init_suscriber_lists();
@@ -56,7 +57,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 		enviar_id_respuesta(id_mensaje, socket_cliente);
 		t_list* suscriptores_informados = informar_a_suscriptores(cod_op, mensaje_recibido, id_mensaje, id_correlativo, suscriptores, mutex);
 		mensaje_encolado->suscribers_informed = suscriptores_informados;
-		log_nuevo_mensaje(id_mensaje, cod_op, logger);
+		log_nuevo_mensaje(id_mensaje, cod_op, LOGGER);
 
 		recibir_multiples_ack(cod_op, id_mensaje, suscriptores_informados);
 	}
@@ -81,7 +82,7 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 
 		responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber, cantidad_mensajes, mensajes_encolados);
 		remover_suscriptor_si_es_temporal(suscriptores, subscriber, estructuraSuscripcion->temporal, mutex);
-		log_nuevo_suscriptor(estructuraSuscripcion->id_proceso, estructuraSuscripcion->tipo_cola, logger);
+		log_nuevo_suscriptor(estructuraSuscripcion->id_proceso, estructuraSuscripcion->tipo_cola, LOGGER);
 	}
 
 	recibir_ack(mensajes_encolados, cantidad_mensajes, subscriber);
@@ -115,7 +116,7 @@ t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint
 		t_subscriber* suscriptor = list_get(suscriptores, i);
 		if (enviar_mensaje(codigo, id, id_correlativo, mensaje, suscriptor->socket_suscriptor) > 0) {
 			list_add(suscriptores_informados, (void*)suscriptor);
-			log_mensaje_a_suscriptor(suscriptor->id_suscriptor, id, logger);
+			log_mensaje_a_suscriptor(suscriptor->id_suscriptor, id, LOGGER);
 		}
 	}
 	pthread_mutex_unlock(&mutex);
@@ -149,7 +150,7 @@ void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subs
 	pthread_mutex_lock(&mutex);
 	for (int i=0; i < cantidad_mensajes; i++) {
 		uint32_t bytes;
-		t_enqueued_message* mensaje_encolado = get_message_by_index(message_queue, i); // TODO deberia meter un mutex aca si en algun momento REMUEVO mensajes de la cola
+		t_enqueued_message* mensaje_encolado = get_message_by_index(message_queue, i);
 		void* a_enviar = serializar_paquete(codigo, mensaje_encolado->ID, mensaje_encolado->ID_correlativo, mensaje_encolado->message, &bytes);
 		bytes += sizeof(bytes);
 
@@ -211,9 +212,17 @@ void recibir_ack(t_enqueued_message* mensajes_encolados[], uint32_t cantidad_men
 
 int init_server()
 {
-	char* IP = config_get_string_value(config,"IP_BROKER");
-	char* PUERTO = config_get_string_value(config,"PUERTO_BROKER");
+	char* IP = config_get_string_value(CONFIG,"IP_BROKER");
+	char* PUERTO = config_get_string_value(CONFIG,"PUERTO_BROKER");
 	return iniciar_servidor(IP, PUERTO);
+}
+
+void init_memory()
+{
+	char* size_memory = config_get_string_value(CONFIG,"TAMANO_MEMORIA");
+	int size = atoi(size_memory);
+
+	MEMORY = malloc(size);
 }
 
 void init_message_queues()
@@ -266,13 +275,13 @@ void init_suscriber_lists()
 
 void init_logger()
 {
-	char* broker_log = config_get_string_value(config,"LOG_FILE");
-	logger = log_create(broker_log, BROKER_NAME, false, LOG_LEVEL_INFO);
+	char* broker_log = config_get_string_value(CONFIG,"LOG_FILE");
+	LOGGER = log_create(broker_log, BROKER_NAME, false, LOG_LEVEL_INFO);
 }
 
 void init_config()
 {
-	config = config_create(BROKER_CONFIG);
+	CONFIG = config_create(BROKER_CONFIG);
 }
 
 
@@ -298,6 +307,6 @@ void terminar_programa(int socket_servidor, t_log* logger)
 	destroy_all_mutex();
 	liberar_conexion(socket_servidor);
 	log_destroy(logger);
-	config_destroy(config);
+	config_destroy(CONFIG);
 }
 
