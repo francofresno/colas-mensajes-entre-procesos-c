@@ -31,7 +31,7 @@ typedef struct
 } t_subscriber;
 
 t_queue* create_message_queue();
-void push_message_queue(t_queue* queue, uint32_t ID, uint32_t ID_correlativo, void* message, t_list* suscribers_sent, pthread_mutex_t mutex);
+t_enqueued_message* push_message_queue(t_queue* queue, uint32_t ID, uint32_t ID_correlativo, void* message, pthread_mutex_t mutex);
 t_enqueued_message* pop_message_queue(t_queue* queue, pthread_mutex_t mutex);
 t_enqueued_message* get_message_by_index(t_queue* queue, int index);
 void inform_message_sent_to(t_enqueued_message* data, t_subscriber* subscriber);

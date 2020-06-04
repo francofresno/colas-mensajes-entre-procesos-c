@@ -17,11 +17,11 @@ t_queue* create_message_queue()
 	return queue_create();
 }
 
-void push_message_queue(t_queue* queue, uint32_t ID, uint32_t ID_correlativo, void* message, t_list* suscribers_sent, pthread_mutex_t mutex)
+t_enqueued_message* push_message_queue(t_queue* queue, uint32_t ID, uint32_t ID_correlativo, void* message, pthread_mutex_t mutex)
 {
 	t_enqueued_message* data = malloc(sizeof(*data));
 	data->suscribers_ack = list_create();
-	data->suscribers_informed = suscribers_sent;
+	data->suscribers_informed = list_create();
 	data->ID = ID;
 	data->ID_correlativo = ID_correlativo;
 	data->message = message;
@@ -29,6 +29,8 @@ void push_message_queue(t_queue* queue, uint32_t ID, uint32_t ID_correlativo, vo
 	pthread_mutex_lock(&mutex);
 	queue_push(queue, (void*) data);
 	pthread_mutex_unlock(&mutex);
+
+	return data;
 }
 
 t_enqueued_message* pop_message_queue(t_queue* queue, pthread_mutex_t mutex)
@@ -197,13 +199,17 @@ int isSubscriber(t_list* subscribers, t_subscriber* subscriber)
 
 void add_new_informed_subscriber_to_mq(t_enqueued_message* messages_in_queue[], uint32_t number_of_mensajes, t_subscriber* subscriber) {
 	for (int i=0; i < number_of_mensajes; i++) {
-		list_add(messages_in_queue[i]->suscribers_informed, subscriber); //TODO mutex?
+		if (!isSubscriber(messages_in_queue[i]->suscribers_informed, subscriber)) {
+			list_add(messages_in_queue[i]->suscribers_informed, subscriber); //TODO mutex?
+		}
 	}
 }
 
 void add_new_ack_suscriber_to_mq(t_enqueued_message* messages_in_queue[], uint32_t number_of_mensajes, t_subscriber* subscriber) {
 	for (int i=0; i < number_of_mensajes; i++) {
-		list_add(messages_in_queue[i]->suscribers_ack, subscriber); //TODO mutex?
+		if (!isSubscriber(messages_in_queue[i]->suscribers_ack, subscriber)) {
+			list_add(messages_in_queue[i]->suscribers_ack, subscriber); //TODO mutex?
+		}
 	}
 }
 

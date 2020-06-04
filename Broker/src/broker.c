@@ -51,10 +51,13 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 		t_queue* queue = COLAS_MENSAJES[cod_op];
 		t_list* suscriptores = SUSCRIPTORES_MENSAJES[cod_op];
 		pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
+
+		t_enqueued_message* mensaje_encolado = push_message_queue(queue, id_mensaje, id_correlativo, mensaje_recibido, mutex);
+		enviar_id_respuesta(id_mensaje, socket_cliente);
 		t_list* suscriptores_informados = informar_a_suscriptores(cod_op, mensaje_recibido, id_mensaje, id_correlativo, suscriptores, mutex);
-		push_message_queue(queue, id_mensaje, id_correlativo, mensaje_recibido, suscriptores_informados, mutex); //TODO modificar para hacer el push ANTES de informar
-		enviar_id_respuesta(id_mensaje,socket_cliente);
+		mensaje_encolado->suscribers_informed = suscriptores_informados;
 		log_nuevo_mensaje(id_mensaje, cod_op, logger);
+
 		recibir_multiples_ack(cod_op, id_mensaje, suscriptores_informados);
 	}
 }
@@ -142,6 +145,8 @@ void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subs
 	int tamanio_paquetes[cantidad_mensajes];
 	uint32_t tamanio_stream = 0;
 
+	pthread_mutex_t mutex = MUTEX_COLAS[codigo];
+	pthread_mutex_lock(&mutex);
 	for (int i=0; i < cantidad_mensajes; i++) {
 		uint32_t bytes;
 		t_enqueued_message* mensaje_encolado = get_message_by_index(message_queue, i); // TODO deberia meter un mutex aca si en algun momento REMUEVO mensajes de la cola
@@ -153,6 +158,7 @@ void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subs
 		tamanio_stream += bytes;
 		mensajes_encolados[i] = mensaje_encolado;
 	}
+	pthread_mutex_unlock(&mutex);
 
 	enviar_mensajes_encolados(cantidad_mensajes, tamanio_stream, paquetes_serializados, tamanio_paquetes, mensajes_encolados, subscriber);
 
