@@ -13,19 +13,20 @@ int main(void) {
 
 	init_config();
 	init_memory();
+	choose_memory_algorithms();
 	init_logger();
 	init_message_queues();
 	init_suscriber_lists();
-	int socket_servidor = init_server();
+	int server_socket = init_server();
 
 
 	printf("broker!\n");
 	fflush(stdout);
 
 	while(1) {
-		int socket_cliente = esperar_cliente(socket_servidor);
-		if(socket_cliente > 0) {
-			pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
+		int client_socket = esperar_cliente(server_socket);
+		if(client_socket > 0) {
+			pthread_create(&thread,NULL,(void*)serve_client,&client_socket);
 			pthread_detach(thread);
 		}
 	}
@@ -215,6 +216,39 @@ int init_server()
 	char* IP = config_get_string_value(CONFIG,"IP_BROKER");
 	char* PUERTO = config_get_string_value(CONFIG,"PUERTO_BROKER");
 	return iniciar_servidor(IP, PUERTO);
+}
+
+void choose_partition_algorithm()
+{
+	char* partition_algorithm = config_get_string_value(CONFIG,"ALGORITMO_PARTICION_LIBRE");
+	if (strcmp(partition_algorithm, "FF") == 0) {
+		PARTITION_SELECTION_ALGORITHM = FIRST_FIT;
+	} else if (strcmp(partition_algorithm, "BF") == 0) {
+		PARTITION_SELECTION_ALGORITHM = BEST_FIT;
+	}
+}
+
+void choose_victim_algorithm()
+{
+	char* victim_algorithm = config_get_string_value(CONFIG,"ALGORITMO_REEMPLAZO");
+	if (strcmp(victim_algorithm, "FIFO") == 0) {
+		VICTIM_SELECTION_ALGORITHM = FIFO;
+	} else if (strcmp(victim_algorithm, "LRU") == 0) {
+		VICTIM_SELECTION_ALGORITHM = LRU;
+	}
+}
+
+void choose_memory_algorithms()
+{
+	char* mem_algorithm = config_get_string_value(CONFIG,"ALGORITMO_MEMORIA");
+	if (strcmp(mem_algorithm, "PD") == 0) {
+		MEMORY_ALGORITHM = DYNAMIC_PARTITIONS;
+		choose_victim_algorithm();
+		choose_partition_algorithm();
+	} else if (strcmp(mem_algorithm, "BS") == 0) {
+		MEMORY_ALGORITHM = BUDDY_SYSTEM;
+		choose_victim_algorithm();
+	}
 }
 
 void init_memory()

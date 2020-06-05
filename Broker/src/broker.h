@@ -26,7 +26,6 @@
 
 uint32_t ID_COUNTER;
 pthread_t thread;
-pthread_t thread_child;
 
 // Colas de mensajes y listas de suscriptores
 t_queue* NEW_POKEMON_QUEUE;
@@ -64,16 +63,26 @@ t_list* SUSCRIPTORES_MENSAJES[7];
 pthread_mutex_t MUTEX_COLAS[7];
 pthread_mutex_t MUTEX_SUSCRIPTORES[7];
 
+// Enums memorias
+typedef enum {
+	DYNAMIC_PARTITIONS,
+	BUDDY_SYSTEM,
+} memory_algorithm;
+
+typedef enum {
+	FIRST_FIT,
+	BEST_FIT,
+	FIFO,
+	LRU
+} selection_algorithm;
+
 // Config y constants obtenidas de config
 t_config* CONFIG;
 t_log* LOGGER;
 void* MEMORY;
-
-struct thread_args {
-	t_list* suscriptores_informados;
-	t_enqueued_message** mensajes_encolados;
-	t_queue* queue;
-};
+memory_algorithm MEMORY_ALGORITHM;
+selection_algorithm PARTITION_SELECTION_ALGORITHM;
+selection_algorithm VICTIM_SELECTION_ALGORITHM;
 
 
 int init_server();
@@ -82,6 +91,7 @@ void init_suscriber_lists();
 void init_logger();
 void init_config();
 void init_memory();
+void choose_memory_algorithms();
 
 int esperar_cliente(int socket_servidor);
 void serve_client(int* socket_cliente);
