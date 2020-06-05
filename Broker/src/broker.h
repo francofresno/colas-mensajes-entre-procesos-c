@@ -20,6 +20,7 @@
 #include "nuestras-commons/mensajes.h"
 #include "messages_queues.h"
 #include "logger.h"
+#include "memory/memory.h"
 
 #define BROKER_NAME "broker"
 #define BROKER_CONFIG "broker.config"
@@ -62,19 +63,6 @@ t_queue* COLAS_MENSAJES[7];
 t_list* SUSCRIPTORES_MENSAJES[7];
 pthread_mutex_t MUTEX_COLAS[7];
 pthread_mutex_t MUTEX_SUSCRIPTORES[7];
-
-// Enums memorias
-typedef enum {
-	DYNAMIC_PARTITIONS,
-	BUDDY_SYSTEM,
-} memory_algorithm;
-
-typedef enum {
-	FIRST_FIT,
-	BEST_FIT,
-	FIFO,
-	LRU
-} selection_algorithm;
 
 // Config y constants obtenidas de config
 t_config* CONFIG;

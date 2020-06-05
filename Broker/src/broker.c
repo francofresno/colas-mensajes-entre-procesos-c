@@ -248,6 +248,7 @@ void choose_memory_algorithms()
 	} else if (strcmp(mem_algorithm, "BS") == 0) {
 		MEMORY_ALGORITHM = BUDDY_SYSTEM;
 		choose_victim_algorithm();
+		PARTITION_SELECTION_ALGORITHM = NONE;
 	}
 }
 
