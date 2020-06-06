@@ -224,4 +224,20 @@
 [INFO] 12:17:59:418 broker/(5895:6031): El mensaje id 9 ha llegado a la cola id: 1
 [INFO] 12:17:59:419 broker/(5895:6032): El mensaje id: 1 ha sido enviado al suscriptor id: 10
 [INFO] 12:17:59:419 broker/(5895:6032): El mensaje id 10 ha llegado a la cola id: 1
-                                                                                                                                                                                  
+                                                                                                                                                                                  [INFO] 21:30:10:166 broker/(8980:9070): El proceso id: 3 se ha suscripto a la cola id: 5
+[INFO] 21:30:10:167 broker/(8980:9071): El proceso id: 2 se ha suscripto a la cola id: 1
+[INFO] 21:33:42:2 broker/(8980:9325): El mensaje id: 2 ha sido enviado al suscriptor id: 1
+[INFO] 21:33:42:2 broker/(8980:9325): El mensaje id 1 ha llegado a la cola id: 1
+[INFO] 21:36:24:295 broker/(9380:9386): El proceso id: 3 se ha suscripto a la cola id: 5
+[INFO] 21:36:24:296 broker/(9380:9387): El proceso id: 2 se ha suscripto a la cola id: 1
+[INFO] 21:36:35:147 broker/(9380:9395): El mensaje id 1 ha llegado a la cola id: 3
+[INFO] 21:36:44:966 broker/(9380:9400): El mensaje id 2 ha llegado a la cola id: 3
+[INFO] 21:37:16:334 broker/(9380:9410): El mensaje id: 3 ha sido enviado al suscriptor id: 3
+[INFO] 21:37:16:334 broker/(9380:9410): El mensaje id 3 ha llegado a la cola id: 5
+[INFO] 21:37:25:351 broker/(9380:9412): El mensaje id 4 ha llegado a la cola id: 3
+[INFO] 21:37:40:723 broker/(9380:9417): El mensaje id: 3 ha sido enviado al suscriptor id: 5
+[INFO] 21:37:40:723 broker/(9380:9417): El mensaje id 5 ha llegado a la cola id: 5
+[INFO] 21:37:47:726 broker/(9380:9420): El mensaje id: 2 ha sido enviado al suscriptor id: 6
+[INFO] 21:37:47:726 broker/(9380:9420): El mensaje id 6 ha llegado a la cola id: 1
+[INFO] 21:38:52:17 broker/(9457:9472): El proceso id: 3 se ha suscripto a la cola id: 5
+[INFO] 21:38:52:17 broker/(9457:9473): El proceso id: 2 se ha suscripto a la cola id: 1

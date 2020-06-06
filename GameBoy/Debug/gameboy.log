@@ -216,3 +216,30 @@ PUERTO: 6011
 CODIGO DE OPERACION: NEW_POKEMON.
 ID: 4.
 ID CORRELATIVO: 0.
+[INFO] 21:33:42:973 gameboy/(9324:9324): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 21:35:13:967 gameboy/(9346:9346): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 21:35:49:903 gameboy/(9371:9371): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 21:36:35:144 gameboy/(9394:9394): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 21:36:44:963 gameboy/(9399:9399): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 21:37:16:331 gameboy/(9409:9409): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 21:37:25:347 gameboy/(9411:9411): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 21:37:40:720 gameboy/(9416:9416): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
+[INFO] 21:37:47:722 gameboy/(9419:9419): Conexión con un proceso
+IP: 127.0.0.1
+PUERTO: 6011
