@@ -1,15 +1,41 @@
 /*
- * gamecard.h
- *
- *  Created on: 18 abr. 2020
- *      Author: utnso
+ ============================================================================
+ Name        : GameCard
+ Author      : Fran and Co
+ Description : Header Proceso GameCard
+ ============================================================================
  */
 
 #ifndef GAMECARD_H_
 #define GAMECARD_H_
 
-// IP y PUERTO de gamecard para iniciar servidor
-#define IP "127.0.0.3"
-#define PUERTO "6013"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <commons/log.h>
+#include <commons/string.h>
+#include <commons/config.h>
+#include <pthread.h>
+// INCLUDES LOCALES
+#include "nuestras-commons/conexion.h"
+#include "nuestras-commons/mensajes.h"
+
+// DEFINES
+#define GAMECARD_CONFIG "gamecard.config"
+
+// THREADS
+pthread_t threadNewPokemon;
+pthread_t threadGetPokemon;
+pthread_t threadCatchPokemon;
+
+// STRUCTS
+typedef struct {
+	int id_hilo;
+	op_code tipoCola;
+} t_datosHilo;
+
+void conectarseYSuscribirse(t_datosHilo*);
+t_config* leer_config(void);
+void recepcionMensajesDeCola(int socket_cliente);
 
 #endif /* GAMECARD_H_ */

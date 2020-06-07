@@ -90,7 +90,6 @@ int main(int argc, char *argv[])
 			t_suscripcion_msg estructuraSuscripcion;
 			estructuraSuscripcion.id_proceso = atoi(config_get_string_value(config, "ID_PROCESO"));
 			estructuraSuscripcion.tipo_cola = stringACodigoOperacion(argv[2]);
-			estructuraSuscripcion.tiempo = atoi(argv[3]);
 			status = suscribirse_a_cola(&estructuraSuscripcion, socket_cliente);
 			break;
 		case ERROR_CODIGO: return -1; break;

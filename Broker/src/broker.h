@@ -20,6 +20,7 @@
 #include "nuestras-commons/mensajes.h"
 #include "messages_queues.h"
 #include "logger.h"
+#include "memory/memory.h"
 
 #define BROKER_NAME "broker"
 #define BROKER_CONFIG "broker.config"
@@ -63,9 +64,13 @@ t_list* SUSCRIPTORES_MENSAJES[7];
 pthread_mutex_t MUTEX_COLAS[7];
 pthread_mutex_t MUTEX_SUSCRIPTORES[7];
 
-// Loggers y config
-t_log* logger;
-t_config* config;
+// Config y constants obtenidas de config
+t_config* CONFIG;
+t_log* LOGGER;
+void* MEMORY;
+memory_algorithm MEMORY_ALGORITHM;
+selection_algorithm PARTITION_SELECTION_ALGORITHM;
+selection_algorithm VICTIM_SELECTION_ALGORITHM;
 
 
 int init_server();
@@ -73,21 +78,25 @@ void init_message_queues();
 void init_suscriber_lists();
 void init_logger();
 void init_config();
+void init_memory();
+void choose_memory_algorithms();
 
 int esperar_cliente(int socket_servidor);
 void serve_client(int* socket_cliente);
 void process_request(int cod_op, uint32_t id_correlativo, void* paqueteRecibido, int socket_cliente);
 void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscriptor);
 t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint32_t id_correlativo, t_list* suscriptores, pthread_mutex_t mutex);
-t_enqueued_message** responder_a_suscriptor_nuevo(op_code codigo, t_queue* queue, t_subscriber* subscriber);
+void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subscriber* subscriber,
+		uint32_t cantidad_mensajes, t_enqueued_message* mensajes_encolados[]);
 /*
  *  @NAME: enviar_mensajes_encolados_a_suscriptor_nuevo
  *  @RETURN: -1 en caso de falla o 0 en caso de éxito
  */
 void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stream, void** paquetes_serializados,
-		int* tamanio_paquetes, t_enqueued_message** mensajes_encolados, t_subscriber* subscriber);
+		int* tamanio_paquetes, t_enqueued_message* mensajes_encolados[], t_subscriber* subscriber);
 void remover_suscriptor_si_es_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t tiempo, pthread_mutex_t mutex);
-void recibir_ack(t_enqueued_message** mensajes_encolados, int cantidad_mensajes, t_subscriber* subscriber);
+void recibir_ack(t_enqueued_message* mensajes_encolados[], uint32_t cantidad_mensajes, t_subscriber* subscriber);
+void recibir_multiples_ack(op_code codigo, uint32_t id, t_list* suscriptores_informados);
 
 uint32_t generar_id();
 
