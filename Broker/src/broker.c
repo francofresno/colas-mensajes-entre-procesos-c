@@ -74,7 +74,7 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 	uint32_t cantidad_mensajes = size_message_queue(queue);
 	t_enqueued_message* mensajes_encolados[cantidad_mensajes];
 
-	if (isSubscriber(suscriptores, estructuraSuscripcion->id_proceso)) {
+	if (isSubscriberListed(suscriptores, estructuraSuscripcion->id_proceso)) {
 		t_subscriber* subscriber_listed = get_subscriber_by_id(suscriptores, estructuraSuscripcion->id_proceso);
 		subscriber_listed->socket_suscriptor = socket_suscriptor;
 		responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber_listed, cantidad_mensajes, mensajes_encolados);

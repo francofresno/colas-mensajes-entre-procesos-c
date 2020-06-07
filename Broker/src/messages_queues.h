@@ -55,7 +55,7 @@ void unsubscribe_process(t_list* subscribers, t_subscriber* subscriber, pthread_
  */
 int get_index_of_subscriber(t_list* subscribers, uint32_t id_subscriber);
 t_subscriber* get_subscriber_by_id(t_list* subscribers, uint32_t id_subscriber);
-int isSubscriber(t_list* subscribers, uint32_t id_subscriber);
+int isSubscriberListed(t_list* subscribers, uint32_t id_subscriber);
 void free_subscribers_list(t_list* subscribers);
 
 #endif /* MESSAGES_QUEUES_H_ */

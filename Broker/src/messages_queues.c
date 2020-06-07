@@ -164,7 +164,7 @@ void unsubscribe_process(t_list* subscribers, t_subscriber* subscriber, pthread_
 {
 	pthread_mutex_lock(&mutex);
 
-	int index = get_index_of_subscriber(subscribers, subscriber);
+	int index = get_index_of_subscriber(subscribers, subscriber->id_suscriptor);
 	if (index != -1)
 		list_remove(subscribers, index);
 
@@ -199,14 +199,14 @@ t_subscriber* get_subscriber_by_id(t_list* subscribers, uint32_t id_subscriber)
 	return index >= 0 ? (t_subscriber*) list_get(subscribers, index) : NULL;
 }
 
-int isSubscriber(t_list* subscribers, uint32_t id_subscriber)
+int isSubscriberListed(t_list* subscribers, uint32_t id_subscriber)
 {
 	return get_index_of_subscriber(subscribers, id_subscriber) >= 0;
 }
 
 void add_new_informed_subscriber_to_mq(t_enqueued_message* messages_in_queue[], uint32_t number_of_mensajes, t_subscriber* subscriber) {
 	for (int i=0; i < number_of_mensajes; i++) {
-		if (!isSubscriber(messages_in_queue[i]->suscribers_informed, subscriber)) {
+		if (!isSubscriberListed(messages_in_queue[i]->suscribers_informed, subscriber->id_suscriptor)) {
 			list_add(messages_in_queue[i]->suscribers_informed, subscriber); //TODO mutex?
 		}
 	}
@@ -214,7 +214,7 @@ void add_new_informed_subscriber_to_mq(t_enqueued_message* messages_in_queue[], 
 
 void add_new_ack_suscriber_to_mq(t_enqueued_message* messages_in_queue[], uint32_t number_of_mensajes, t_subscriber* subscriber) {
 	for (int i=0; i < number_of_mensajes; i++) {
-		if (!isSubscriber(messages_in_queue[i]->suscribers_ack, subscriber)) {
+		if (!isSubscriberListed(messages_in_queue[i]->suscribers_ack, subscriber->id_suscriptor)) {
 			list_add(messages_in_queue[i]->suscribers_ack, subscriber); //TODO mutex?
 		}
 	}
