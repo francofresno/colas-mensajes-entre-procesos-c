@@ -77,6 +77,7 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 	if (isSubscriberListed(suscriptores, estructuraSuscripcion->id_proceso)) {
 		t_subscriber* subscriber_listed = get_subscriber_by_id(suscriptores, estructuraSuscripcion->id_proceso);
 		subscriber_listed->socket_suscriptor = socket_suscriptor;
+		subscriber_listed->activo = 1;
 		responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber_listed, cantidad_mensajes, mensajes_encolados);
 
 		subscriber = subscriber_listed;
@@ -84,6 +85,7 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 		subscriber = malloc(sizeof(*subscriber));
 		subscriber->id_suscriptor = estructuraSuscripcion->id_proceso;
 		subscriber->socket_suscriptor = socket_suscriptor;
+		subscriber->activo = 1;
 		subscribe_process(suscriptores, subscriber, mutex);
 
 		responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber, cantidad_mensajes, mensajes_encolados);
@@ -120,10 +122,19 @@ t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint
 	pthread_mutex_lock(&mutex);
 	for (int i=0; i < list_size(suscriptores); i++) {
 		t_subscriber* suscriptor = list_get(suscriptores, i);
-		if (enviar_mensaje(codigo, id, id_correlativo, mensaje, suscriptor->socket_suscriptor) > 0) {
-			list_add(suscriptores_informados, (void*)suscriptor);
-			log_mensaje_a_suscriptor(suscriptor->id_suscriptor, id, LOGGER);
+
+		if (suscriptor->activo == 1) {
+			printf("1. voy a informar \n");
+			if (enviar_mensaje(codigo, id, id_correlativo, mensaje, suscriptor->socket_suscriptor) > 0) {
+				printf("2. informe \n");
+				list_add(suscriptores_informados, (void*)suscriptor);
+				log_mensaje_a_suscriptor(suscriptor->id_suscriptor, id, LOGGER);
+			} else {
+				suscriptor->activo = 0;
+				printf("2. suscriptor inactivo \n");
+			}
 		}
+
 	}
 	pthread_mutex_unlock(&mutex);
 
@@ -146,6 +157,7 @@ void recibir_multiples_ack(op_code codigo, uint32_t id, t_list* suscriptores_inf
 void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subscriber* subscriber, uint32_t cantidad_mensajes, t_enqueued_message* mensajes_encolados[])
 {
 	printf("Cantidad de mensajes en cola: %d\n", cantidad_mensajes);
+	printf("Socket suscriptor: %d\n", subscriber->socket_suscriptor);
 	fflush(stdout);
 
 	void* paquetes_serializados[cantidad_mensajes];
@@ -156,7 +168,8 @@ void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subs
 	pthread_mutex_lock(&mutex);
 	for (int i=0; i < cantidad_mensajes; i++) {
 		uint32_t bytes;
-		t_enqueued_message* mensaje_encolado = get_message_by_index(message_queue, i); //TODO solamente si no fue informado al subscriber
+		t_enqueued_message* mensaje_encolado = get_message_by_index(message_queue, i);
+
 		void* a_enviar = serializar_paquete(codigo, mensaje_encolado->ID, mensaje_encolado->ID_correlativo, mensaje_encolado->message, &bytes);
 		bytes += sizeof(bytes);
 
@@ -199,9 +212,13 @@ void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stre
 	}
 
 	printf("Respondi!\n");
-	if (send(subscriber->socket_suscriptor, a_enviar, bytes_a_enviar, 0) > 0 && cantidad_mensajes > 0) {
-		printf("Envie mensajes encolados!\n");
-		add_new_informed_subscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber);
+	if (send(subscriber->socket_suscriptor, a_enviar, bytes_a_enviar, 0) > 0) {
+		if (cantidad_mensajes > 0) {
+			printf("Envie mensajes encolados!\n");
+			add_new_informed_subscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber);
+		}
+	} else {
+		subscriber->activo = 0;
 	}
 
 	free(a_enviar);

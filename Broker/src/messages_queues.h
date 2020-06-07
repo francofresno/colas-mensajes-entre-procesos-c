@@ -28,6 +28,7 @@ typedef struct
 {
 	uint32_t id_suscriptor;
 	int socket_suscriptor;
+	int activo;
 } t_subscriber;
 
 t_queue* create_message_queue();
