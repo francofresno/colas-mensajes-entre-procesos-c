@@ -66,9 +66,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscriptor)
 {
-	t_subscriber* subscriber = malloc(sizeof(*subscriber));
-	subscriber->id_suscriptor = estructuraSuscripcion->id_proceso;
-	subscriber->socket_suscriptor = socket_suscriptor;
+	t_subscriber* subscriber;
 
 	t_list* suscriptores = SUSCRIPTORES_MENSAJES[estructuraSuscripcion->tipo_cola];
 	t_queue* queue = COLAS_MENSAJES[estructuraSuscripcion->tipo_cola];
@@ -76,9 +74,16 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 	uint32_t cantidad_mensajes = size_message_queue(queue);
 	t_enqueued_message* mensajes_encolados[cantidad_mensajes];
 
-	if (isSubscriber(suscriptores, subscriber)) {
-		responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber, cantidad_mensajes, mensajes_encolados);
+	if (isSubscriber(suscriptores, estructuraSuscripcion->id_proceso)) {
+		t_subscriber* subscriber_listed = get_subscriber_by_id(suscriptores, estructuraSuscripcion->id_proceso);
+		subscriber_listed->socket_suscriptor = socket_suscriptor;
+		responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber_listed, cantidad_mensajes, mensajes_encolados);
+
+		subscriber = subscriber_listed;
 	} else {
+		subscriber = malloc(sizeof(*subscriber));
+		subscriber->id_suscriptor = estructuraSuscripcion->id_proceso;
+		subscriber->socket_suscriptor = socket_suscriptor;
 		subscribe_process(suscriptores, subscriber, mutex);
 
 		responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber, cantidad_mensajes, mensajes_encolados);
@@ -151,7 +156,7 @@ void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subs
 	pthread_mutex_lock(&mutex);
 	for (int i=0; i < cantidad_mensajes; i++) {
 		uint32_t bytes;
-		t_enqueued_message* mensaje_encolado = get_message_by_index(message_queue, i);
+		t_enqueued_message* mensaje_encolado = get_message_by_index(message_queue, i); //TODO solamente si no fue informado al subscriber
 		void* a_enviar = serializar_paquete(codigo, mensaje_encolado->ID, mensaje_encolado->ID_correlativo, mensaje_encolado->message, &bytes);
 		bytes += sizeof(bytes);
 
