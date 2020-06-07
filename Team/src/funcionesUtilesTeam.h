@@ -48,7 +48,9 @@ typedef struct
 typedef struct
 {
 	t_queue* colaListos;
-	t_queue* colaBloqueados;
+	t_queue* colaBloqueadosLLenos;
+	t_queue* colaBloqueadosEsperandoAtraparMas;
+	t_queue* colaBloqueadosEsperandoCaught;
 	t_queue* colaEnEjecucion;
 	t_queue* colaFinalizados;
 

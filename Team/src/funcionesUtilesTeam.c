@@ -12,6 +12,7 @@ t_list* hilosEntrenadores;
 t_list* objetivoTeam;
 
 pthread_mutex_t mutex_id_entrenadores = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_hay_pokemones = PTHREAD_MUTEX_INITIALIZER;
 /*
   ============================================================================
  	 	 	 	 	 	 	 	 HITO 2
@@ -59,7 +60,6 @@ void ponerEntrenadoresEnLista(t_config* config) {
 
 	}
 
-	//TODO OBJETIVOS GLOBALES DEL TEMA --> VARIABLE GLOBAL.
 	hacerObjetivoTeam(listaDePokemonesDeEntrenadores, listaDePokemonesObjetivoDeEntrenadores);
 }
 
@@ -219,7 +219,7 @@ int sonIguales(t_nombrePokemon* pokemon1, t_nombrePokemon* pokemon2){
 }
 
 void planificarSegun(t_config* config) {
-
+	pthread_mutex_lock(&mutex_hay_pokemones);
 	char* algoritmoPlanificacion = config_get_string_value(config,
 			"ALGORITMO_PLANIFICACION");
 	//char* quantum= config_get_array_value(config, "QUANTUM");
@@ -268,11 +268,14 @@ void planificarSegun(t_config* config) {
 
 void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 
+
 	t_estructuraCola* estructura_cola = malloc(sizeof(t_estructuraCola));
 
 	estructura_cola->colaListos = queue_create();
 	estructura_cola->colaEnEjecucion = queue_create();
-	estructura_cola->colaBloqueados= queue_create();
+	estructura_cola->colaBloqueadosLLenos= queue_create();
+	estructura_cola->colaBloqueadosEsperandoCaught= queue_create();
+	estructura_cola->colaBloqueadosEsperandoAtraparMas= queue_create();
 	estructura_cola->colaFinalizados = queue_create();
 
 	int tamanio = list_size(entrenadores);
@@ -294,7 +297,7 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 
 			if (entrenador->estado == BLOCKED){
 				queue_pop(estructura_cola->colaEnEjecucion);
-				queue_push(estructura_cola->colaBloqueados, entrenador);
+				queue_push(estructura_cola->colaBloqueadosLLenos, entrenador);
 			}
 		}
 	}

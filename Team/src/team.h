@@ -36,17 +36,33 @@ t_log* iniciar_logger(void);
 
 t_config* leer_config(void);
 
+void suscribirseAColas();
+
+void suscribirseA(op_code*);
+
 void serve_client(int*);
 
 void process_request(int, uint32_t, void*, int);
 
 op_code stringACodigoOperacion(const char*);
 
+void enviarMensajes();
+
 void enviarMensajeGetABroker();
 
 t_list* eliminarRepetidos();
 
 void enviarMensajeGet(t_nombrePokemon*);
+
+void inicializarBinarios();
+
+void inicializarListas();
+
+void esperarId(int);
+
+void requiere(t_nombrePokemon*, t_coordenadas);
+
+void diferencia();
 
 //void terminar_programa(int socket, t_log* logger, t_config* config);
 
