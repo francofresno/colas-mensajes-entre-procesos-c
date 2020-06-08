@@ -8,7 +8,6 @@
 
 #include "broker.h"
 
-
 int main(void) {
 
 	init_config();
@@ -18,7 +17,6 @@ int main(void) {
 	init_message_queues();
 	init_suscriber_lists();
 	int server_socket = init_server();
-
 
 	printf("broker!\n");
 	fflush(stdout);
@@ -55,6 +53,14 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 		pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
 
 		t_enqueued_message* mensaje_encolado = push_message_queue(queue, id_mensaje, id_correlativo, mensaje_recibido, mutex);
+
+
+t_newPokemon_msg* est = (t_newPokemon_msg*) mensaje_encolado->message;
+t_newPokemon_msg* est2 = (t_newPokemon_msg*) mensaje_recibido;
+
+t_enqueued_message* msg = find_message_by_id(queue, id_mensaje);
+t_newPokemon_msg* est3 = (t_newPokemon_msg*) msg->message;
+
 		enviar_id_respuesta(id_mensaje, socket_cliente);
 		t_list* suscriptores_informados = informar_a_suscriptores(cod_op, mensaje_recibido, id_mensaje, id_correlativo, suscriptores, mutex);
 		mensaje_encolado->suscribers_informed = suscriptores_informados;
@@ -71,14 +77,14 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 	t_list* suscriptores = SUSCRIPTORES_MENSAJES[estructuraSuscripcion->tipo_cola];
 	t_queue* queue = COLAS_MENSAJES[estructuraSuscripcion->tipo_cola];
 	pthread_mutex_t mutex = MUTEX_SUSCRIPTORES[estructuraSuscripcion->tipo_cola];
-	uint32_t cantidad_mensajes = size_message_queue(queue);
-	t_enqueued_message* mensajes_encolados[cantidad_mensajes];
+	uint32_t cantidad_mensajes = size_message_queue(queue); // Como maximo sera del size de la lista, este valor es modificado en responder_a_suscriptor_nuevo
+	t_list* mensajes_encolados = list_create();
 
 	if (isSubscriberListed(suscriptores, estructuraSuscripcion->id_proceso)) {
 		t_subscriber* subscriber_listed = get_subscriber_by_id(suscriptores, estructuraSuscripcion->id_proceso);
 		subscriber_listed->socket_suscriptor = socket_suscriptor;
 		subscriber_listed->activo = 1;
-		responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber_listed, cantidad_mensajes, mensajes_encolados);
+		responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber_listed, &cantidad_mensajes, mensajes_encolados);
 
 		subscriber = subscriber_listed;
 	} else {
@@ -88,13 +94,14 @@ void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscr
 		subscriber->activo = 1;
 		subscribe_process(suscriptores, subscriber, mutex);
 
-		responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber, cantidad_mensajes, mensajes_encolados);
+		responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber, &cantidad_mensajes, mensajes_encolados);
 		remover_suscriptor_si_es_temporal(suscriptores, subscriber, estructuraSuscripcion->temporal, mutex);
 		log_nuevo_suscriptor(estructuraSuscripcion->id_proceso, estructuraSuscripcion->tipo_cola, LOGGER);
 	}
 
 	recibir_ack(mensajes_encolados, cantidad_mensajes, subscriber);
 
+	list_destroy(mensajes_encolados);
 }
 
 void remover_suscriptor_si_es_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t temporal, pthread_mutex_t mutex)
@@ -125,6 +132,7 @@ t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint
 
 		if (suscriptor->activo == 1) {
 			printf("1. voy a informar \n");
+			t_newPokemon_msg* est2 = (t_newPokemon_msg*) mensaje;
 			if (enviar_mensaje(codigo, id, id_correlativo, mensaje, suscriptor->socket_suscriptor) > 0) {
 				printf("2. informe \n");
 				list_add(suscriptores_informados, (void*)suscriptor);
@@ -143,51 +151,59 @@ t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint
 
 void recibir_multiples_ack(op_code codigo, uint32_t id, t_list* suscriptores_informados)
 {
-	t_enqueued_message* mensajes_encolados[1];
+	t_list* mensajes_encolados = list_create();
 	t_queue* queue = COLAS_MENSAJES[codigo];
 	t_enqueued_message* enqueued_message = find_message_by_id(queue, id);
-	mensajes_encolados[0] = enqueued_message;
+	list_add(mensajes_encolados, enqueued_message);
 
 	for (int i=0; i < list_size(suscriptores_informados); i++) {
 		t_subscriber* suscriptor = list_get(suscriptores_informados, i);
 		recibir_ack(mensajes_encolados, 1, suscriptor);
 	}
+
+	list_destroy(mensajes_encolados);
 }
 
-void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subscriber* subscriber, uint32_t cantidad_mensajes, t_enqueued_message* mensajes_encolados[])
+void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subscriber* subscriber, uint32_t* cantidad_mensajes, t_list* mensajes_encolados)
 {
-	printf("Cantidad de mensajes en cola: %d\n", cantidad_mensajes);
+	printf("Cantidad de mensajes en cola: %d\n", *cantidad_mensajes);
 	printf("Socket suscriptor: %d\n", subscriber->socket_suscriptor);
 	fflush(stdout);
 
-	void* paquetes_serializados[cantidad_mensajes];
-	int tamanio_paquetes[cantidad_mensajes];
+	t_list* paquetes_serializados = list_create();
+	t_list* tamanio_paquetes = list_create();
 	uint32_t tamanio_stream = 0;
 
 	pthread_mutex_t mutex = MUTEX_COLAS[codigo];
 	pthread_mutex_lock(&mutex);
-	for (int i=0; i < cantidad_mensajes; i++) {
+	for (int i=0; i < *cantidad_mensajes; i++) {
 		uint32_t bytes;
 		t_enqueued_message* mensaje_encolado = get_message_by_index(message_queue, i);
 
-		void* a_enviar = serializar_paquete(codigo, mensaje_encolado->ID, mensaje_encolado->ID_correlativo, mensaje_encolado->message, &bytes);
-		bytes += sizeof(bytes);
+		t_newPokemon_msg* est = (t_newPokemon_msg*) mensaje_encolado->message;
 
-		paquetes_serializados[i] = a_enviar;
-		tamanio_paquetes[i] = bytes;
-		tamanio_stream += bytes;
-		mensajes_encolados[i] = mensaje_encolado;
+		if(!isSubscriberListed(mensaje_encolado->suscribers_ack, subscriber->id_suscriptor)) {
+			void* a_enviar = serializar_paquete(codigo, mensaje_encolado->ID, mensaje_encolado->ID_correlativo, mensaje_encolado->message, &bytes);
+			bytes += sizeof(bytes);
+
+			list_add(paquetes_serializados, a_enviar);
+			list_add(tamanio_paquetes, &bytes);
+			tamanio_stream += bytes;
+			list_add(mensajes_encolados, (void*) mensaje_encolado);
+		}
+
 	}
 	pthread_mutex_unlock(&mutex);
 
-	enviar_mensajes_encolados(cantidad_mensajes, tamanio_stream, paquetes_serializados, tamanio_paquetes, mensajes_encolados, subscriber);
+	*cantidad_mensajes = list_size(paquetes_serializados);
 
-	for (int i=0; i < cantidad_mensajes; i++) {
-		free(paquetes_serializados[i]);
-	}
+	enviar_mensajes_encolados(*cantidad_mensajes, tamanio_stream, paquetes_serializados, tamanio_paquetes, mensajes_encolados, subscriber);
+
+	list_destroy(tamanio_paquetes);
+	list_destroy_and_destroy_elements(paquetes_serializados, free);
 }
 
-void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stream, void** paquetes_serializados, int* tamanio_paquetes, t_enqueued_message* mensajes_encolados[], t_subscriber* subscriber)
+void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stream, t_list* paquetes_serializados, t_list* tamanio_paquetes, t_list* mensajes_encolados, t_subscriber* subscriber)
 {
 	void* a_enviar;
 	int bytes_a_enviar = sizeof(cantidad_mensajes) + sizeof(tamanio_stream);
@@ -200,8 +216,10 @@ void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stre
 		offset += sizeof(tamanio_stream);
 
 		for (int i=0; i < cantidad_mensajes; i++ ) {
-			memcpy(a_enviar + offset, paquetes_serializados[i], tamanio_paquetes[i]);
-			offset += tamanio_paquetes[i];
+			int tamanio = list_size(tamanio_paquetes);
+			void* paquete = list_get(paquetes_serializados, i);
+			memcpy(a_enviar + offset, paquete, tamanio);
+			offset += tamanio;
 		}
 		bytes_a_enviar += tamanio_stream;
 
@@ -224,7 +242,8 @@ void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stre
 	free(a_enviar);
 }
 
-void recibir_ack(t_enqueued_message* mensajes_encolados[], uint32_t cantidad_mensajes, t_subscriber* subscriber) {
+void recibir_ack(t_list* mensajes_encolados, uint32_t cantidad_mensajes, t_subscriber* subscriber)
+{
 	uint32_t response_status = 0;
 	int status = recv(subscriber->socket_suscriptor, &response_status, sizeof(response_status), MSG_WAITALL);
 

@@ -82,6 +82,7 @@ int esperar_cliente(int socket_servidor)
 int enviar_mensaje(op_code codigoOperacion, uint32_t id, uint32_t id_correlativo, void* mensaje, int socket_envio)
 {
 	uint32_t bytes;
+	t_newPokemon_msg* est2 = (t_newPokemon_msg*) mensaje;
 	void* paqueteAEnviar = serializar_paquete(codigoOperacion, id, id_correlativo, mensaje, &bytes);
 	printf("2.2 serialice %d bytes\n", bytes);
 	printf("2.3 intentare enviar al socket %d\n", socket_envio);
@@ -116,6 +117,7 @@ void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_corr
 			serializar_variable(a_enviar, &(estSuscripcion->temporal), sizeof(estSuscripcion->temporal), &offset);
 			break;
 		case NEW_POKEMON: ;
+		t_newPokemon_msg* est2 = (t_newPokemon_msg*) estructura;
 			t_newPokemon_msg* estNew = estructura;
 			*bytes += estNew->nombre_pokemon.nombre_lenght
 					+ sizeof(estNew->nombre_pokemon.nombre_lenght)
@@ -362,10 +364,10 @@ void copiar_variable(void* variable, void* stream, int* offset, int size)
 
 void free_paquete_recibido(char* nombre_recibido, t_paquete* paquete_recibido)
 {
-	if(nombre_recibido != NULL) {
-		free(nombre_recibido);
-	}
-	free(paquete_recibido->mensaje);
+//	if(nombre_recibido != NULL) {
+//		free(nombre_recibido);
+//	}
+//	free(paquete_recibido->mensaje);
 	free(paquete_recibido);
 }
 
