@@ -87,7 +87,7 @@ int enviar_mensaje(op_code codigoOperacion, uint32_t id, uint32_t id_correlativo
 	printf("2.2 serialice %d bytes\n", bytes);
 	printf("2.3 intentare enviar al socket %d\n", socket_envio);
 	fflush(stdout);
-	int status = send(socket_envio, paqueteAEnviar, bytes + sizeof(bytes), 0);
+	int status = send(socket_envio, paqueteAEnviar, bytes + sizeof(bytes), MSG_NOSIGNAL);
 	printf("2.4 envie con status %d\n", status);
 	free(paqueteAEnviar);
 	return status;
