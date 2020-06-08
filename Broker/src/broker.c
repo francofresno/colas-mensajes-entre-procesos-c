@@ -22,9 +22,12 @@ int main(void) {
 
 	while(1) {
 		int client_socket = esperar_cliente(server_socket);
+		int* c = (int*) malloc(sizeof(int));
+		*c = client_socket;
 		if(client_socket > 0) {
-			printf("Llego un cliente al socket: %d \n", client_socket);
-			pthread_create(&thread,NULL,(void*)serve_client,&client_socket);
+			printf("Llego un cliente al socket: %d \n", *c);
+			fflush(stdout);
+			pthread_create(&thread,NULL,(void*)serve_client,c);
 			pthread_detach(thread);
 		}
 	}
@@ -179,7 +182,7 @@ void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subs
 	for (int i=0; i < *cantidad_mensajes; i++) {
 		uint32_t bytes;
 		t_enqueued_message* mensaje_encolado = get_message_by_index(message_queue, i);
-
+		//TODO si mensaje_encolado->message == NULL, sacar de la cola y no enviar a nadie
 //t_newPokemon_msg* est = (t_newPokemon_msg*) mensaje_encolado->message;
 
 		if(!isSubscriberListed(mensaje_encolado->suscribers_ack, subscriber->id_suscriptor)) {
@@ -301,7 +304,13 @@ void init_memory()
 		partition_alg = NONE;
 	}
 
-	load_memory(size, memory_alg, victim_alg, partition_alg);
+	char* min_par_size = config_get_string_value(CONFIG,"TAMANO_MINIMO_PARTICION");
+	int min_part_size = atoi(min_par_size);
+
+	char* frequency = config_get_string_value(CONFIG,"FRECUENCIA_COMPACTACION");
+	int freq_compact = atoi(frequency);
+
+	load_memory(size, min_part_size, freq_compact, memory_alg, victim_alg, partition_alg);
 }
 
 void init_message_queues()
