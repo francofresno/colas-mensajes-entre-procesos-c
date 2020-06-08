@@ -67,10 +67,6 @@ pthread_mutex_t MUTEX_SUSCRIPTORES[7];
 // Config y constants obtenidas de config
 t_config* CONFIG;
 t_log* LOGGER;
-void* MEMORY;
-memory_algorithm MEMORY_ALGORITHM;
-selection_algorithm PARTITION_SELECTION_ALGORITHM;
-selection_algorithm VICTIM_SELECTION_ALGORITHM;
 
 
 int init_server();
@@ -79,7 +75,6 @@ void init_suscriber_lists();
 void init_logger();
 void init_config();
 void init_memory();
-void choose_memory_algorithms();
 
 int esperar_cliente(int socket_servidor);
 void serve_client(int* socket_cliente);

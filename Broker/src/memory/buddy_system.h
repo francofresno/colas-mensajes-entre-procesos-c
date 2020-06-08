@@ -11,6 +11,7 @@
 
 #include "memory_algorithm.h"
 
-void* bs_malloc();
+void buddy_init(int size);
+void* buddy_alloc(int size, void* memory, t_memory_algorithm memory_algorithm, t_selection_algorithm victim_algorithm);
 
 #endif /* BUDDY_SYSTEM_H_ */

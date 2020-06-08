@@ -64,7 +64,11 @@ int is_same_id(uint32_t data_id, uint32_t id)
 
 t_enqueued_message* find_message_by_id(t_queue* queue, uint32_t id)
 {
-	t_link_element *element = queue->elements->head;
+	t_link_element* element = queue->elements->head;
+
+	if (element == NULL)
+		return NULL;
+
 	t_enqueued_message* message = (t_enqueued_message*) (queue->elements->head->data);
 
 	while(element != NULL && !is_same_id(message->ID, id)) {
@@ -78,6 +82,10 @@ t_enqueued_message* find_message_by_id(t_queue* queue, uint32_t id)
 t_enqueued_message* find_message_by_id_correlativo(t_queue* queue, uint32_t id)
 {
 	t_link_element *element = queue->elements->head;
+
+	if (element == NULL)
+		return NULL;
+
 	t_enqueued_message* message = (t_enqueued_message*) (queue->elements->head->data);
 
 	while(element != NULL && !is_same_id(message->ID_correlativo, id)) {

@@ -12,7 +12,6 @@ int main(void) {
 
 	init_config();
 	init_memory();
-	choose_memory_algorithms();
 	init_logger();
 	init_message_queues();
 	init_suscriber_lists();
@@ -24,6 +23,7 @@ int main(void) {
 	while(1) {
 		int client_socket = esperar_cliente(server_socket);
 		if(client_socket > 0) {
+			printf("Llego un cliente al socket: %d \n", client_socket);
 			pthread_create(&thread,NULL,(void*)serve_client,&client_socket);
 			pthread_detach(thread);
 		}
@@ -55,11 +55,11 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 		t_enqueued_message* mensaje_encolado = push_message_queue(queue, id_mensaje, id_correlativo, mensaje_recibido, mutex);
 
 
-t_newPokemon_msg* est = (t_newPokemon_msg*) mensaje_encolado->message;
-t_newPokemon_msg* est2 = (t_newPokemon_msg*) mensaje_recibido;
-
-t_enqueued_message* msg = find_message_by_id(queue, id_mensaje);
-t_newPokemon_msg* est3 = (t_newPokemon_msg*) msg->message;
+//t_newPokemon_msg* est = (t_newPokemon_msg*) mensaje_encolado->message;
+//t_newPokemon_msg* est2 = (t_newPokemon_msg*) mensaje_recibido;
+//
+//t_enqueued_message* msg = find_message_by_id(queue, id_mensaje);
+//t_newPokemon_msg* est3 = (t_newPokemon_msg*) msg->message;
 
 		enviar_id_respuesta(id_mensaje, socket_cliente);
 		t_list* suscriptores_informados = informar_a_suscriptores(cod_op, mensaje_recibido, id_mensaje, id_correlativo, suscriptores, mutex);
@@ -132,7 +132,7 @@ t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint
 
 		if (suscriptor->activo == 1) {
 			printf("1. voy a informar \n");
-			t_newPokemon_msg* est2 = (t_newPokemon_msg*) mensaje;
+//t_newPokemon_msg* est2 = (t_newPokemon_msg*) mensaje;
 			if (enviar_mensaje(codigo, id, id_correlativo, mensaje, suscriptor->socket_suscriptor) > 0) {
 				printf("2. informe \n");
 				list_add(suscriptores_informados, (void*)suscriptor);
@@ -180,7 +180,7 @@ void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subs
 		uint32_t bytes;
 		t_enqueued_message* mensaje_encolado = get_message_by_index(message_queue, i);
 
-		t_newPokemon_msg* est = (t_newPokemon_msg*) mensaje_encolado->message;
+//t_newPokemon_msg* est = (t_newPokemon_msg*) mensaje_encolado->message;
 
 		if(!isSubscriberListed(mensaje_encolado->suscribers_ack, subscriber->id_suscriptor)) {
 			void* a_enviar = serializar_paquete(codigo, mensaje_encolado->ID, mensaje_encolado->ID_correlativo, mensaje_encolado->message, &bytes);
@@ -259,38 +259,26 @@ int init_server()
 	return iniciar_servidor(IP, PUERTO);
 }
 
-void choose_partition_algorithm()
+t_selection_algorithm choose_partition_algorithm()
 {
 	char* partition_algorithm = config_get_string_value(CONFIG,"ALGORITMO_PARTICION_LIBRE");
 	if (strcmp(partition_algorithm, "FF") == 0) {
-		PARTITION_SELECTION_ALGORITHM = FIRST_FIT;
+		return FIRST_FIT;
 	} else if (strcmp(partition_algorithm, "BF") == 0) {
-		PARTITION_SELECTION_ALGORITHM = BEST_FIT;
+		return BEST_FIT;
 	}
+	return NONE;
 }
 
-void choose_victim_algorithm()
+t_selection_algorithm choose_victim_algorithm()
 {
 	char* victim_algorithm = config_get_string_value(CONFIG,"ALGORITMO_REEMPLAZO");
 	if (strcmp(victim_algorithm, "FIFO") == 0) {
-		VICTIM_SELECTION_ALGORITHM = FIFO;
+		return FIFO;
 	} else if (strcmp(victim_algorithm, "LRU") == 0) {
-		VICTIM_SELECTION_ALGORITHM = LRU;
+		return LRU;
 	}
-}
-
-void choose_memory_algorithms()
-{
-	char* mem_algorithm = config_get_string_value(CONFIG,"ALGORITMO_MEMORIA");
-	if (strcmp(mem_algorithm, "PD") == 0) {
-		MEMORY_ALGORITHM = DYNAMIC_PARTITIONS;
-		choose_victim_algorithm();
-		choose_partition_algorithm();
-	} else if (strcmp(mem_algorithm, "BS") == 0) {
-		MEMORY_ALGORITHM = BUDDY_SYSTEM;
-		choose_victim_algorithm();
-		PARTITION_SELECTION_ALGORITHM = NONE;
-	}
+	return NONE;
 }
 
 void init_memory()
@@ -298,7 +286,22 @@ void init_memory()
 	char* size_memory = config_get_string_value(CONFIG,"TAMANO_MEMORIA");
 	int size = atoi(size_memory);
 
-	MEMORY = malloc(size);
+	t_memory_algorithm memory_alg;
+	t_selection_algorithm victim_alg;
+	t_selection_algorithm partition_alg;
+
+	char* mem_algorithm = config_get_string_value(CONFIG,"ALGORITMO_MEMORIA");
+	if (strcmp(mem_algorithm, "PD") == 0) {
+		memory_alg = DYNAMIC_PARTITIONS;
+		victim_alg = choose_victim_algorithm();
+		partition_alg = choose_partition_algorithm();
+	} else if (strcmp(mem_algorithm, "BS") == 0) {
+		memory_alg = BUDDY_SYSTEM;
+		victim_alg = choose_victim_algorithm();
+		partition_alg = NONE;
+	}
+
+	load_memory(size, memory_alg, victim_alg, partition_alg);
 }
 
 void init_message_queues()
