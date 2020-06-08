@@ -17,32 +17,26 @@ t_list* id_mensajeGet;
 
 char* ipBroker;
 char* puertoBroker;
-char* ID_TEAM;
+int ID_TEAM;
+int TIEMPO_RECONEXION;
 
 extern pthread_mutex_t mutex_hay_pokemones;
+pthread_mutex_t mutex_send = PTHREAD_MUTEX_INITIALIZER;
 
 int main(void) {
 
 	inicializarBinarios();
 	inicializarListas();
 	t_config* config = leer_config();
-
-	ID_TEAM = config_get_string_value(config, "ID");
+	inicializarConfig(config);
 
 	ponerEntrenadoresEnLista(config);
 
-	ipBroker = config_get_string_value(config, "IP_BROKER");
-	puertoBroker = config_get_string_value(config, "PUERTO_BROKER");
+	suscribirseAColas(); //TODO terminar y checkear
 
-	suscribirseAColas(config); //TODO terminar y checkear
-	enviarMensajes();
+	//enviarMensajes();
 
 
-
-
-////	op_code codigoOperacion;
-////	int socket_cliente;
-//
 	puts("Soy un team!\n");
 //
 //	fflush(stdout);
@@ -74,10 +68,21 @@ t_config* leer_config(void)
 
 }
 
-void suscribirseAColas(){ //TODO HILOS
-	suscribirseA(APPEARED_POKEMON);
-	suscribirseA(LOCALIZED_POKEMON);
-	suscribirseA(CAUGHT_POKEMON);
+void inicializarConfig(t_config* config){
+
+	ID_TEAM = config_get_int_value(config, "ID");
+	TIEMPO_RECONEXION = config_get_int_value(config, "TIEMPO_RECONEXION");
+	ipBroker = config_get_string_value(config, "IP_BROKER");
+	puertoBroker = config_get_string_value(config, "PUERTO_BROKER");
+
+}
+
+void suscribirseAColas(){ //TODO HILOS DANGER
+	op_code colas[3]= {APPEARED_POKEMON, LOCALIZED_POKEMON, CAUGHT_POKEMON};
+	for(int i=0; i<3 ; i++){
+		pthread_create(&thread, NULL, (void*) suscribirseA, &colas[i]);
+		pthread_detach(thread);
+	}
 
 }
 
@@ -89,15 +94,20 @@ void suscribirseA(op_code* codigo){
 	printf("===============\n");
 	fflush(stdout);
 
+	pthread_mutex_lock(&mutex_send);
 	int socket_cliente = crear_conexion(ipBroker, puertoBroker);
 	printf("Conexion con broker en socket %d\n", socket_cliente);
 
-	t_suscripcion_msg* estructuraSuscripcion = malloc(sizeof(*estructuraSuscripcion));
+	t_suscripcion_msg* estructuraSuscripcion = malloc(sizeof(t_suscripcion_msg));
 	estructuraSuscripcion->id_proceso = ID_TEAM;
 	estructuraSuscripcion->tipo_cola = tipo_cola;
-	estructuraSuscripcion->tiempo=0;
+	estructuraSuscripcion->temporal = 0;
 
+
+	printf("ALO \n");
 	int status_susc = suscribirse_a_cola(estructuraSuscripcion, socket_cliente);
+	pthread_mutex_unlock(&mutex_send);
+
 	printf("status de envio de susc %d\n", status_susc);
 
 	uint32_t cant_paquetes;
@@ -105,12 +115,12 @@ void suscribirseA(op_code* codigo){
 	printf("Recibi %d mensajes\n", cant_paquetes);
 	fflush(stdout);
 
-	int status_ack=informar_ask(socket_cliente);
+	int status_ack=informar_ack(socket_cliente);
 	printf("Informe ACK con status %d \n", status_ack);
 
 	for(int i = 0; i<cant_paquetes; i++){
 		t_paquete* paquete_recibido = list_get(paquetes, i);
-		printf("Fijarse que hacer con los paquetes");
+		printf("Fijarse que hacer con los paquetes con codigo de op %d", paquete_recibido->codigo_operacion);
 	}
 
 	free(estructuraSuscripcion);
@@ -208,13 +218,13 @@ void enviarMensajeGetABroker(){
 	objetivoTeamSinRepe = eliminarRepetidos();
 
 	int tamanioObjTeamSinRepetidos = list_size(objetivoTeamSinRepe);
-	pthread_t pthread_id;
+
 
 	for(int a=0; a< tamanioObjTeamSinRepetidos ; a++){
 		t_nombrePokemon* pokemon = (t_nombrePokemon*) list_get(objetivoTeamSinRepe, a);
-		pthread_create(&pthread_id, NULL, (void*) enviarMensajeGet, pokemon);
-		pthread_detach(pthread_id);
+		enviarMensajeGet(pokemon);
 	}
+
 }
 
 t_list* eliminarRepetidos(){
@@ -239,8 +249,8 @@ t_list* eliminarRepetidos(){
 	return objetivoTeamSinRepetidos;
 }
 
-void enviarMensajeGet(t_nombrePokemon* pokemon){ //TODO fijarse CON DEBUG
-	t_getPokemon_msg* estructuraPokemon = malloc(sizeof(t_getPokemon_msg));
+void enviarMensajeGet(t_nombrePokemon* pokemon){
+	t_getPokemon_msg* estructuraPokemon = malloc(sizeof(t_nombrePokemon));
 	estructuraPokemon->nombre_pokemon = *pokemon;
 	int socket_cliente = crear_conexion(ipBroker, puertoBroker);
 	int status = enviar_mensaje(GET_POKEMON, 0, 0, estructuraPokemon, socket_cliente);
@@ -267,7 +277,6 @@ void inicializarListas(){
 
 void esperarId(int socket_cliente){
 	uint32_t id_respuesta = recibir_id(socket_cliente);
-	printf("El id recibido de broker es: %d\n", id_respuesta);
 	list_add(id_mensajeGet, &id_respuesta);
 }
 

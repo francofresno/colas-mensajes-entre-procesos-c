@@ -36,6 +36,8 @@ t_log* iniciar_logger(void);
 
 t_config* leer_config(void);
 
+void inicializarConfig(t_config*);
+
 void suscribirseAColas();
 
 void suscribirseA(op_code*);
