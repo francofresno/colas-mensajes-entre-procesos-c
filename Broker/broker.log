@@ -36,3 +36,41 @@
 [INFO] 11:07:12:973 broker/(7994:8014): El mensaje id 1 ha llegado a la cola id: 1
 [INFO] 11:07:20:405 broker/(7994:8020): El mensaje id: 1 ha sido enviado al suscriptor id: 2
 [INFO] 11:07:20:405 broker/(7994:8020): El mensaje id 2 ha llegado a la cola id: 1
+[INFO] 11:15:03:674 broker/(8489:8502): El proceso id: 1 se ha suscripto a la cola id: 1
+[INFO] 11:15:08:447 broker/(8489:8510): El mensaje id: 1 ha sido enviado al suscriptor id: 1
+[INFO] 11:15:08:447 broker/(8489:8510): El mensaje id 1 ha llegado a la cola id: 1
+[INFO] 11:15:08:755 broker/(8489:8514): El mensaje id: 1 ha sido enviado al suscriptor id: 2
+[INFO] 11:15:08:756 broker/(8489:8514): El mensaje id 2 ha llegado a la cola id: 1
+[INFO] 11:15:26:401 broker/(8489:8523): El mensaje id: 1 ha sido enviado al suscriptor id: 3
+[INFO] 11:15:26:401 broker/(8489:8523): El mensaje id 3 ha llegado a la cola id: 1
+[INFO] 11:18:38:74 broker/(8761:8778): El proceso id: 1 se ha suscripto a la cola id: 1
+[INFO] 11:18:42:824 broker/(8761:8787): El mensaje id: 1 ha sido enviado al suscriptor id: 1
+[INFO] 11:18:42:824 broker/(8761:8787): El mensaje id 1 ha llegado a la cola id: 1
+[INFO] 11:21:07:546 broker/(8761:8793): El mensaje id: 1 ha sido enviado al suscriptor id: 2
+[INFO] 11:21:37:721 broker/(8761:8793): El mensaje id 2 ha llegado a la cola id: 1
+[INFO] 11:24:13:203 broker/(8974:8987): El proceso id: 1 se ha suscripto a la cola id: 1
+[INFO] 11:24:17:143 broker/(8974:8995): El mensaje id: 1 ha sido enviado al suscriptor id: 1
+[INFO] 11:24:17:143 broker/(8974:8995): El mensaje id 1 ha llegado a la cola id: 1
+[INFO] 11:24:23:605 broker/(8974:9001): El mensaje id: 1 ha sido enviado al suscriptor id: 2
+[INFO] 11:24:23:605 broker/(8974:9001): El mensaje id 2 ha llegado a la cola id: 1
+[INFO] 11:35:52:546 broker/(9422:9429): El proceso id: 1 se ha suscripto a la cola id: 1
+[INFO] 11:35:54:218 broker/(9422:9431): El mensaje id: 1 ha sido enviado al suscriptor id: 1
+[INFO] 11:35:54:221 broker/(9422:9431): El mensaje id 1 ha llegado a la cola id: 1
+[INFO] 11:35:57:575 broker/(9422:9433): El mensaje id: 1 ha sido enviado al suscriptor id: 2
+[INFO] 11:35:57:575 broker/(9422:9433): El mensaje id 2 ha llegado a la cola id: 1
+[INFO] 11:36:12:206 broker/(9422:9439): El mensaje id: 1 ha sido enviado al suscriptor id: 3
+[INFO] 11:36:12:206 broker/(9422:9439): El mensaje id 3 ha llegado a la cola id: 1
+[INFO] 11:36:16:499 broker/(9422:9441): El mensaje id: 1 ha sido enviado al suscriptor id: 4
+[INFO] 11:36:16:499 broker/(9422:9441): El mensaje id 4 ha llegado a la cola id: 1
+[INFO] 11:44:20:208 broker/(9599:9606): El proceso id: 1 se ha suscripto a la cola id: 1
+[INFO] 11:44:22:78 broker/(9599:9608): El mensaje id: 1 ha sido enviado al suscriptor id: 1
+[INFO] 11:44:22:82 broker/(9599:9608): El mensaje id 1 ha llegado a la cola id: 1
+[INFO] 11:44:31:791 broker/(9599:9610): El mensaje id: 1 ha sido enviado al suscriptor id: 2
+[INFO] 11:44:31:791 broker/(9599:9610): El mensaje id 2 ha llegado a la cola id: 1
+[INFO] 11:46:53:70 broker/(9684:9691): El proceso id: 1 se ha suscripto a la cola id: 1
+[INFO] 11:46:54:965 broker/(9684:9693): El mensaje id: 1 ha sido enviado al suscriptor id: 1
+[INFO] 11:46:54:967 broker/(9684:9693): El mensaje id 1 ha llegado a la cola id: 1
+[INFO] 11:46:58:94 broker/(9684:9695): El mensaje id: 1 ha sido enviado al suscriptor id: 2
+[INFO] 11:46:58:94 broker/(9684:9695): El mensaje id 2 ha llegado a la cola id: 1
+[INFO] 11:47:08:835 broker/(9684:9700): El mensaje id: 1 ha sido enviado al suscriptor id: 3
+[INFO] 11:47:08:836 broker/(9684:9700): El mensaje id 3 ha llegado a la cola id: 1

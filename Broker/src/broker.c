@@ -216,10 +216,10 @@ void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stre
 		offset += sizeof(tamanio_stream);
 
 		for (int i=0; i < cantidad_mensajes; i++ ) {
-			int tamanio = list_size(tamanio_paquetes);
+			uint32_t* tamanio_paquete = (uint32_t*) list_get(tamanio_paquetes, i);
 			void* paquete = list_get(paquetes_serializados, i);
-			memcpy(a_enviar + offset, paquete, tamanio);
-			offset += tamanio;
+			memcpy(a_enviar + offset, paquete, *tamanio_paquete);
+			offset += *tamanio_paquete;
 		}
 		bytes_a_enviar += tamanio_stream;
 
