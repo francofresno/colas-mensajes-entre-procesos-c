@@ -212,20 +212,22 @@ int isSubscriberListed(t_list* subscribers, uint32_t id_subscriber)
 	return get_index_of_subscriber(subscribers, id_subscriber) >= 0;
 }
 
-void add_new_informed_subscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber) {
+void add_new_informed_subscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber, t_log* logger) {
 	for (int i=0; i < number_of_messages; i++) {
 		t_enqueued_message* message = (t_enqueued_message*) list_get(messages_in_queue, i);
 		if (!isSubscriberListed(message->suscribers_informed, subscriber->id_suscriptor)) {
 			list_add(message->suscribers_informed, subscriber); //TODO mutex?
+			log_mensaje_a_suscriptor(subscriber->id_suscriptor, message->ID, logger);
 		}
 	}
 }
 
-void add_new_ack_suscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber) {
+void add_new_ack_suscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber, t_log* logger) {
 	for (int i=0; i < number_of_messages; i++) {
 		t_enqueued_message* message = (t_enqueued_message*) list_get(messages_in_queue, i);
 		if (!isSubscriberListed(message->suscribers_ack, subscriber->id_suscriptor)) {
 			list_add(message->suscribers_ack, subscriber); //TODO mutex?
+			log_ack_de_suscriptor(subscriber->id_suscriptor, message->ID, logger);
 		}
 	}
 }

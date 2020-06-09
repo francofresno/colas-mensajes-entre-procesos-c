@@ -25,7 +25,7 @@ int main(void) {
 		int* c = (int*) malloc(sizeof(int));
 		*c = client_socket;
 		if(client_socket > 0) {
-			printf("Llego un cliente al socket: %d \n", *c);
+			printf("Llegó un cliente al socket: %d \n", *c);
 			fflush(stdout);
 			pthread_create(&thread,NULL,(void*)serve_client,c);
 			pthread_detach(thread);
@@ -56,13 +56,6 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 		pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
 
 		t_enqueued_message* mensaje_encolado = push_message_queue(queue, id_mensaje, id_correlativo, mensaje_recibido, mutex);
-
-
-//t_newPokemon_msg* est = (t_newPokemon_msg*) mensaje_encolado->message;
-//t_newPokemon_msg* est2 = (t_newPokemon_msg*) mensaje_recibido;
-//
-//t_enqueued_message* msg = find_message_by_id(queue, id_mensaje);
-//t_newPokemon_msg* est3 = (t_newPokemon_msg*) msg->message;
 
 		enviar_id_respuesta(id_mensaje, socket_cliente);
 		t_list* suscriptores_informados = informar_a_suscriptores(cod_op, mensaje_recibido, id_mensaje, id_correlativo, suscriptores, mutex);
@@ -134,15 +127,11 @@ t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint
 		t_subscriber* suscriptor = list_get(suscriptores, i);
 
 		if (suscriptor->activo == 1) {
-			printf("1. voy a informar \n");
-//t_newPokemon_msg* est2 = (t_newPokemon_msg*) mensaje;
 			if (enviar_mensaje(codigo, id, id_correlativo, mensaje, suscriptor->socket_suscriptor) > 0) {
-				printf("2. informe \n");
 				list_add(suscriptores_informados, (void*)suscriptor);
 				log_mensaje_a_suscriptor(suscriptor->id_suscriptor, id, LOGGER);
 			} else {
 				suscriptor->activo = 0;
-				printf("2. suscriptor inactivo \n");
 			}
 		}
 
@@ -183,7 +172,6 @@ void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subs
 		uint32_t bytes;
 		t_enqueued_message* mensaje_encolado = get_message_by_index(message_queue, i);
 		//TODO si mensaje_encolado->message == NULL, sacar de la cola y no enviar a nadie
-//t_newPokemon_msg* est = (t_newPokemon_msg*) mensaje_encolado->message;
 
 		if(!isSubscriberListed(mensaje_encolado->suscribers_ack, subscriber->id_suscriptor)) {
 			void* a_enviar = serializar_paquete(codigo, mensaje_encolado->ID, mensaje_encolado->ID_correlativo, mensaje_encolado->message, &bytes);
@@ -232,13 +220,14 @@ void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stre
 		memcpy(a_enviar + sizeof(cantidad_mensajes), &tamanio_stream, sizeof(tamanio_stream));
 	}
 
-	printf("Respondi!\n");
-	if (send(subscriber->socket_suscriptor, a_enviar, bytes_a_enviar, 0) > 0) {
+	if (send(subscriber->socket_suscriptor, a_enviar, bytes_a_enviar, MSG_NOSIGNAL) > 0) {
+	printf("Respondí a la suscripción!\n");
 		if (cantidad_mensajes > 0) {
-			printf("Envie mensajes encolados!\n");
-			add_new_informed_subscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber);
+			printf("Envié mensajes encolados!\n");
+			add_new_informed_subscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber, LOGGER);
 		}
 	} else {
+		printf("El suscriptor está inactivo!\n");
 		subscriber->activo = 0;
 	}
 
@@ -251,7 +240,7 @@ void recibir_ack(t_list* mensajes_encolados, uint32_t cantidad_mensajes, t_subsc
 	int status = recv(subscriber->socket_suscriptor, &response_status, sizeof(response_status), MSG_WAITALL);
 
 	if(status > 0 && response_status == 200) {
-		add_new_ack_suscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber);
+		add_new_ack_suscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber, LOGGER);
 	}
 }
 
