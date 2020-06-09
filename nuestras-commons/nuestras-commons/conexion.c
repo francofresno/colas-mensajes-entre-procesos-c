@@ -431,7 +431,7 @@ int respuesta_suscripcion_cantidad_y_tamanio(uint32_t* cantidad_paquetes, uint32
 	return status;
 }
 
-t_list* respueta_suscripcion_obtener_paquetes(int socket_servidor, uint32_t* cant_paquetes_recibidos)
+t_list* respuesta_suscripcion_obtener_paquetes(int socket_servidor, uint32_t* cant_paquetes_recibidos)
 {
 	t_list* paquetes = list_create();
 	uint32_t cantidad_paquetes;
