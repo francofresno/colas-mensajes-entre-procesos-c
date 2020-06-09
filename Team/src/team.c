@@ -109,6 +109,12 @@ void suscribirseA(op_code tipo_cola){
 
 	pthread_mutex_lock(&mutex_send);
 	int socket_cliente = crear_conexion(ipBroker, puertoBroker);
+	printf("que tul socket %d\n", socket_cliente);
+	while(socket_cliente<=0){
+		sleep(TIEMPO_RECONEXION);
+		printf("Termino el sleep\n");
+		socket_cliente = crear_conexion(ipBroker, puertoBroker);
+	}
 	printf("Conexion con broker en socket %d\n", socket_cliente);
 
 	t_suscripcion_msg* estructuraSuscripcion = malloc(sizeof(t_suscripcion_msg));
@@ -143,8 +149,9 @@ void suscribirseA(op_code tipo_cola){
 		t_paquete*paquete_recibido = recibir_paquete(socket_cliente,&nombre_recibido);
 
 		if(paquete_recibido == NULL){
-			break; //TODO VER COMO RECONECTARNOS CON TIEMPO DE RECONECCION
-
+			sleep(TIEMPO_RECONEXION);
+			suscribirseA(tipo_cola);
+			printf("me vuelvo a conectar a broker\n");
 		}
 
 		printf("------------------------\n");
