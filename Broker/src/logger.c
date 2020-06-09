@@ -18,7 +18,7 @@ void log_nuevo_suscriptor(uint32_t id_proceso, op_code cola, t_log* logger)
 void log_nuevo_mensaje(uint32_t id, op_code cola, t_log* logger)
 {
 	char log_msg[100];
-	sprintf(log_msg, "El mensaje id %d ha llegado a la cola id: %d", id, cola);
+	sprintf(log_msg, "El mensaje id: %d ha llegado a la cola id: %d", id, cola);
 	log_info(logger,log_msg);
 }
 

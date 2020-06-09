@@ -15,6 +15,8 @@
 
 #include<commons/collections/queue.h>
 
+#include "logger.h"
+
 typedef struct
 {
 	uint32_t ID;
@@ -28,6 +30,7 @@ typedef struct
 {
 	uint32_t id_suscriptor;
 	int socket_suscriptor;
+	int activo;
 } t_subscriber;
 
 t_queue* create_message_queue();
@@ -44,8 +47,8 @@ void element_destroyer_mq(void* data);
 int size_message_queue(t_queue* queue);
 int is_empty_message_queue(t_queue* queue);
 void free_message_queue(t_queue* queue);
-void add_new_informed_subscriber_to_mq(t_enqueued_message* messages_in_queue[], uint32_t number_of_mensajes, t_subscriber* subscriber);
-void add_new_ack_suscriber_to_mq(t_enqueued_message* messages_in_queue[], uint32_t number_of_mensajes, t_subscriber* subscriber);
+void add_new_informed_subscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber, t_log* logger);
+void add_new_ack_suscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber, t_log* logger);
 
 void subscribe_process(t_list* subscribers, t_subscriber* subscriber, pthread_mutex_t mutex);
 void unsubscribe_process(t_list* subscribers, t_subscriber* subscriber, pthread_mutex_t mutex);
@@ -53,8 +56,9 @@ void unsubscribe_process(t_list* subscribers, t_subscriber* subscriber, pthread_
  * @NAME: get_index_of_subscriber
  * @RETURN: -1 in case of error
  */
-int get_index_of_subscriber(t_list* subscribers, t_subscriber* subscriber);
-int isSubscriber(t_list* subscribers, t_subscriber* subscriber);
+int get_index_of_subscriber(t_list* subscribers, uint32_t id_subscriber);
+t_subscriber* get_subscriber_by_id(t_list* subscribers, uint32_t id_subscriber);
+int isSubscriberListed(t_list* subscribers, uint32_t id_subscriber);
 void free_subscribers_list(t_list* subscribers);
 
 #endif /* MESSAGES_QUEUES_H_ */

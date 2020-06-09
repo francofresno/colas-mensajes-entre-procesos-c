@@ -8,25 +8,26 @@
 
 #include "broker.h"
 
-
 int main(void) {
 
 	init_config();
 	init_memory();
-	choose_memory_algorithms();
 	init_logger();
 	init_message_queues();
 	init_suscriber_lists();
 	int server_socket = init_server();
-
 
 	printf("broker!\n");
 	fflush(stdout);
 
 	while(1) {
 		int client_socket = esperar_cliente(server_socket);
+		int* c = (int*) malloc(sizeof(int));
+		*c = client_socket;
 		if(client_socket > 0) {
-			pthread_create(&thread,NULL,(void*)serve_client,&client_socket);
+			printf("Llegó un cliente al socket: %d \n", *c);
+			fflush(stdout);
+			pthread_create(&thread,NULL,(void*)serve_client,c);
 			pthread_detach(thread);
 		}
 	}
@@ -55,6 +56,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 		pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
 
 		t_enqueued_message* mensaje_encolado = push_message_queue(queue, id_mensaje, id_correlativo, mensaje_recibido, mutex);
+
 		enviar_id_respuesta(id_mensaje, socket_cliente);
 		t_list* suscriptores_informados = informar_a_suscriptores(cod_op, mensaje_recibido, id_mensaje, id_correlativo, suscriptores, mutex);
 		mensaje_encolado->suscribers_informed = suscriptores_informados;
@@ -66,28 +68,36 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscriptor)
 {
-	t_subscriber* subscriber = malloc(sizeof(*subscriber));
-	subscriber->id_suscriptor = estructuraSuscripcion->id_proceso;
-	subscriber->socket_suscriptor = socket_suscriptor;
+	t_subscriber* subscriber;
 
 	t_list* suscriptores = SUSCRIPTORES_MENSAJES[estructuraSuscripcion->tipo_cola];
 	t_queue* queue = COLAS_MENSAJES[estructuraSuscripcion->tipo_cola];
 	pthread_mutex_t mutex = MUTEX_SUSCRIPTORES[estructuraSuscripcion->tipo_cola];
-	uint32_t cantidad_mensajes = size_message_queue(queue);
-	t_enqueued_message* mensajes_encolados[cantidad_mensajes];
+	uint32_t cantidad_mensajes = size_message_queue(queue); // Como maximo sera del size de la lista, este valor es modificado en responder_a_suscriptor_nuevo
+	t_list* mensajes_encolados = list_create();
 
-	if (isSubscriber(suscriptores, subscriber)) {
-		responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber, cantidad_mensajes, mensajes_encolados);
+	if (isSubscriberListed(suscriptores, estructuraSuscripcion->id_proceso)) {
+		t_subscriber* subscriber_listed = get_subscriber_by_id(suscriptores, estructuraSuscripcion->id_proceso);
+		subscriber_listed->socket_suscriptor = socket_suscriptor;
+		subscriber_listed->activo = 1;
+		responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber_listed, &cantidad_mensajes, mensajes_encolados);
+
+		subscriber = subscriber_listed;
 	} else {
+		subscriber = malloc(sizeof(*subscriber));
+		subscriber->id_suscriptor = estructuraSuscripcion->id_proceso;
+		subscriber->socket_suscriptor = socket_suscriptor;
+		subscriber->activo = 1;
 		subscribe_process(suscriptores, subscriber, mutex);
 
-		responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber, cantidad_mensajes, mensajes_encolados);
+		responder_a_suscriptor_nuevo(estructuraSuscripcion->tipo_cola, queue, subscriber, &cantidad_mensajes, mensajes_encolados);
 		remover_suscriptor_si_es_temporal(suscriptores, subscriber, estructuraSuscripcion->temporal, mutex);
 		log_nuevo_suscriptor(estructuraSuscripcion->id_proceso, estructuraSuscripcion->tipo_cola, LOGGER);
 	}
 
 	recibir_ack(mensajes_encolados, cantidad_mensajes, subscriber);
 
+	list_destroy(mensajes_encolados);
 }
 
 void remover_suscriptor_si_es_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t temporal, pthread_mutex_t mutex)
@@ -115,10 +125,16 @@ t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint
 	pthread_mutex_lock(&mutex);
 	for (int i=0; i < list_size(suscriptores); i++) {
 		t_subscriber* suscriptor = list_get(suscriptores, i);
-		if (enviar_mensaje(codigo, id, id_correlativo, mensaje, suscriptor->socket_suscriptor) > 0) {
-			list_add(suscriptores_informados, (void*)suscriptor);
-			log_mensaje_a_suscriptor(suscriptor->id_suscriptor, id, LOGGER);
+
+		if (suscriptor->activo == 1) {
+			if (enviar_mensaje(codigo, id, id_correlativo, mensaje, suscriptor->socket_suscriptor) > 0) {
+				list_add(suscriptores_informados, (void*)suscriptor);
+				log_mensaje_a_suscriptor(suscriptor->id_suscriptor, id, LOGGER);
+			} else {
+				suscriptor->activo = 0;
+			}
 		}
+
 	}
 	pthread_mutex_unlock(&mutex);
 
@@ -127,49 +143,58 @@ t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint
 
 void recibir_multiples_ack(op_code codigo, uint32_t id, t_list* suscriptores_informados)
 {
-	t_enqueued_message* mensajes_encolados[1];
+	t_list* mensajes_encolados = list_create();
 	t_queue* queue = COLAS_MENSAJES[codigo];
 	t_enqueued_message* enqueued_message = find_message_by_id(queue, id);
-	mensajes_encolados[0] = enqueued_message;
+	list_add(mensajes_encolados, enqueued_message);
 
 	for (int i=0; i < list_size(suscriptores_informados); i++) {
 		t_subscriber* suscriptor = list_get(suscriptores_informados, i);
 		recibir_ack(mensajes_encolados, 1, suscriptor);
 	}
+
+	list_destroy(mensajes_encolados);
 }
 
-void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subscriber* subscriber, uint32_t cantidad_mensajes, t_enqueued_message* mensajes_encolados[])
+void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subscriber* subscriber, uint32_t* cantidad_mensajes, t_list* mensajes_encolados)
 {
-	printf("Cantidad de mensajes en cola: %d\n", cantidad_mensajes);
+	printf("Cantidad de mensajes en cola: %d\n", *cantidad_mensajes);
+	printf("Socket suscriptor: %d\n", subscriber->socket_suscriptor);
 	fflush(stdout);
 
-	void* paquetes_serializados[cantidad_mensajes];
-	int tamanio_paquetes[cantidad_mensajes];
+	t_list* paquetes_serializados = list_create();
+	t_list* tamanio_paquetes = list_create();
 	uint32_t tamanio_stream = 0;
 
 	pthread_mutex_t mutex = MUTEX_COLAS[codigo];
 	pthread_mutex_lock(&mutex);
-	for (int i=0; i < cantidad_mensajes; i++) {
+	for (int i=0; i < *cantidad_mensajes; i++) {
 		uint32_t bytes;
 		t_enqueued_message* mensaje_encolado = get_message_by_index(message_queue, i);
-		void* a_enviar = serializar_paquete(codigo, mensaje_encolado->ID, mensaje_encolado->ID_correlativo, mensaje_encolado->message, &bytes);
-		bytes += sizeof(bytes);
+		//TODO si mensaje_encolado->message == NULL, sacar de la cola y no enviar a nadie
 
-		paquetes_serializados[i] = a_enviar;
-		tamanio_paquetes[i] = bytes;
-		tamanio_stream += bytes;
-		mensajes_encolados[i] = mensaje_encolado;
+		if(!isSubscriberListed(mensaje_encolado->suscribers_ack, subscriber->id_suscriptor)) {
+			void* a_enviar = serializar_paquete(codigo, mensaje_encolado->ID, mensaje_encolado->ID_correlativo, mensaje_encolado->message, &bytes);
+			bytes += sizeof(bytes);
+
+			list_add(paquetes_serializados, a_enviar);
+			list_add(tamanio_paquetes, &bytes);
+			tamanio_stream += bytes;
+			list_add(mensajes_encolados, (void*) mensaje_encolado);
+		}
+
 	}
 	pthread_mutex_unlock(&mutex);
 
-	enviar_mensajes_encolados(cantidad_mensajes, tamanio_stream, paquetes_serializados, tamanio_paquetes, mensajes_encolados, subscriber);
+	*cantidad_mensajes = list_size(paquetes_serializados);
 
-	for (int i=0; i < cantidad_mensajes; i++) {
-		free(paquetes_serializados[i]);
-	}
+	enviar_mensajes_encolados(*cantidad_mensajes, tamanio_stream, paquetes_serializados, tamanio_paquetes, mensajes_encolados, subscriber);
+
+	list_destroy(tamanio_paquetes);
+	list_destroy_and_destroy_elements(paquetes_serializados, free);
 }
 
-void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stream, void** paquetes_serializados, int* tamanio_paquetes, t_enqueued_message* mensajes_encolados[], t_subscriber* subscriber)
+void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stream, t_list* paquetes_serializados, t_list* tamanio_paquetes, t_list* mensajes_encolados, t_subscriber* subscriber)
 {
 	void* a_enviar;
 	int bytes_a_enviar = sizeof(cantidad_mensajes) + sizeof(tamanio_stream);
@@ -182,8 +207,10 @@ void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stre
 		offset += sizeof(tamanio_stream);
 
 		for (int i=0; i < cantidad_mensajes; i++ ) {
-			memcpy(a_enviar + offset, paquetes_serializados[i], tamanio_paquetes[i]);
-			offset += tamanio_paquetes[i];
+			uint32_t* tamanio_paquete = (uint32_t*) list_get(tamanio_paquetes, i);
+			void* paquete = list_get(paquetes_serializados, i);
+			memcpy(a_enviar + offset, paquete, *tamanio_paquete);
+			offset += *tamanio_paquete;
 		}
 		bytes_a_enviar += tamanio_stream;
 
@@ -193,21 +220,27 @@ void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stre
 		memcpy(a_enviar + sizeof(cantidad_mensajes), &tamanio_stream, sizeof(tamanio_stream));
 	}
 
-	printf("Respondi!\n");
-	if (send(subscriber->socket_suscriptor, a_enviar, bytes_a_enviar, 0) > 0 && cantidad_mensajes > 0) {
-		printf("Envie mensajes encolados!\n");
-		add_new_informed_subscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber);
+	if (send(subscriber->socket_suscriptor, a_enviar, bytes_a_enviar, MSG_NOSIGNAL) > 0) {
+	printf("Respondí a la suscripción!\n");
+		if (cantidad_mensajes > 0) {
+			printf("Envié mensajes encolados!\n");
+			add_new_informed_subscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber, LOGGER);
+		}
+	} else {
+		printf("El suscriptor está inactivo!\n");
+		subscriber->activo = 0;
 	}
 
 	free(a_enviar);
 }
 
-void recibir_ack(t_enqueued_message* mensajes_encolados[], uint32_t cantidad_mensajes, t_subscriber* subscriber) {
+void recibir_ack(t_list* mensajes_encolados, uint32_t cantidad_mensajes, t_subscriber* subscriber)
+{
 	uint32_t response_status = 0;
 	int status = recv(subscriber->socket_suscriptor, &response_status, sizeof(response_status), MSG_WAITALL);
 
 	if(status > 0 && response_status == 200) {
-		add_new_ack_suscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber);
+		add_new_ack_suscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber, LOGGER);
 	}
 }
 
@@ -218,38 +251,26 @@ int init_server()
 	return iniciar_servidor(IP, PUERTO);
 }
 
-void choose_partition_algorithm()
+t_selection_algorithm choose_partition_algorithm()
 {
 	char* partition_algorithm = config_get_string_value(CONFIG,"ALGORITMO_PARTICION_LIBRE");
 	if (strcmp(partition_algorithm, "FF") == 0) {
-		PARTITION_SELECTION_ALGORITHM = FIRST_FIT;
+		return FIRST_FIT;
 	} else if (strcmp(partition_algorithm, "BF") == 0) {
-		PARTITION_SELECTION_ALGORITHM = BEST_FIT;
+		return BEST_FIT;
 	}
+	return NONE;
 }
 
-void choose_victim_algorithm()
+t_selection_algorithm choose_victim_algorithm()
 {
 	char* victim_algorithm = config_get_string_value(CONFIG,"ALGORITMO_REEMPLAZO");
 	if (strcmp(victim_algorithm, "FIFO") == 0) {
-		VICTIM_SELECTION_ALGORITHM = FIFO;
+		return FIFO;
 	} else if (strcmp(victim_algorithm, "LRU") == 0) {
-		VICTIM_SELECTION_ALGORITHM = LRU;
+		return LRU;
 	}
-}
-
-void choose_memory_algorithms()
-{
-	char* mem_algorithm = config_get_string_value(CONFIG,"ALGORITMO_MEMORIA");
-	if (strcmp(mem_algorithm, "PD") == 0) {
-		MEMORY_ALGORITHM = DYNAMIC_PARTITIONS;
-		choose_victim_algorithm();
-		choose_partition_algorithm();
-	} else if (strcmp(mem_algorithm, "BS") == 0) {
-		MEMORY_ALGORITHM = BUDDY_SYSTEM;
-		choose_victim_algorithm();
-		PARTITION_SELECTION_ALGORITHM = NONE;
-	}
+	return NONE;
 }
 
 void init_memory()
@@ -257,7 +278,28 @@ void init_memory()
 	char* size_memory = config_get_string_value(CONFIG,"TAMANO_MEMORIA");
 	int size = atoi(size_memory);
 
-	MEMORY = malloc(size);
+	t_memory_algorithm memory_alg;
+	t_selection_algorithm victim_alg;
+	t_selection_algorithm partition_alg;
+
+	char* mem_algorithm = config_get_string_value(CONFIG,"ALGORITMO_MEMORIA");
+	if (strcmp(mem_algorithm, "PD") == 0) {
+		memory_alg = DYNAMIC_PARTITIONS;
+		victim_alg = choose_victim_algorithm();
+		partition_alg = choose_partition_algorithm();
+	} else if (strcmp(mem_algorithm, "BS") == 0) {
+		memory_alg = BUDDY_SYSTEM;
+		victim_alg = choose_victim_algorithm();
+		partition_alg = NONE;
+	}
+
+	char* min_par_size = config_get_string_value(CONFIG,"TAMANO_MINIMO_PARTICION");
+	int min_part_size = atoi(min_par_size);
+
+	char* frequency = config_get_string_value(CONFIG,"FRECUENCIA_COMPACTACION");
+	int freq_compact = atoi(frequency);
+
+	load_memory(size, min_part_size, freq_compact, memory_alg, victim_alg, partition_alg);
 }
 
 void init_message_queues()

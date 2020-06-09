@@ -64,7 +64,11 @@ int is_same_id(uint32_t data_id, uint32_t id)
 
 t_enqueued_message* find_message_by_id(t_queue* queue, uint32_t id)
 {
-	t_link_element *element = queue->elements->head;
+	t_link_element* element = queue->elements->head;
+
+	if (element == NULL)
+		return NULL;
+
 	t_enqueued_message* message = (t_enqueued_message*) (queue->elements->head->data);
 
 	while(element != NULL && !is_same_id(message->ID, id)) {
@@ -78,6 +82,10 @@ t_enqueued_message* find_message_by_id(t_queue* queue, uint32_t id)
 t_enqueued_message* find_message_by_id_correlativo(t_queue* queue, uint32_t id)
 {
 	t_link_element *element = queue->elements->head;
+
+	if (element == NULL)
+		return NULL;
+
 	t_enqueued_message* message = (t_enqueued_message*) (queue->elements->head->data);
 
 	while(element != NULL && !is_same_id(message->ID_correlativo, id)) {
@@ -164,14 +172,14 @@ void unsubscribe_process(t_list* subscribers, t_subscriber* subscriber, pthread_
 {
 	pthread_mutex_lock(&mutex);
 
-	int index = get_index_of_subscriber(subscribers, subscriber);
+	int index = get_index_of_subscriber(subscribers, subscriber->id_suscriptor);
 	if (index != -1)
 		list_remove(subscribers, index);
 
 	pthread_mutex_unlock(&mutex);
 }
 
-int get_index_of_subscriber(t_list* subscribers, t_subscriber* subscriber)
+int get_index_of_subscriber(t_list* subscribers, uint32_t id_subscriber)
 {
 	if (subscribers->head == NULL)
 		return -1;
@@ -181,7 +189,7 @@ int get_index_of_subscriber(t_list* subscribers, t_subscriber* subscriber)
 
 	int index = 0;
 	while(element != NULL) {
-		if (is_same_id(subscriber_listed->id_suscriptor, subscriber->id_suscriptor))
+		if (is_same_id(subscriber_listed->id_suscriptor, id_subscriber))
 			return index;
 
 		element = element->next;
@@ -192,23 +200,34 @@ int get_index_of_subscriber(t_list* subscribers, t_subscriber* subscriber)
 	return -1;
 }
 
-int isSubscriber(t_list* subscribers, t_subscriber* subscriber)
+t_subscriber* get_subscriber_by_id(t_list* subscribers, uint32_t id_subscriber)
 {
-	return get_index_of_subscriber(subscribers, subscriber) != -1;
+	int index = get_index_of_subscriber(subscribers, id_subscriber);
+
+	return index >= 0 ? (t_subscriber*) list_get(subscribers, index) : NULL;
 }
 
-void add_new_informed_subscriber_to_mq(t_enqueued_message* messages_in_queue[], uint32_t number_of_mensajes, t_subscriber* subscriber) {
-	for (int i=0; i < number_of_mensajes; i++) {
-		if (!isSubscriber(messages_in_queue[i]->suscribers_informed, subscriber)) {
-			list_add(messages_in_queue[i]->suscribers_informed, subscriber); //TODO mutex?
+int isSubscriberListed(t_list* subscribers, uint32_t id_subscriber)
+{
+	return get_index_of_subscriber(subscribers, id_subscriber) >= 0;
+}
+
+void add_new_informed_subscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber, t_log* logger) {
+	for (int i=0; i < number_of_messages; i++) {
+		t_enqueued_message* message = (t_enqueued_message*) list_get(messages_in_queue, i);
+		if (!isSubscriberListed(message->suscribers_informed, subscriber->id_suscriptor)) {
+			list_add(message->suscribers_informed, subscriber); //TODO mutex?
+			log_mensaje_a_suscriptor(subscriber->id_suscriptor, message->ID, logger);
 		}
 	}
 }
 
-void add_new_ack_suscriber_to_mq(t_enqueued_message* messages_in_queue[], uint32_t number_of_mensajes, t_subscriber* subscriber) {
-	for (int i=0; i < number_of_mensajes; i++) {
-		if (!isSubscriber(messages_in_queue[i]->suscribers_ack, subscriber)) {
-			list_add(messages_in_queue[i]->suscribers_ack, subscriber); //TODO mutex?
+void add_new_ack_suscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber, t_log* logger) {
+	for (int i=0; i < number_of_messages; i++) {
+		t_enqueued_message* message = (t_enqueued_message*) list_get(messages_in_queue, i);
+		if (!isSubscriberListed(message->suscribers_ack, subscriber->id_suscriptor)) {
+			list_add(message->suscribers_ack, subscriber); //TODO mutex?
+			log_ack_de_suscriptor(subscriber->id_suscriptor, message->ID, logger);
 		}
 	}
 }

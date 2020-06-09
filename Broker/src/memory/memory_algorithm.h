@@ -9,11 +9,13 @@
 #ifndef MEMORY_MEMORY_ALGORITHM_H_
 #define MEMORY_MEMORY_ALGORITHM_H_
 
+#include <stddef.h>
+
 // Enums memorias
 typedef enum {
 	DYNAMIC_PARTITIONS,
 	BUDDY_SYSTEM,
-} memory_algorithm;
+} t_memory_algorithm;
 
 typedef enum {
 	FIRST_FIT,
@@ -21,6 +23,6 @@ typedef enum {
 	FIFO,
 	LRU,
 	NONE
-} selection_algorithm;
+} t_selection_algorithm;
 
 #endif /* MEMORY_MEMORY_ALGORITHM_H_ */
