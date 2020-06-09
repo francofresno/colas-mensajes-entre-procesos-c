@@ -2,16 +2,11 @@
  ============================================================================
  Name        : Broker
  Author      : Fran and Co
- Description : Buddy System Algorithm Header
+ Description : Memory Common Logic
  ============================================================================
  */
 
-#ifndef BUDDY_SYSTEM_H_
-#define BUDDY_SYSTEM_H_
-
 #include "memory_commons.h"
 
-void buddy_init();
-void* buddy_alloc(int size);
-
-#endif /* BUDDY_SYSTEM_H_ */
+pthread_mutex_t mutex_lru_list = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_deleted_messages_ids = PTHREAD_MUTEX_INITIALIZER;

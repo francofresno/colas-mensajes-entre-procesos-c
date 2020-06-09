@@ -8,6 +8,9 @@
 
 #include "dynamic_partitions.h"
 
+pthread_mutex_t mutex_free_list = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_occupied_list = PTHREAD_MUTEX_INITIALIZER;
+
 //TODO SINCRO
 
 void dp_init()
@@ -15,43 +18,95 @@ void dp_init()
 	FREE_PARTITIONS = list_create();
 	OCCUPIED_PARTITIONS = list_create();
 
-	t_partition initial_partition;
-	initial_partition.id_data = 0;
-	initial_partition.data = NULL;
-	initial_partition.base = 0;
-	initial_partition.size = MEMORY_SIZE;
+	SEARCH_FAILURE_COUNTER = 0;
 
-	list_add(FREE_PARTITIONS, (void*) &initial_partition);
+	t_partition* initial_partition = malloc(sizeof(*initial_partition));
+	initial_partition->id_data = 0;
+	initial_partition->data = NULL;
+	initial_partition->free = 1;
+	initial_partition->base = 0;
+	initial_partition->size = MEMORY_SIZE;
+
+	list_add(FREE_PARTITIONS, (void*) initial_partition);
 }
 
 void* dp_alloc(int size)
 {
-	t_partition* partition = NULL;
-
-	while (partition == NULL) {
-		if (PARTITION_SELECTION_ALGORITHM == FIRST_FIT) {
-			partition = first_fit_find_free_partition(size);
-		} else if (PARTITION_SELECTION_ALGORITHM == BEST_FIT) {
-			partition = best_fit_find_free_partition(size);
-		}
-
-
-	}
-
-
-	// TODO compectar antes de seleccionar victima chequeando frecuencia de compactacion y volver a buscar particion
+	int index_victim_chosen = 0;
+	t_partition* partition = find_free_partition(size);
 
 	if (partition == NULL) {
-		if (VICTIM_SELECTION_ALGORITHM == FIFO) {
-			partition = fifo_find_victim_partition(size);
-		} else if (VICTIM_SELECTION_ALGORITHM == LRU) {
-			partition = lru_find_victim_partition(size);
+		compact_memory();
+		partition = choose_victim_partition();
+		if (partition != NULL) {
+			partition->free = 1;
+			partition->data = NULL;
+
+			pthread_mutex_lock(&mutex_deleted_messages_ids);
+			list_add(deleted_messages_ids, (void*) &(partition->id_data));
+			pthread_mutex_unlock(&mutex_deleted_messages_ids);
+
+			index_victim_chosen = list_add(FREE_PARTITIONS, (void*) partition);
 		}
 	}
 
-	// TODO hacer algo con la particion
+	if (partition == NULL || partition->size < size) {
+		dp_alloc(size);
+	}
 
+	if (index_victim_chosen) {
+		list_remove(FREE_PARTITIONS, index_victim_chosen);
+	}
+
+	if (partition->size > size && partition->size - size >= MIN_PARTITION_SIZE) {
+		t_partition* new_partition = malloc(sizeof(*new_partition));
+		new_partition->data = NULL;
+		new_partition->id_data = 0;
+		new_partition->free = 1;
+		new_partition->size = partition->size - size;
+		new_partition->base = partition->base + size;
+		list_add(FREE_PARTITIONS, (void*) new_partition);
+
+		partition->size = size;
+	}
+
+	partition->free = 0;
+	list_add(OCCUPIED_PARTITIONS, (void*) partition);
+
+	SEARCH_FAILURE_COUNTER = 0;
+
+	return (void*) partition;
+}
+
+t_partition* find_free_partition(int size)
+{
+	if (PARTITION_SELECTION_ALGORITHM == FIRST_FIT) {
+		return first_fit_find_free_partition(size, FREE_PARTITIONS);
+	} else if (PARTITION_SELECTION_ALGORITHM == BEST_FIT) {
+		return best_fit_find_free_partition(size, FREE_PARTITIONS);
+	}
 	return NULL;
+}
+
+t_partition* choose_victim_partition()
+{
+	if (VICTIM_SELECTION_ALGORITHM == FIFO) {
+		return fifo_find_victim_partition(OCCUPIED_PARTITIONS);
+	} else if (VICTIM_SELECTION_ALGORITHM == LRU) {
+		return lru_find_victim_partition(OCCUPIED_PARTITIONS);
+	}
+	return NULL;
+}
+
+void compact_memory()
+{
+	SEARCH_FAILURE_COUNTER++;
+	if (SEARCH_FAILURE_COUNTER == COMPACTION_FREQUENCY) {
+
+		//TODO compacto, recordar freerear las particiones que se compactan
+
+		SEARCH_FAILURE_COUNTER = 0;
+	}
 }
 
 t_partition* first_fit_find_free_partition(int size)
@@ -108,7 +163,7 @@ t_partition* best_fit_find_free_partition(int size)
 	return (t_partition*) list_remove(FREE_PARTITIONS, best_index);
 }
 
-t_partition* fifo_find_victim_partition(int size)
+t_partition* fifo_find_victim_partition()
 {
 	if (OCCUPIED_PARTITIONS->head == NULL)
 		return NULL;
@@ -116,7 +171,7 @@ t_partition* fifo_find_victim_partition(int size)
 	return (t_partition*) list_remove(OCCUPIED_PARTITIONS, 0);
 }
 
-t_partition* lru_find_victim_partition(int size)
+t_partition* lru_find_victim_partition()
 {
 	if (lru_list->head == NULL)
 		return NULL;

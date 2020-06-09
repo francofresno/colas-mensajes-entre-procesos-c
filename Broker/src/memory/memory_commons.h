@@ -2,15 +2,20 @@
  ============================================================================
  Name        : Broker
  Author      : Fran and Co
- Description : Memory Algorithm Common Logic
+ Description : Header Memory Common Logic
  ============================================================================
  */
 
-#ifndef MEMORY_MEMORY_CONSTANTS_H_
-#define MEMORY_MEMORY_CONSTANTS_H_
+#ifndef MEMORY_MEMORY_COMMONS_H_
+#define MEMORY_MEMORY_COMMONS_H_
 
 #include <stddef.h>
 #include <pthread.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+
+#include <commons/collections/list.h>
 
 // Enums memorias
 typedef enum {
@@ -31,6 +36,7 @@ typedef struct
 {
 	uint32_t id_data;
 	void* data;
+	int free;
 	int base;
 	int size;
 } t_partition;
@@ -45,8 +51,10 @@ t_selection_algorithm PARTITION_SELECTION_ALGORITHM;
 t_selection_algorithm VICTIM_SELECTION_ALGORITHM;
 
 t_list* lru_list;
+t_list* deleted_messages_ids;
 
 // Mutex
-pthread_mutex_t mutex_lru_list = PTHREAD_MUTEX_INITIALIZER;
+extern pthread_mutex_t mutex_lru_list;
+extern pthread_mutex_t mutex_deleted_messages_ids;
 
-#endif /* MEMORY_MEMORY_CONSTANTS_H_ */
+#endif /* MEMORY_MEMORY_COMMONS_H_ */
