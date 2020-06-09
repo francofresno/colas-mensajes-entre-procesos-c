@@ -8,25 +8,30 @@
 
 #include "dynamic_partitions.h"
 
-void dp_init(int size)
+//TODO SINCRO
+
+void dp_init()
 {
 	FREE_PARTITIONS = list_create();
 	OCCUPIED_PARTITIONS = list_create();
 
 	t_partition initial_partition;
-	initial_partition.size = size;
+	initial_partition.id_data = 0;
+	initial_partition.data = NULL;
+	initial_partition.base = 0;
+	initial_partition.size = MEMORY_SIZE;
 
 	list_add(FREE_PARTITIONS, (void*) &initial_partition);
 }
 
-void* dp_alloc(int size, int min_partition_size, int comp_frequency, void* memory, t_memory_algorithm memory_algorithm, t_selection_algorithm partition_algorithm, t_selection_algorithm victim_algorithm)
+void* dp_alloc(int size)
 {
 	t_partition* partition = NULL;
 
 	while (partition == NULL) {
-		if (partition_algorithm == FIRST_FIT) {
+		if (PARTITION_SELECTION_ALGORITHM == FIRST_FIT) {
 			partition = first_fit_find_free_partition(size);
-		} else if (partition_algorithm == BEST_FIT) {
+		} else if (PARTITION_SELECTION_ALGORITHM == BEST_FIT) {
 			partition = best_fit_find_free_partition(size);
 		}
 
@@ -37,9 +42,9 @@ void* dp_alloc(int size, int min_partition_size, int comp_frequency, void* memor
 	// TODO compectar antes de seleccionar victima chequeando frecuencia de compactacion y volver a buscar particion
 
 	if (partition == NULL) {
-		if (victim_algorithm == FIFO) {
+		if (VICTIM_SELECTION_ALGORITHM == FIFO) {
 			partition = fifo_find_victim_partition(size);
-		} else if (victim_algorithm == LRU) {
+		} else if (VICTIM_SELECTION_ALGORITHM == LRU) {
 			partition = lru_find_victim_partition(size);
 		}
 	}
@@ -113,6 +118,8 @@ t_partition* fifo_find_victim_partition(int size)
 
 t_partition* lru_find_victim_partition(int size)
 {
-	//TODO en que me baso para decir que fue el lru?
-	return NULL;
+	if (lru_list->head == NULL)
+		return NULL;
+
+	return (t_partition*) list_remove(lru_list, 0);
 }

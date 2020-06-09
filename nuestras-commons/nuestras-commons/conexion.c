@@ -20,7 +20,7 @@ int crear_conexion(char *ip, char* puerto)
 	int socket_cliente = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol);
 
 	if(connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen) == -1)
-		socket_cliente =-1;
+		socket_cliente = -1;
 
 	freeaddrinfo(server_info);
 
@@ -83,11 +83,8 @@ int enviar_mensaje(op_code codigoOperacion, uint32_t id, uint32_t id_correlativo
 {
 	uint32_t bytes;
 	void* paqueteAEnviar = serializar_paquete(codigoOperacion, id, id_correlativo, mensaje, &bytes);
-	printf("2.2 serialice %d bytes\n", bytes);
-	printf("2.3 intentare enviar al socket %d\n", socket_envio);
 	fflush(stdout);
 	int status = send(socket_envio, paqueteAEnviar, bytes + sizeof(bytes), MSG_NOSIGNAL);
-	printf("2.4 envie con status %d\n", status);
 	free(paqueteAEnviar);
 	return status;
 }
@@ -362,6 +359,7 @@ void copiar_variable(void* variable, void* stream, int* offset, int size)
 
 void free_paquete_recibido(char* nombre_recibido, t_paquete* paquete_recibido)
 {
+// En principio se liberaba el nombre recibido y el mensaje pero esto termino generando problemas
 //	if(nombre_recibido != NULL) {
 //		free(nombre_recibido);
 //	}
@@ -453,7 +451,6 @@ t_list* respuesta_suscripcion_obtener_paquetes(int socket_servidor, uint32_t* ca
 			deserializar_paquete(stream, paquete_recibido, &offset, bytes, &nombre_recibido);
 
 			list_add(paquetes, (void*) paquete_recibido);
-			//free_paquete_recibido(nombre_recibido, paquete_recibido); TODO: preguntar, al hacer free del paquete no llega bien el cod op
 			cantidad_paquetes--;
 		}
 		free(stream);

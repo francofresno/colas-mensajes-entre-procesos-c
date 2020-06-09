@@ -217,7 +217,7 @@ void add_new_informed_subscriber_to_mq(t_list* messages_in_queue, uint32_t numbe
 		t_enqueued_message* message = (t_enqueued_message*) list_get(messages_in_queue, i);
 		if (!isSubscriberListed(message->suscribers_informed, subscriber->id_suscriptor)) {
 			list_add(message->suscribers_informed, subscriber); //TODO mutex?
-			log_mensaje_a_suscriptor(subscriber->id_suscriptor, message->ID, logger);
+			log_message_to_subscriber(subscriber->id_suscriptor, message->ID, logger);
 		}
 	}
 }
@@ -227,7 +227,7 @@ void add_new_ack_suscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_m
 		t_enqueued_message* message = (t_enqueued_message*) list_get(messages_in_queue, i);
 		if (!isSubscriberListed(message->suscribers_ack, subscriber->id_suscriptor)) {
 			list_add(message->suscribers_ack, subscriber); //TODO mutex?
-			log_ack_de_suscriptor(subscriber->id_suscriptor, message->ID, logger);
+			log_ack_from_subscriber(subscriber->id_suscriptor, message->ID, logger);
 		}
 	}
 }

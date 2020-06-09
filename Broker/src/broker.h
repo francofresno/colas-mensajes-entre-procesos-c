@@ -77,21 +77,21 @@ void init_memory();
 
 int esperar_cliente(int socket_servidor);
 void serve_client(int* socket_cliente);
-void process_request(int cod_op, uint32_t id_correlativo, void* paqueteRecibido, int socket_cliente);
-void suscribir_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_suscriptor);
-t_list* informar_a_suscriptores(op_code codigo, void* mensaje, uint32_t id, uint32_t id_correlativo, t_list* suscriptores, pthread_mutex_t mutex);
-void responder_a_suscriptor_nuevo(op_code codigo, t_queue* message_queue, t_subscriber* subscriber, uint32_t* cantidad_mensajes, t_list* mensajes_encolados);
+void process_new_message(int cod_op, uint32_t id_correlativo, void* mensaje_recibido, int socket_cliente);
+void process_suscription(t_suscripcion_msg* estructuraSuscripcion, int socket_suscriptor);
+t_list* inform_subscribers(op_code codigo, void* mensaje, uint32_t id, uint32_t id_correlativo, t_list* suscriptores, pthread_mutex_t mutex);
+void reply_to_new_subscriber(op_code codigo, t_queue* message_queue, t_subscriber* subscriber, uint32_t* cantidad_mensajes, t_list* mensajes_encolados);
 /*
  *  @NAME: enviar_mensajes_encolados_a_suscriptor_nuevo
  *  @RETURN: -1 en caso de falla o 0 en caso de éxito
  */
-void enviar_mensajes_encolados(uint32_t cantidad_mensajes, uint32_t tamanio_stream, t_list* paquetes_serializados, t_list* tamanio_paquetes,
+void send_enqueued_messages(uint32_t cantidad_mensajes, uint32_t tamanio_stream, t_list* paquetes_serializados, t_list* tamanio_paquetes,
 		t_list* mensajes_encolados, t_subscriber* subscriber);
-void remover_suscriptor_si_es_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t tiempo, pthread_mutex_t mutex);
-void recibir_ack(t_list* mensajes_encolados, uint32_t cantidad_mensajes, t_subscriber* subscriber);
-void recibir_multiples_ack(op_code codigo, uint32_t id, t_list* suscriptores_informados);
+void remove_subscriber_if_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t tiempo, pthread_mutex_t mutex);
+void receive_ack(t_list* mensajes_encolados, uint32_t cantidad_mensajes, t_subscriber* subscriber);
+void receive_multiples_ack(op_code codigo, uint32_t id, t_list* suscriptores_informados);
 
-uint32_t generar_id();
+uint32_t generate_id();
 
 void terminar_programa(int socket, t_log* logger);
 
