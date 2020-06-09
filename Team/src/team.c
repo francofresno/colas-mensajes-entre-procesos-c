@@ -77,18 +77,31 @@ void inicializarConfig(t_config* config){
 
 }
 
+void suscribirseAppeared(){
+	suscribirseA(APPEARED_POKEMON);
+}
+
+void suscribirseCaught(){
+	suscribirseA(CAUGHT_POKEMON);
+}
+
+void suscribirseLocalized(){
+	suscribirseA(LOCALIZED_POKEMON);
+}
+
 void suscribirseAColas(){ //TODO HILOS DANGER
-	op_code colas[3]= {APPEARED_POKEMON, LOCALIZED_POKEMON, CAUGHT_POKEMON};
-	for(int i=0; i<3 ; i++){
-		pthread_create(&thread, NULL, (void*) suscribirseA, &colas[i]);
-		pthread_detach(thread);
-	}
+
+	pthread_create(&thread, NULL, (void*)suscribirseAppeared, NULL);
+	pthread_detach(thread);
+	pthread_create(&thread, NULL, (void*)suscribirseCaught, NULL);
+	pthread_detach(thread);
+	pthread_create(&thread, NULL, (void*)suscribirseLocalized, NULL);
+	pthread_join(thread, NULL);
 
 }
 
-void suscribirseA(op_code* codigo){
+void suscribirseA(op_code tipo_cola){
 
-	op_code tipo_cola = *codigo;
 	printf("===============\n");
 	printf("TEST SUSCRIPCION A COLA\n");
 	printf("===============\n");

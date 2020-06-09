@@ -38,9 +38,15 @@ t_config* leer_config(void);
 
 void inicializarConfig(t_config*);
 
+void suscribirseAppeared();
+
+void suscribirseCaught();
+
+void suscribirseLocalized();
+
 void suscribirseAColas();
 
-void suscribirseA(op_code*);
+void suscribirseA(op_code);
 
 void serve_client(int*);
 
