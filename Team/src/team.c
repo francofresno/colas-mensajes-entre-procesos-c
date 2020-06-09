@@ -89,14 +89,14 @@ void suscribirseLocalized(){
 	suscribirseA(LOCALIZED_POKEMON);
 }
 
-void suscribirseAColas(){ //TODO HILOS DANGER
+void suscribirseAColas(){
 
 	pthread_create(&thread, NULL, (void*)suscribirseAppeared, NULL);
 	pthread_detach(thread);
 	pthread_create(&thread, NULL, (void*)suscribirseCaught, NULL);
 	pthread_detach(thread);
 	pthread_create(&thread, NULL, (void*)suscribirseLocalized, NULL);
-	pthread_join(thread, NULL);
+	pthread_detach(thread);
 
 }
 
@@ -116,8 +116,6 @@ void suscribirseA(op_code tipo_cola){
 	estructuraSuscripcion->tipo_cola = tipo_cola;
 	estructuraSuscripcion->temporal = 0;
 
-
-	printf("ALO \n");
 	int status_susc = suscribirse_a_cola(estructuraSuscripcion, socket_cliente);
 	pthread_mutex_unlock(&mutex_send);
 
@@ -133,12 +131,12 @@ void suscribirseA(op_code tipo_cola){
 
 	for(int i = 0; i<cant_paquetes; i++){
 		t_paquete* paquete_recibido = list_get(paquetes, i);
-		printf("Fijarse que hacer con los paquetes con codigo de op %d", paquete_recibido->codigo_operacion);
+		printf("Fijarse que hacer con los paquetes con codigo de op %d\n", paquete_recibido->codigo_operacion);
 	}
 
 	free(estructuraSuscripcion);
 
-	printf("---------Recepciones por suscripcion---------");
+	printf("---------Recepciones por suscripcion---------cola %d\n", tipo_cola);
 
 	while(1){
 		char*nombre_recibido = NULL;
