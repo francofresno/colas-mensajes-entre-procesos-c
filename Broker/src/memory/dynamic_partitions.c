@@ -81,9 +81,9 @@ void* dp_alloc(int size)
 t_partition* find_free_partition(int size)
 {
 	if (PARTITION_SELECTION_ALGORITHM == FIRST_FIT) {
-		return first_fit_find_free_partition(size, FREE_PARTITIONS);
+		return first_fit_find_free_partition(size);
 	} else if (PARTITION_SELECTION_ALGORITHM == BEST_FIT) {
-		return best_fit_find_free_partition(size, FREE_PARTITIONS);
+		return best_fit_find_free_partition(size);
 	}
 	return NULL;
 }

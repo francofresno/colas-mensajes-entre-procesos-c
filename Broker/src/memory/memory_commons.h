@@ -6,8 +6,8 @@
  ============================================================================
  */
 
-#ifndef MEMORY_MEMORY_COMMONS_H_
-#define MEMORY_MEMORY_COMMONS_H_
+#ifndef MEMORY_COMMONS_H_
+#define MEMORY_COMMONS_H_
 
 #include <stddef.h>
 #include <pthread.h>
@@ -57,4 +57,4 @@ t_list* deleted_messages_ids;
 extern pthread_mutex_t mutex_lru_list;
 extern pthread_mutex_t mutex_deleted_messages_ids;
 
-#endif /* MEMORY_MEMORY_COMMONS_H_ */
+#endif /* MEMORY_COMMONS_H_ */

@@ -21,15 +21,15 @@ typedef struct
 {
 	uint32_t ID;
 	uint32_t ID_correlativo;
-	t_list* suscribers_informed;
-	t_list* suscribers_ack;
+	t_list* subscribers_informed;
+	t_list* subscribers_ack;
 	void* message;
 } t_enqueued_message;
 
 typedef struct
 {
-	uint32_t id_suscriptor;
-	int socket_suscriptor;
+	uint32_t id_subscriber;
+	int socket_subscriber;
 	int activo;
 } t_subscriber;
 

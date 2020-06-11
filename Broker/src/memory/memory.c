@@ -57,11 +57,16 @@ void* memory_alloc(int size)
 
 void* memory_copy(t_copy_args* args)
 {
-	t_partition* partition = args->alloc;
-	partition->id_data = args->id;
+	void* data = NULL;
+	if (MEMORY_ALGORITHM == BUDDY_SYSTEM) {
+		//TODO
+	} else if (MEMORY_ALGORITHM == DYNAMIC_PARTITIONS) {
+		t_partition* partition = args->alloc;
+		partition->id_data = args->id;
 
-	void* data = memcpy(MEMORY + partition->base, args->data, partition->size);
-	partition->data = data;
+		data = memcpy(MEMORY + partition->base, args->data, args->data_size);
+		partition->data = data;
+	}
 
 	free(args->data);
 	return data;
