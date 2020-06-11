@@ -16,8 +16,8 @@ t_list* FREE_PARTITIONS;
 t_list* OCCUPIED_PARTITIONS;
 
 // Mutex
-pthread_mutex_t mutex_free_list = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex_occupied_list = PTHREAD_MUTEX_INITIALIZER;
+extern pthread_mutex_t mutex_free_list;
+extern pthread_mutex_t mutex_occupied_list;
 
 void dp_init();
 void* dp_alloc(int size);

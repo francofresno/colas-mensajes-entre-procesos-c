@@ -11,6 +11,10 @@
 
 #include <stddef.h>
 #include <pthread.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+#include<commons/collections/list.h>
 
 // Enums memorias
 typedef enum {
@@ -47,6 +51,6 @@ t_selection_algorithm VICTIM_SELECTION_ALGORITHM;
 t_list* lru_list;
 
 // Mutex
-pthread_mutex_t mutex_lru_list = PTHREAD_MUTEX_INITIALIZER;
+extern pthread_mutex_t mutex_lru_list;
 
 #endif /* MEMORY_MEMORY_CONSTANTS_H_ */

@@ -8,6 +8,9 @@
 
 #include "dynamic_partitions.h"
 
+pthread_mutex_t mutex_free_list = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_occupied_list = PTHREAD_MUTEX_INITIALIZER;
+
 //TODO SINCRO
 
 void dp_init()

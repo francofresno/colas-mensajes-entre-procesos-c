@@ -8,6 +8,10 @@
 
 #include "memory.h"
 
+pthread_mutex_t mutex_memory = PTHREAD_MUTEX_INITIALIZER;
+
+pthread_mutex_t mutex_lru_list = PTHREAD_MUTEX_INITIALIZER;
+
 void load_memory(int size, int min_partition_size, int frequency, t_memory_algorithm memory_alg, t_selection_algorithm victim_alg, t_selection_algorithm partition_alg)
 {
 	MEMORY = malloc(size);
@@ -61,15 +65,15 @@ int get_index_of_partition(t_list* partitions, uint32_t id_partition)
 		return -1;
 
 	t_link_element *element = partitions->head;
-	t_subscriber* subscriber_listed = (t_subscriber*) (partitions->head->data);
+	t_partition* partition = (t_partition*) (partitions->head->data);
 
 	int index = 0;
 	while(element != NULL) {
-		if (is_same_id(subscriber_listed->id_suscriptor, id_partition))
+		if (partition->id_data == id_partition)
 			return index;
 
 		element = element->next;
-		subscriber_listed = element == NULL ? NULL : element->data;
+		partition = element == NULL ? NULL : element->data;
 		index++;
 	}
 
