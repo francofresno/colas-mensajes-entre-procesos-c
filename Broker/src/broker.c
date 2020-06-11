@@ -48,8 +48,6 @@ void serve_client(int* socket_cliente)
 	}
 
 	free_paquete_recibido(nombre_recibido, paquete_recibido);
-	liberar_conexion(*socket_cliente);
-	free(socket_cliente);
 }
 
 void process_suscription(t_suscripcion_msg* subscription_msg, int socket_suscriptor)
