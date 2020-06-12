@@ -27,7 +27,7 @@ int main(void) {
 		if(potential_client_socket > 0) {
 			int* client_socket = (int*) malloc(sizeof(int));
 			*client_socket = potential_client_socket;
-			printf("Llegó un cliente al socket: %d \n", *client_socket);
+			log_new_connection(*client_socket, LOGGER);
 			fflush(stdout);
 			pthread_create(&thread,NULL,(void*)serve_client,client_socket);
 			pthread_detach(thread);
@@ -325,7 +325,7 @@ void init_memory()
 	char* frequency = config_get_string_value(CONFIG,"FRECUENCIA_COMPACTACION");
 	int freq_compact = atoi(frequency);
 
-	load_memory(size, min_part_size, freq_compact, memory_alg, victim_alg, partition_alg);
+	load_memory(size, min_part_size, freq_compact, memory_alg, victim_alg, partition_alg, LOGGER);
 }
 
 void init_message_queues()

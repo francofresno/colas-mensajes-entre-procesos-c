@@ -15,6 +15,6 @@ void buddy_init()
 
 void* buddy_alloc(int size)
 {
-	//TODO
+	//TODO y recordar void log_buddy_association(int base_buddy_1, int base_buddy_2, t_log* logger);
 	return NULL;
 }
