@@ -14,9 +14,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-
 #include <commons/collections/list.h>
 #include "../logger.h"
+
 
 // Enums memorias
 typedef enum {
@@ -56,6 +56,8 @@ t_list* deleted_messages_ids;
 
 // Mutex
 extern pthread_mutex_t mutex_lru_list;
+
 extern pthread_mutex_t mutex_deleted_messages_ids;
+
 
 #endif /* MEMORY_COMMONS_H_ */

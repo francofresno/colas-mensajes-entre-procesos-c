@@ -50,7 +50,6 @@ void serve_client(int* client_socket)
 	}
 
 	free_paquete_recibido(nombre_recibido, paquete_recibido);
-
 }
 
 void process_suscription(t_suscripcion_msg* subscription_msg, int socket_subscriptor)
