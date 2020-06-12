@@ -8,6 +8,11 @@
 
 #include "logger.h"
 
+void log_new_conection(uint32_t socket_client, t_log* logger)
+{
+
+}
+
 void log_new_subscriber(uint32_t id_subscriber, op_code queue, t_log* logger)
 {
 	char log_msg[100];
@@ -35,3 +40,5 @@ void log_ack_from_subscriber(uint32_t id_subscriber, uint32_t id_message, t_log*
 	sprintf(log_msg, "El suscriptor id: %d ha recibido el mensaje id: %d", id_subscriber, id_message);
 	log_info(logger,log_msg);
 }
+
+

@@ -41,6 +41,7 @@ void inform_message_sent_to(t_enqueued_message* data, t_subscriber* subscriber);
 void inform_message_ack_from(t_enqueued_message* data, t_subscriber* subscriber);
 t_enqueued_message* find_message_by_id(t_queue* queue, uint32_t id);
 t_enqueued_message* find_message_by_id_correlativo(t_queue* queue, uint32_t id);
+void remove_messages_by_id(t_queue* queue, t_list* ids_messages_deleted, int ids_count);
 void remove_message_by_id(t_queue* queue, uint32_t id);
 void remove_message_by_id_correlativo(t_queue* queue, uint32_t id);
 void element_destroyer_mq(void* data);

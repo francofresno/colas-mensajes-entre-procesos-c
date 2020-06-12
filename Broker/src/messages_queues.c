@@ -96,6 +96,14 @@ t_enqueued_message* find_message_by_id_correlativo(t_queue* queue, uint32_t id)
 	return message;
 }
 
+void remove_messages_by_id(t_queue* queue, t_list* ids_messages_deleted, int ids_count)
+{
+	for (int i=0; i < ids_count; i++) {
+		uint32_t* id = (uint32_t*) list_get(ids_messages_deleted, i);
+		remove_message_by_id(queue, *id);
+	}
+}
+
 void remove_message_by_id(t_queue* queue, uint32_t id)
 {
 	t_link_element *element = queue->elements->head;
@@ -137,7 +145,7 @@ void element_destroyer_mq(void* message)
 	t_enqueued_message* message_enqueue = (t_enqueued_message*) message;
 	free_subscribers_list(message_enqueue->subscribers_ack);
 	free_subscribers_list(message_enqueue->subscribers_informed);
-	free(message_enqueue->message);
+	//free(message_enqueue->message);
 	free(message_enqueue);
 }
 
@@ -153,7 +161,7 @@ int is_empty_message_queue(t_queue* queue)
 
 void free_message_queue(t_queue* queue)
 {
-	queue_destroy_and_destroy_elements(queue, element_destroyer_mq);
+	queue_destroy_and_destroy_elements(queue, element_destroyer_mq); // TODO chequear que element_destroyer_mq no freerea la data
 }
 
 

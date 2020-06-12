@@ -49,8 +49,7 @@ void serve_client(int* client_socket)
 	}
 
 	free_paquete_recibido(nombre_recibido, paquete_recibido);
-	liberar_conexion(*client_socket);
-	free(client_socket);
+
 }
 
 void process_suscription(t_suscripcion_msg* subscription_msg, int socket_subscriptor)
@@ -95,16 +94,27 @@ void process_new_message(int cod_op, uint32_t id_correlative, void* received_mes
 	t_list* subscribers = SUSCRIPTORES_MENSAJES[cod_op];
 	pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
 
-//	t_copy_args* args = malloc(sizeof(*args));
-//	args->id = id_message;
-//	args->data = received_message;
-//	args->data_size = size_message;
-//	void* allocated_memory = memory_alloc(size_message);
-//	args->alloc = allocated_memory;
-//	void* allocated_message = memory_copy(args);
-//	free(args);
+	t_copy_args* args = malloc(sizeof(*args));
+	args->id = id_message;
+	args->data = received_message;
+	args->data_size = size_message;
+	void* allocated_memory = memory_alloc(size_message);
+	args->alloc = allocated_memory;
+	void* allocated_message = memory_copy(args);
+	free(args);
 
-	void* allocated_message = received_message;
+
+	pthread_mutex_lock(&mutex_deleted_messages_ids);
+	int ids_count = 0;
+	t_list* ids_messages_deleted = get_victim_messages_ids(&ids_count);
+
+	if (ids_count > 0) {
+		pthread_mutex_lock(&mutex);
+		remove_messages_by_id(queue, ids_messages_deleted, ids_count);
+		pthread_mutex_unlock(&mutex);
+		notify_all_victim_messages_deleted();
+	}
+	pthread_mutex_unlock(&mutex_deleted_messages_ids);
 
 	t_enqueued_message* mensaje_encolado = push_message_queue(queue, id_message, id_correlative, allocated_message, mutex);
 

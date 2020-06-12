@@ -19,8 +19,8 @@ void load_memory(int size, int min_partition_size, int frequency, t_memory_algor
 	MIN_PARTITION_SIZE = min_partition_size;
 	COMPACTION_FREQUENCY = frequency;
 	MEMORY_ALGORITHM = memory_alg;
-	PARTITION_SELECTION_ALGORITHM = victim_alg;
-	VICTIM_SELECTION_ALGORITHM = partition_alg;
+	VICTIM_SELECTION_ALGORITHM = victim_alg;
+	PARTITION_SELECTION_ALGORITHM = partition_alg;
 
 	lru_list = list_create();
 	deleted_messages_ids = list_create();
@@ -50,9 +50,9 @@ void* memory_alloc(int size)
 		add_to_lru(allocated);
 		pthread_mutex_unlock(&mutex_lru_list);
 	}
-	pthread_mutex_lock(&mutex_memory);
+	pthread_mutex_unlock(&mutex_memory);
 
-	return NULL;
+	return allocated;
 }
 
 void* memory_copy(t_copy_args* args)
@@ -116,6 +116,23 @@ void* get_partition_by_id(t_list* partitions, uint32_t id_partition)
 void add_to_lru(void* partition)
 {
 	list_add(lru_list, partition);
+}
+
+void ids_message_destroyer(void* message)
+{
+	uint32_t* message_enqueue = (uint32_t*) message;
+	free(message_enqueue);
+}
+
+t_list* get_victim_messages_ids(int* element_count)
+{
+	*element_count = list_size(deleted_messages_ids);
+	return deleted_messages_ids;
+}
+
+void notify_all_victim_messages_deleted()
+{
+	list_clean_and_destroy_elements(deleted_messages_ids, ids_message_destroyer);
 }
 
 void notify_message_used(uint32_t id_message)

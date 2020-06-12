@@ -40,10 +40,13 @@ void* dp_alloc(int size)
 		partition = choose_victim_partition();
 		if (partition != NULL) {
 			partition->free = 1;
+			free(partition->data);
 			partition->data = NULL;
 
+			uint32_t* id_to_delete = malloc(sizeof(*id_to_delete));
+			*id_to_delete = partition->id_data;
 			pthread_mutex_lock(&mutex_deleted_messages_ids);
-			list_add(deleted_messages_ids, (void*) &(partition->id_data));
+			list_add(deleted_messages_ids, (void*) id_to_delete);
 			pthread_mutex_unlock(&mutex_deleted_messages_ids);
 
 			index_victim_chosen = list_add(FREE_PARTITIONS, (void*) partition);
@@ -54,7 +57,7 @@ void* dp_alloc(int size)
 		dp_alloc(size);
 	}
 
-	if (index_victim_chosen) {
+	if (index_victim_chosen >= 0) {
 		list_remove(FREE_PARTITIONS, index_victim_chosen);
 	}
 
@@ -64,7 +67,7 @@ void* dp_alloc(int size)
 		new_partition->id_data = 0;
 		new_partition->free = 1;
 		new_partition->size = partition->size - size;
-		new_partition->base = partition->base + size;
+		new_partition->base = partition->base + size + 1; // TODO chequear ese +1
 		list_add(FREE_PARTITIONS, (void*) new_partition);
 
 		partition->size = size;
