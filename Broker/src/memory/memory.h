@@ -9,20 +9,27 @@
 #ifndef MEMORY_H_
 #define MEMORY_H_
 
-#include <stdlib.h>
-
 #include "dynamic_partitions.h"
 #include "buddy_system.h"
 
-void* MEMORY;
-int MEMORY_SIZE;
-int MIN_PARTITION_SIZE;
-int COMPACTION_FREQUENCY;
-t_memory_algorithm MEMORY_ALGORITHM;
-t_selection_algorithm PARTITION_SELECTION_ALGORITHM;
-t_selection_algorithm VICTIM_SELECTION_ALGORITHM;
+typedef struct
+{
+	void* alloc;
+	void* data;
+	uint32_t data_size;
+	uint32_t id;
+} t_copy_args;
+
+// Mutex
+extern pthread_mutex_t mutex_memory;
 
 void load_memory(int size, int min_partition_size, int frequency, t_memory_algorithm memory_alg, t_selection_algorithm victim_alg, t_selection_algorithm partition_alg);
-void* memory_alloc();
+void* memory_alloc(int size);
+void* memory_copy(t_copy_args* args);
+void add_to_lru(void* partition);
+t_list* get_victim_messages_ids(int* element_count);
+void notify_all_victim_messages_deleted();
+void notify_message_used(uint32_t id_message);
+
 
 #endif /* MEMORY_H_ */

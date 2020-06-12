@@ -61,7 +61,7 @@
 	 *  @NAME: recibir_paquete
 	 *  @RETURN: paquete recibido o NULL en caso de falla en el recv
 	 */
-	t_paquete* recibir_paquete(int socket_cliente, char** nombre_recibido);
+	t_paquete* recibir_paquete(int socket_cliente, char** nombre_recibido, uint32_t* tamanio_recibido);
 	void deserializar_paquete(void* stream, t_paquete* paquete_recibido, int* offset, uint32_t bytes, char** nombre_recibido);
 	void copiar_nombre(t_nombrePokemon* estructuraNombre, void* stream, int* offset);
 	void copiar_coordenadas(t_coordenadas* estructuraCoordenadas, void* stream, int* offset);
