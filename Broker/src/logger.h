@@ -12,6 +12,8 @@
 #include<commons/log.h>
 #include "nuestras-commons/mensajes.h"
 
+t_log* LOGGER;
+
 void log_new_connection(int socket_client, t_log* logger);
 void log_new_subscriber(uint32_t id_proceso, op_code cola, t_log* logger);
 void log_new_message(uint32_t id, op_code cola, t_log* logger);

@@ -1,6 +1,7 @@
 /*
  ============================================================================
  Name        : Broker
+
  Author      : Fran and Co
  Description : Proceso Broker
  ============================================================================
@@ -325,7 +326,7 @@ void init_memory()
 	char* frequency = config_get_string_value(CONFIG,"FRECUENCIA_COMPACTACION");
 	int freq_compact = atoi(frequency);
 
-	load_memory(size, min_part_size, freq_compact, memory_alg, victim_alg, partition_alg, LOGGER);
+	load_memory(size, min_part_size, freq_compact, memory_alg, victim_alg, partition_alg);
 }
 
 void init_message_queues()

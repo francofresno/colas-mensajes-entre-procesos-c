@@ -145,7 +145,7 @@ void element_destroyer_mq(void* message)
 	t_enqueued_message* message_enqueue = (t_enqueued_message*) message;
 	free_subscribers_list(message_enqueue->subscribers_ack);
 	free_subscribers_list(message_enqueue->subscribers_informed);
-	//free(message_enqueue->message);
+	//free(message_enqueue->message); TODO freerear los nombres de alguna manera aca
 	free(message_enqueue);
 }
 

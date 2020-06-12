@@ -40,7 +40,7 @@ void* dp_alloc(int size)
 		partition = choose_victim_partition();
 		if (partition != NULL) {
 			partition->free = 1;
-			free(partition->data);
+			//free(partition->data); VALGRIND tira invalid free TODO
 			partition->data = NULL;
 
 			uint32_t* id_to_delete = malloc(sizeof(*id_to_delete));
@@ -49,7 +49,7 @@ void* dp_alloc(int size)
 			list_add(deleted_messages_ids, (void*) id_to_delete);
 			pthread_mutex_unlock(&mutex_deleted_messages_ids);
 
-			log_deleted_partition(partition->base, LOGGER_MEMORY);
+			log_deleted_partition(partition->base, LOGGER);
 
 			index_victim_chosen = list_add(FREE_PARTITIONS, (void*) partition);
 		}
@@ -109,7 +109,7 @@ void compact_memory()
 	if (SEARCH_FAILURE_COUNTER == COMPACTION_FREQUENCY) {
 
 		//TODO compacto, recordar freerear las particiones que se compactan
-		log_compactation(LOGGER_MEMORY);
+		log_compactation(LOGGER);
 		SEARCH_FAILURE_COUNTER = 0;
 	}
 }

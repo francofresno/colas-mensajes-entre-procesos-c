@@ -50,7 +50,6 @@ int COMPACTION_FREQUENCY;
 t_memory_algorithm MEMORY_ALGORITHM;
 t_selection_algorithm PARTITION_SELECTION_ALGORITHM;
 t_selection_algorithm VICTIM_SELECTION_ALGORITHM;
-t_log* LOGGER_MEMORY;
 
 t_list* lru_list;
 t_list* deleted_messages_ids;

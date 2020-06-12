@@ -63,10 +63,8 @@ t_list* SUSCRIPTORES_MENSAJES[7];
 pthread_mutex_t MUTEX_COLAS[7];
 pthread_mutex_t MUTEX_SUSCRIPTORES[7];
 
-// Config y constants obtenidas de config
+// Config
 t_config* CONFIG;
-t_log* LOGGER;
-
 
 int init_server();
 void init_message_queues();

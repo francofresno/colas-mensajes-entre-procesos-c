@@ -12,7 +12,7 @@
 
 pthread_mutex_t mutex_memory = PTHREAD_MUTEX_INITIALIZER;
 
-void load_memory(int size, int min_partition_size, int frequency, t_memory_algorithm memory_alg, t_selection_algorithm victim_alg, t_selection_algorithm partition_alg, t_log* logger)
+void load_memory(int size, int min_partition_size, int frequency, t_memory_algorithm memory_alg, t_selection_algorithm victim_alg, t_selection_algorithm partition_alg)
 {
 	MEMORY = malloc(size);
 	MEMORY_SIZE = size;
@@ -21,7 +21,6 @@ void load_memory(int size, int min_partition_size, int frequency, t_memory_algor
 	MEMORY_ALGORITHM = memory_alg;
 	VICTIM_SELECTION_ALGORITHM = victim_alg;
 	PARTITION_SELECTION_ALGORITHM = partition_alg;
-	LOGGER_MEMORY = logger;
 
 	lru_list = list_create();
 	deleted_messages_ids = list_create();
@@ -65,10 +64,10 @@ void* memory_copy(t_copy_args* args)
 		t_partition* partition = args->alloc;
 		partition->id_data = args->id;
 
-		data = memcpy(MEMORY + partition->base, args->data, args->data_size);
+		data = memcpy(MEMORY + partition->base, args->data, args->data_size); // TODO funciona bien pero valgrind dice invalid read of size X
 		partition->data = data;
 
-		log_new_message_in_memory(partition->id_data, partition->base, LOGGER_MEMORY);
+		log_new_message_in_memory(partition->id_data, partition->base, LOGGER);
 	}
 
 	free(args->data);
@@ -78,7 +77,7 @@ void* memory_copy(t_copy_args* args)
 void memory_dump()
 {
 	//TODO
-	log_dump(LOGGER_MEMORY);
+	log_dump(LOGGER);
 }
 
 int get_index_of_partition(t_list* partitions, uint32_t id_partition)
