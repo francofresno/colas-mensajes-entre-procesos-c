@@ -37,24 +37,32 @@ typedef enum{
 
 typedef struct
 {
+	t_nombrePokemon* pokemon;
+	t_coordenadas* coordenadas;
+} t_newPokemon;
+
+typedef struct
+{
 	uint32_t id_entrenador;
 	t_coordenadas* coordenadas;
 	t_list* pokemonesQuePosee;
 	t_list* pokemonesQueQuiere;
 	uint32_t cantidad_pokemons;
+	t_newPokemon* pokemonInstantaneo;
 	status_code estado;
+
 } t_entrenador;
 
-typedef struct
-{
-	t_queue* colaListos;
-	t_queue* colaBloqueadosLLenos;
-	t_queue* colaBloqueadosEsperandoAtraparMas;
-	t_queue* colaBloqueadosEsperandoCaught;
-	t_queue* colaEnEjecucion;
-	t_queue* colaFinalizados;
-
-} t_estructuraCola;
+//typedef struct
+//{
+//	t_list* listaNuevos;
+//	t_list* listaReady;
+//	t_list* listaBloqueadosEsperandoPokemones;
+//	t_list* listaBloqueadosDeadlock;
+//	t_list* listaBloqueadosEsperandoMensaje;
+//	t_list* listaFinalizados;
+//
+//} t_estructuraListas;
 
 typedef enum{
 	FIFO = 1,
@@ -78,6 +86,8 @@ const static struct {
 
 void ponerEntrenadoresEnLista(t_config*);
 
+void inicializarListasDeEstados();
+
 void crearHilosEntrenadores();
 
 t_entrenador* crear_entrenador(uint32_t, t_coordenadas*, t_list*, t_list*, uint32_t, status_code);
@@ -88,9 +98,7 @@ uint32_t generar_id();
 
 t_nombrePokemon* crear_pokemon(char*);
 
-void buscarPokemones();
-
-void gestionarPokemones(t_entrenador*);
+void ejecutarEntrenador(t_entrenador*);
 
 void hacerObjetivoTeam(t_list*,t_list*);
 
@@ -100,7 +108,11 @@ void contiene(t_list*, t_list*);
 
 int sonIguales(t_nombrePokemon*, t_nombrePokemon*);
 
-void planificarSegun(t_config*);
+t_entrenador* entrenadorMasCercano(t_newPokemon*);
+
+int distanciaA(t_coordenadas*, t_coordenadas*);
+
+void planificarSegun();
 
 void planificarSegunFifo();
 

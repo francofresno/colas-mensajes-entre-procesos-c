@@ -11,7 +11,22 @@ t_list* entrenadores;
 t_list* hilosEntrenadores;
 t_list* objetivoTeam;
 
+//Listas de entrenadores segun estado
+t_list* listaNuevos;
+t_list* listaReady;
+t_list* listaBloqueadosDeadlock;
+t_list* listaBloqueadosEsperandoMensaje;
+t_list* listaBloqueadosEsperandoPokemones;
+t_list* listaFinalizados;
+
+char* algoritmoPlanificacion;
+int quantum;
+int estimacionInicial;
+double alfa;
+
 pthread_mutex_t mutex_id_entrenadores = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_entrenador = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_entrenadores_ejecutar = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_hay_pokemones = PTHREAD_MUTEX_INITIALIZER;
 /*
   ============================================================================
@@ -20,6 +35,9 @@ pthread_mutex_t mutex_hay_pokemones = PTHREAD_MUTEX_INITIALIZER;
 */
 
 void ponerEntrenadoresEnLista(t_config* config) {
+
+	inicializarListasDeEstados();
+
 	entrenadores = list_create(); //Creamos la lista de entrenadores
 
 	t_coordenadas* coords = malloc(sizeof(t_coordenadas));
@@ -54,6 +72,7 @@ void ponerEntrenadoresEnLista(t_config* config) {
 				list_size(pokemonesQueTiene), NEW);
 
 		list_add(entrenadores, entrenador);
+		list_add(listaNuevos, entrenador);
 
 		j++;
 		i++;
@@ -75,13 +94,23 @@ void crearHilosEntrenadores() {
 
 		t_entrenador* entrenador = (t_entrenador*) list_get(entrenadores, a);
 
-		pthread_create(&pthread_id[a], NULL, (void*) gestionarPokemones, entrenador);
+		pthread_create(&pthread_id[a], NULL, (void*) ejecutarEntrenador, entrenador);
 
 		list_add(hilosEntrenadores, &pthread_id[a]);
 	}
 
 }
 
+void inicializarListasDeEstados(){
+
+listaNuevos = list_create();
+listaReady = list_create();
+listaBloqueadosDeadlock= list_create();
+listaBloqueadosEsperandoMensaje= list_create();
+listaBloqueadosEsperandoPokemones = list_create();
+listaFinalizados = list_create();
+
+}
 
 t_entrenador* crear_entrenador(uint32_t id_entrenador,
 		t_coordenadas* coordenadas, t_list* pokemonesQuePosee,
@@ -149,14 +178,11 @@ uint32_t generar_id() {
 	return id_generado;
 }
 
-void buscarPokemones(t_entrenador* entrenador) {
-
-	entrenador->estado = FINISHED;
-	printf("El estado del entrenador de id %d es: %d\n", entrenador->id_entrenador, entrenador->estado);
-}
-
-void gestionarPokemones(t_entrenador* entrenador){
+void ejecutarEntrenador(t_entrenador* entrenador){
 	printf("Soy el entrenador con el id %d\n", entrenador->id_entrenador);
+	entrenador->estado = FINISHED;
+		printf("El estado del entrenador de id %d es: %d\n", entrenador->id_entrenador, entrenador->estado);
+	pthread_mutex_lock(&mutex_entrenadores_ejecutar);
 }
 
 void hacerObjetivoTeam(t_list* listaPokemonesTieneEntrenadores, t_list* listaPokemonesDeseaEntrenadores){ //Siempre Despues de Usar estas Listas
@@ -218,12 +244,97 @@ int sonIguales(t_nombrePokemon* pokemon1, t_nombrePokemon* pokemon2){
 	return strcmp(pokemon1->nombre, pokemon2->nombre);					//retorna un 0 si cumple
 }
 
-void planificarSegun(t_config* config) {
-	pthread_mutex_lock(&mutex_hay_pokemones);
-	char* algoritmoPlanificacion = config_get_string_value(config,
-			"ALGORITMO_PLANIFICACION");
-	//char* quantum= config_get_array_value(config, "QUANTUM");
-	//char* quantum= config_get_array_value(config, "ESTIMACION_INICIAL");
+t_entrenador* entrenadorMasCercano(t_newPokemon* pokemon){
+	t_entrenador* entrenadorTemporal;
+	t_entrenador* entrenadorMasCercanoBlocked;
+
+	int distanciaTemporal;
+	int menorDistanciaBlocked;
+
+	t_list* entrenadores_bloqueados = listaBloqueadosEsperandoPokemones;
+
+	if(!list_is_empty(entrenadores_bloqueados)){
+		entrenadorMasCercanoBlocked = list_get(entrenadores_bloqueados, 0);
+		menorDistanciaBlocked = distanciaA(entrenadorMasCercanoBlocked->coordenadas, pokemon->coordenadas);
+
+		for(int i=0; i < entrenadores_bloqueados->elements_count; i++){
+
+			if(menorDistanciaBlocked ==0){
+				break;
+			}
+
+			entrenadorTemporal = list_get(entrenadores_bloqueados, i);
+			distanciaTemporal = distanciaA(entrenadorTemporal->coordenadas, pokemon->coordenadas);
+
+			if(distanciaTemporal < menorDistanciaBlocked){
+				entrenadorMasCercanoBlocked = entrenadorTemporal;
+				menorDistanciaBlocked = distanciaTemporal;
+			}
+		}
+	}
+
+	t_list* entrenadores_new = listaNuevos;
+	t_entrenador* entrenadorMasCercanoNew;
+	int menorDistanciaNew;
+
+
+	if(!list_is_empty(entrenadores_new)){
+		entrenadorMasCercanoNew = list_get(entrenadores_new, 0);
+		menorDistanciaNew = distanciaA(entrenadorMasCercanoNew->coordenadas, pokemon->coordenadas);
+
+
+		for(int i = 1; i < entrenadores_new->elements_count; i++){
+
+			if(menorDistanciaNew == 0){
+				break;
+			}
+
+			entrenadorTemporal = list_get(entrenadores_new, i);
+			distanciaTemporal = distanciaA(entrenadorTemporal->coordenadas, pokemon->coordenadas);
+
+			if(distanciaTemporal < menorDistanciaNew){
+				entrenadorMasCercanoNew = entrenadorTemporal;
+				menorDistanciaNew = distanciaTemporal;
+			}
+
+		}
+	}
+
+	if(menorDistanciaNew <= menorDistanciaBlocked ){ //TODO despertar o poner a ejecutar.
+		entrenadorMasCercanoNew->pokemonInstantaneo = pokemon;
+		return entrenadorMasCercanoNew;
+
+	} else{
+		entrenadorMasCercanoBlocked->pokemonInstantaneo = pokemon;
+		return entrenadorMasCercanoBlocked;
+	}
+
+}
+
+int distanciaA(t_coordenadas* desde, t_coordenadas* hasta){
+
+	int distanciaX = abs(desde->posX - hasta->posX);
+	int distanciaY = abs(desde->posY - hasta->posY);
+
+	return distanciaX + distanciaY;
+}
+
+void buscarPokemon(t_newPokemon* pokemon){
+
+	//pthread_mutex_lock(&mutex_entrenadores_ejecutar); //TODO hacer impide que otro entrenador ejecute a la par
+	t_entrenador* entrenador = entrenadorMasCercano(pokemon);
+
+	entrenador->estado = READY;
+
+	planificarSegun();
+
+	//pthread_mutex_unlock(&mutex_entrenador); 		//a un entrenador no se le asignen más de un pokemon al haber un appeard
+	//pthread_mutex_unlock(&mutex_entrenador_hilo); //signal al hilo del entrenador que va a ejecutar
+
+}
+
+void planificarSegun() {
+
 
 	switch (stringACodigoAlgoritmo(algoritmoPlanificacion)) {
 
@@ -253,7 +364,6 @@ void planificarSegun(t_config* config) {
 	case ERROR_CODIGO_ALGORITMO:
 
 		puts("Se recibio mal el codigo\n");
-
 		break;
 
 	default:
@@ -268,39 +378,24 @@ void planificarSegun(t_config* config) {
 
 void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 
-
-	t_estructuraCola* estructura_cola = malloc(sizeof(t_estructuraCola));
-
-	estructura_cola->colaListos = queue_create();
-	estructura_cola->colaEnEjecucion = queue_create();
-	estructura_cola->colaBloqueadosLLenos= queue_create();
-	estructura_cola->colaBloqueadosEsperandoCaught= queue_create();
-	estructura_cola->colaBloqueadosEsperandoAtraparMas= queue_create();
-	estructura_cola->colaFinalizados = queue_create();
-
-	int tamanio = list_size(entrenadores);
+	int tamanio = list_size(listaReady);
 
 	for (int b = 0; b < tamanio; b++) {
 
-		t_entrenador* entrenador = (t_entrenador*) list_get(entrenadores, b);
-
-		if (entrenador->estado == READY) {
+		t_entrenador* entrenador = (t_entrenador*) list_get(listaReady, b);
 
 			entrenador->estado = EXEC;
-			queue_push(estructura_cola->colaEnEjecucion, entrenador);
-			buscarPokemones(entrenador); //Buscar pokemones cambia el estado a finalizado o bloqueado.
+			ejecutarEntrenador(entrenador); //Buscar pokemones cambia el estado a finalizado o bloqueado.
 
 			if (entrenador->estado == FINISHED) {
-				queue_pop(estructura_cola->colaEnEjecucion);
-				queue_push(estructura_cola->colaFinalizados, entrenador);
+				list_add(listaFinalizados, entrenador);
 			}
 
 			if (entrenador->estado == BLOCKED){
-				queue_pop(estructura_cola->colaEnEjecucion);
-				queue_push(estructura_cola->colaBloqueadosLLenos, entrenador);
+				list_add(listaBloqueadosDeadlock, entrenador);
 			}
 		}
-	}
+
 }
 
 algoritmo_code stringACodigoAlgoritmo(const char* string) {

@@ -12,13 +12,30 @@ extern t_list* entrenadores;
 extern t_list* objetivoTeam;
 t_list* atrapados;
 t_list* pendientes;
+
+////Listas de entrenadores segun estado
+//extern t_list* listaNuevos;
+//extern t_list* listaReady;
+//extern t_list* listaBloqueadosDeadlock;
+//extern t_list* listaBloqueadosEsperandoMensaje;
+//extern t_list* listaBloqueadosEsperandoPokemones;
+//extern t_list* listaFinalizados;
+
+
 //extern t_list* hilosEntrenadores;
 t_list* id_mensajeGet;
 
+char* IP_TEAM;
+char* PUERTO_TEAM;
 char* ipBroker;
 char* puertoBroker;
 int ID_TEAM;
 int TIEMPO_RECONEXION;
+extern char* algoritmoPlanificacion;
+extern int quantum;
+extern int estimacionInicial;
+extern double alfa;
+
 
 extern pthread_mutex_t mutex_hay_pokemones;
 pthread_mutex_t mutex_send = PTHREAD_MUTEX_INITIALIZER;
@@ -32,30 +49,31 @@ int main(void) {
 
 	ponerEntrenadoresEnLista(config);
 
-	suscribirseAColas(); //TODO terminar y checkear
+	suscribirseAColas();
 
-	//enviarMensajes();
+	enviarMensajes();
 
 
 	puts("Soy un team!\n");
-//
-//	fflush(stdout);
-//
-	int socket_servidor = iniciar_servidor(IP, PUERTO);
 
-	while(1) {
 
-		int socket_cliente = esperar_cliente(socket_servidor);
-		if(socket_cliente > 0) {
-			pthread_create(&thread,NULL,(void*)serve_client,&socket_cliente);
-			pthread_detach(thread);
-		}
-	}
+//	int socket_servidor = iniciar_servidor(IP_TEAM, PUERTO_TEAM);
+//	pthread_create(&thread,NULL,(void*)quedarseALaEscucha,&socket_servidor);
+//	pthread_join(thread, NULL);
+
 
 
 	return EXIT_SUCCESS;
 }
 
+void quedarseALaEscucha(int* socket_servidor){
+	while(1) {
+		int client_socket = esperar_cliente(*socket_servidor);
+		if(client_socket > 0) {
+			serve_client(&client_socket);
+		}
+	}
+}
 
 t_log* iniciar_logger(void)
 {
@@ -70,11 +88,16 @@ t_config* leer_config(void)
 
 void inicializarConfig(t_config* config){
 
+	IP_TEAM = config_get_string_value(config, "IP_TEAM");;
+	PUERTO_TEAM = config_get_string_value(config, "PUERTO_TEAM");;
 	ID_TEAM = config_get_int_value(config, "ID");
 	TIEMPO_RECONEXION = config_get_int_value(config, "TIEMPO_RECONEXION");
 	ipBroker = config_get_string_value(config, "IP_BROKER");
 	puertoBroker = config_get_string_value(config, "PUERTO_BROKER");
-
+	algoritmoPlanificacion = config_get_string_value(config,"ALGORITMO_PLANIFICACION");
+	quantum= config_get_int_value(config, "QUANTUM");
+	estimacionInicial= config_get_int_value(config, "ESTIMACION_INICIAL");
+	alfa = config_get_double_value(config, "ALPHA");
 }
 
 void suscribirseAppeared(){
@@ -189,7 +212,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 		t_coordenadas coordenadas = estructura->coordenadas;
 
-		requiere(&pokemon, coordenadas);
+		requiere(&pokemon, &coordenadas);
 
 
 			break;
@@ -202,7 +225,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 //		} t_localizedPokemon_msg;
 
 		puts("Llego un localized al Team!\n");
-		pthread_mutex_unlock(&mutex_hay_pokemones);
+		 //TODO no es para appeard (planificar)
 
 
 			break;
@@ -273,12 +296,9 @@ void enviarMensajeGet(t_nombrePokemon* pokemon){
 	int socket_cliente = crear_conexion(ipBroker, puertoBroker);
 	int status = enviar_mensaje(GET_POKEMON, 0, 0, estructuraPokemon, socket_cliente);
 
-	if(status>0){
+	if(status>=0){
 		esperarId(socket_cliente);
-	}else{
-		//TODO default no existen locaciones para la especie requerida
 	}
-
 
 	liberar_conexion(socket_cliente);
 }
@@ -299,11 +319,16 @@ void esperarId(int socket_cliente){
 }
 
 
-void requiere(t_nombrePokemon* pokemon, t_coordenadas coordenadas){
+void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
 
 	diferencia();
 	int a = list_size(pendientes);
 	int j=0;
+
+	t_newPokemon* pokemonNuevo;
+	pokemonNuevo->pokemon = pokemon;
+	pokemonNuevo->coordenadas = coordenadas;
+
 
 	for(int i=0; i < a; i++){
 
@@ -314,8 +339,7 @@ void requiere(t_nombrePokemon* pokemon, t_coordenadas coordenadas){
 
 	if(j!=a){
 
-		list_add(atrapados, pokemon);
-		//hace lo que tenga que hacer --> poner a planificar al entrenador dormido o listo (con coordenadas y pokemon)
+		//buscarPokemon(pokemonNuevo);hace lo que tenga que hacer --> poner a planificar al entrenador dormido o listo (con coordenadas y pokemon)
 	}
 }
 
@@ -337,6 +361,3 @@ void diferencia(){ 		//llenar lista pendientes  //TODO probar
 	}
 
 }
-
-
-

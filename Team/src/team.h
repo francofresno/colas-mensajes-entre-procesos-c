@@ -11,8 +11,6 @@
 #include "funcionesUtilesTeam.h"
 
 // IP y PUERTO de team para iniciar servidor
-#define IP "127.0.0.2"
-#define PUERTO "6012"
 
 #define TEAM_LOG "team.log"
 #define TEAM_NAME "team" // No estamos seguras porq cada proceso tema tiene su propio archivo de log
@@ -31,6 +29,8 @@ const static struct {
 };
 
 pthread_t thread;
+
+void quedarseALaEscucha(int*);
 
 t_log* iniciar_logger(void);
 
@@ -68,7 +68,7 @@ void inicializarListas();
 
 void esperarId(int);
 
-void requiere(t_nombrePokemon*, t_coordenadas);
+void requiere(t_nombrePokemon*, t_coordenadas*);
 
 void diferencia();
 
