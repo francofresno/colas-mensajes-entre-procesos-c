@@ -20,8 +20,8 @@ t_queue* create_message_queue()
 t_enqueued_message* push_message_queue(t_queue* queue, uint32_t ID, uint32_t ID_correlativo, void* message, pthread_mutex_t mutex)
 {
 	t_enqueued_message* data = malloc(sizeof(*data));
-	data->suscribers_ack = list_create();
-	data->suscribers_informed = list_create();
+	data->subscribers_ack = list_create();
+	data->subscribers_informed = list_create();
 	data->ID = ID;
 	data->ID_correlativo = ID_correlativo;
 	data->message = message;
@@ -49,12 +49,12 @@ t_enqueued_message* get_message_by_index(t_queue* queue, int index)
 
 void inform_message_sent_to(t_enqueued_message* message, t_subscriber* subscriber)
 {
-	list_add(message->suscribers_informed, (void*)subscriber);
+	list_add(message->subscribers_informed, (void*)subscriber);
 }
 
 void inform_message_ack_from(t_enqueued_message* message, t_subscriber* subscriber)
 {
-	list_add(message->suscribers_ack, (void*)subscriber);
+	list_add(message->subscribers_ack, (void*)subscriber);
 }
 
 int is_same_id(uint32_t data_id, uint32_t id)
@@ -96,6 +96,14 @@ t_enqueued_message* find_message_by_id_correlativo(t_queue* queue, uint32_t id)
 	return message;
 }
 
+void remove_messages_by_id(t_queue* queue, t_list* ids_messages_deleted, int ids_count)
+{
+	for (int i=0; i < ids_count; i++) {
+		uint32_t* id = (uint32_t*) list_get(ids_messages_deleted, i);
+		remove_message_by_id(queue, *id);
+	}
+}
+
 void remove_message_by_id(t_queue* queue, uint32_t id)
 {
 	t_link_element *element = queue->elements->head;
@@ -135,9 +143,9 @@ void remove_message_by_id_correlativo(t_queue* queue, uint32_t id)
 void element_destroyer_mq(void* message)
 {
 	t_enqueued_message* message_enqueue = (t_enqueued_message*) message;
-	free_subscribers_list(message_enqueue->suscribers_ack);
-	free_subscribers_list(message_enqueue->suscribers_informed);
-	free(message_enqueue->message);
+	free_subscribers_list(message_enqueue->subscribers_ack);
+	free_subscribers_list(message_enqueue->subscribers_informed);
+	//free(message_enqueue->message); TODO freerear los nombres de alguna manera aca
 	free(message_enqueue);
 }
 
@@ -153,7 +161,7 @@ int is_empty_message_queue(t_queue* queue)
 
 void free_message_queue(t_queue* queue)
 {
-	queue_destroy_and_destroy_elements(queue, element_destroyer_mq);
+	queue_destroy_and_destroy_elements(queue, element_destroyer_mq); // TODO chequear que element_destroyer_mq no freerea la data
 }
 
 
@@ -172,7 +180,7 @@ void unsubscribe_process(t_list* subscribers, t_subscriber* subscriber, pthread_
 {
 	pthread_mutex_lock(&mutex);
 
-	int index = get_index_of_subscriber(subscribers, subscriber->id_suscriptor);
+	int index = get_index_of_subscriber(subscribers, subscriber->id_subscriber);
 	if (index != -1)
 		list_remove(subscribers, index);
 
@@ -189,7 +197,7 @@ int get_index_of_subscriber(t_list* subscribers, uint32_t id_subscriber)
 
 	int index = 0;
 	while(element != NULL) {
-		if (is_same_id(subscriber_listed->id_suscriptor, id_subscriber))
+		if (is_same_id(subscriber_listed->id_subscriber, id_subscriber))
 			return index;
 
 		element = element->next;
@@ -215,9 +223,9 @@ int isSubscriberListed(t_list* subscribers, uint32_t id_subscriber)
 void add_new_informed_subscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber, t_log* logger) {
 	for (int i=0; i < number_of_messages; i++) {
 		t_enqueued_message* message = (t_enqueued_message*) list_get(messages_in_queue, i);
-		if (!isSubscriberListed(message->suscribers_informed, subscriber->id_suscriptor)) {
-			list_add(message->suscribers_informed, subscriber); //TODO mutex?
-			log_message_to_subscriber(subscriber->id_suscriptor, message->ID, logger);
+		if (!isSubscriberListed(message->subscribers_informed, subscriber->id_subscriber)) {
+			list_add(message->subscribers_informed, subscriber); //TODO mutex?
+			log_message_to_subscriber(subscriber->id_subscriber, message->ID, logger);
 		}
 	}
 }
@@ -225,9 +233,9 @@ void add_new_informed_subscriber_to_mq(t_list* messages_in_queue, uint32_t numbe
 void add_new_ack_suscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber, t_log* logger) {
 	for (int i=0; i < number_of_messages; i++) {
 		t_enqueued_message* message = (t_enqueued_message*) list_get(messages_in_queue, i);
-		if (!isSubscriberListed(message->suscribers_ack, subscriber->id_suscriptor)) {
-			list_add(message->suscribers_ack, subscriber); //TODO mutex?
-			log_ack_from_subscriber(subscriber->id_suscriptor, message->ID, logger);
+		if (!isSubscriberListed(message->subscribers_ack, subscriber->id_subscriber)) {
+			list_add(message->subscribers_ack, subscriber); //TODO mutex?
+			log_ack_from_subscriber(subscriber->id_subscriber, message->ID, logger);
 		}
 	}
 }

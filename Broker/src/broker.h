@@ -9,12 +9,12 @@
 #ifndef BROKER_H_
 #define BROKER_H_
 
-#include<stdio.h>
-#include<stdlib.h>
-#include<commons/string.h>
-#include<commons/config.h>
-#include<readline/readline.h>
-#include<pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <commons/string.h>
+#include <commons/config.h>
+#include <readline/readline.h>
+#include <pthread.h>
 
 #include "nuestras-commons/conexion.h"
 #include "nuestras-commons/mensajes.h"
@@ -63,10 +63,8 @@ t_list* SUSCRIPTORES_MENSAJES[7];
 pthread_mutex_t MUTEX_COLAS[7];
 pthread_mutex_t MUTEX_SUSCRIPTORES[7];
 
-// Config y constants obtenidas de config
+// Config
 t_config* CONFIG;
-t_log* LOGGER;
-
 
 int init_server();
 void init_message_queues();
@@ -75,16 +73,12 @@ void init_logger();
 void init_config();
 void init_memory();
 
-int esperar_cliente(int socket_servidor);
-void serve_client(int* socket_cliente);
-void process_new_message(int cod_op, uint32_t id_correlativo, void* mensaje_recibido, int socket_cliente);
+int esperar_cliente(int socket_server);
+void serve_client(int* socket_client);
+void process_new_message(int cod_op, uint32_t id_correlative, void* received_message, uint32_t size_message, int socket_client);
 void process_suscription(t_suscripcion_msg* estructuraSuscripcion, int socket_suscriptor);
-t_list* inform_subscribers(op_code codigo, void* mensaje, uint32_t id, uint32_t id_correlativo, t_list* suscriptores, pthread_mutex_t mutex);
+t_list* inform_subscribers(op_code codigo, void* mensaje, uint32_t id, uint32_t id_correlative, t_list* suscriptores, pthread_mutex_t mutex);
 void reply_to_new_subscriber(op_code codigo, t_queue* message_queue, t_subscriber* subscriber, uint32_t* cantidad_mensajes, t_list* mensajes_encolados);
-/*
- *  @NAME: enviar_mensajes_encolados_a_suscriptor_nuevo
- *  @RETURN: -1 en caso de falla o 0 en caso de éxito
- */
 void send_enqueued_messages(uint32_t cantidad_mensajes, uint32_t tamanio_stream, t_list* paquetes_serializados, t_list* tamanio_paquetes,
 		t_list* mensajes_encolados, t_subscriber* subscriber);
 void remove_subscriber_if_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t tiempo, pthread_mutex_t mutex);

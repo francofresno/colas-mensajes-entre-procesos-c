@@ -236,9 +236,10 @@ uint32_t obtener_cantidad_bytes_a_recibir(int socket_cliente)
 	return bytes;
 }
 
-t_paquete* recibir_paquete(int socket_cliente, char** nombre_recibido)
+t_paquete* recibir_paquete(int socket_cliente, char** nombre_recibido, uint32_t* tamanio_recibido)
 {
 	uint32_t bytes = obtener_cantidad_bytes_a_recibir(socket_cliente);
+	*tamanio_recibido = bytes;
 
 	t_paquete* paquete_recibido = malloc(sizeof(*paquete_recibido));
 	void* stream = malloc(bytes);
