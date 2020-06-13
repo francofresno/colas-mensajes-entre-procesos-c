@@ -96,6 +96,9 @@ void process_new_message(int cod_op, uint32_t id_correlative, void* received_mes
 	pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
 
 	uint32_t net_size_message = size_message - sizeof(uint32_t)*3; // Se resta el tamanio del cod. op, id e id correlativo que son 3 uint32_t
+	if (cod_op != CAUGHT_POKEMON) {
+		net_size_message--; // TODO ojo esto
+	}
 	t_copy_args* args = malloc(sizeof(*args));
 	args->id = id_message;
 	args->data = received_message;
@@ -104,7 +107,6 @@ void process_new_message(int cod_op, uint32_t id_correlative, void* received_mes
 	args->alloc = allocated_memory;
 	void* allocated_message = memory_copy(args);
 	free(args);
-
 
 	pthread_mutex_lock(&mutex_deleted_messages_ids);
 	int ids_count = 0;

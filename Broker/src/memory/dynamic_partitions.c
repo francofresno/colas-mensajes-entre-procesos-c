@@ -32,7 +32,7 @@ void dp_init()
 
 void* dp_alloc(int size)
 {
-	int index_victim_chosen = 0;
+	int index_victim_chosen = -1;
 	t_partition* partition = find_free_partition(size);
 
 	if (partition == NULL) {
@@ -68,11 +68,18 @@ void* dp_alloc(int size)
 		new_partition->data = NULL;
 		new_partition->id_data = 0;
 		new_partition->free = 1;
-		new_partition->size = partition->size - size;
-		new_partition->base = partition->base + size - 1; // TODO chequear ese -1
-		list_add(FREE_PARTITIONS, (void*) new_partition);
 
-		partition->size = size;
+		if (size <= MIN_PARTITION_SIZE) {
+			new_partition->size = partition->size - MIN_PARTITION_SIZE;
+			new_partition->base = partition->base + MIN_PARTITION_SIZE;
+			partition->size = MIN_PARTITION_SIZE;
+		} else {
+			new_partition->size = partition->size - size;
+			new_partition->base = partition->base + size;
+			partition->size = size;
+		}
+
+		list_add(FREE_PARTITIONS, (void*) new_partition);
 	}
 
 	partition->free = 0;
