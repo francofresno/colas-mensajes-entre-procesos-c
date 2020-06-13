@@ -98,7 +98,8 @@ int main(int argc, char *argv[])
 			break;
 		case CAUGHT_POKEMON: ;
 			t_caughtPokemon_msg estructuraCaught;
-			estructuraCaught.atrapado = atoi(argv[4]);
+			uint32_t atrapado = fueAtrapado(argv[4]);
+			estructuraCaught.atrapado = atrapado;
 			status = enviar_mensaje(codigoOperacion, 6, atoi(argv[3]), &estructuraCaught, socket_cliente);
 			break;
 		case SUSCRIPCION: ;
@@ -183,6 +184,16 @@ process_code stringACodigoProceso(const char* string)
 			return conversionCodigoProceso[i].codigoProceso;
 	}
 	return ERROR_PROCESO;
+}
+
+uint32_t fueAtrapado(const char* estadoAtrapado)
+{
+	if(strcmp(estadoAtrapado, "OK") == 0) {
+		return 1;
+	} else if (strcmp(estadoAtrapado, "FAIL") == 0) {
+		return 0;
+	}
+	return 0;
 }
 
 void chequearSiEsSuscripcion(const char* argumento1, const char* argumento2, op_code* codigoOperacion, process_code* codigoProceso)

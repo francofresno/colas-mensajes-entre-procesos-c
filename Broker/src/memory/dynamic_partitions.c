@@ -69,7 +69,7 @@ void* dp_alloc(int size)
 		new_partition->id_data = 0;
 		new_partition->free = 1;
 		new_partition->size = partition->size - size;
-		new_partition->base = partition->base + size + 1; // TODO chequear ese +1
+		new_partition->base = partition->base + size - 1; // TODO chequear ese -1
 		list_add(FREE_PARTITIONS, (void*) new_partition);
 
 		partition->size = size;

@@ -60,6 +60,7 @@ t_config* leer_config(void);
 void terminar_programa(int, t_log*, t_config*);
 op_code stringACodigoOperacion(const char*);
 process_code stringACodigoProceso(const char*);
+uint32_t fueAtrapado(const char* estadoAtrapado);
 void chequearSiEsSuscripcion(const char*, const char*, op_code*, process_code*);
 int asignarDatosConexion(t_config*, char**, char**, process_code);
 void recepcionMensajesDeCola(int, const char*, const char*);

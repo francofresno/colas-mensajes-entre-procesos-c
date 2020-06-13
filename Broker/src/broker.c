@@ -95,11 +95,12 @@ void process_new_message(int cod_op, uint32_t id_correlative, void* received_mes
 	t_list* subscribers = SUSCRIPTORES_MENSAJES[cod_op];
 	pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
 
+	uint32_t net_size_message = size_message - sizeof(uint32_t)*3; // Se resta el tamanio del cod. op, id e id correlativo que son 3 uint32_t
 	t_copy_args* args = malloc(sizeof(*args));
 	args->id = id_message;
 	args->data = received_message;
-	args->data_size = size_message;
-	void* allocated_memory = memory_alloc(size_message);
+	args->data_size = net_size_message;
+	void* allocated_memory = memory_alloc(net_size_message);
 	args->alloc = allocated_memory;
 	void* allocated_message = memory_copy(args);
 	free(args);
