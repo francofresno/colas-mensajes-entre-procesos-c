@@ -70,7 +70,6 @@ void* memory_copy(t_copy_args* args)
 		log_new_message_in_memory(partition->id_data, partition->base, LOGGER);
 	}
 
-	free(args->data);
 	return data;
 }
 

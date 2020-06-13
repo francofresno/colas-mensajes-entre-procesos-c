@@ -102,7 +102,7 @@ void process_new_message(int cod_op, uint32_t id_correlative, void* received_mes
 	args->alloc = allocated_memory;
 	void* allocated_message = memory_copy(args);
 	free(args);
-
+	free(received_message);
 
 	pthread_mutex_lock(&mutex_deleted_messages_ids);
 	int ids_count = 0;
