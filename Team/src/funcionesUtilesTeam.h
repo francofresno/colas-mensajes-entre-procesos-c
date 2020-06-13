@@ -14,8 +14,9 @@
 #include<commons/string.h>
 #include<string.h>
 #include "nuestras-commons/conexion.h"
+#include<semaphore.h>
 
-
+#include "logger.h"
 
 #include<pthread.h>
 #include<commons/collections/list.h>
@@ -26,6 +27,9 @@ uint32_t ID_ENTRENADORES;
 
 t_list* organizarPokemones(char**);
 
+//semaforos
+sem_t* sem_entrenadores_ejecutar;
+sem_t sem_planificar;
 
 typedef enum{
 	NEW = 1,
@@ -86,19 +90,25 @@ const static struct {
 
 void ponerEntrenadoresEnLista(t_config*);
 
-void inicializarListasDeEstados();
-
 void crearHilosEntrenadores();
+
+void inicializarListasDeEstados();
 
 t_entrenador* crear_entrenador(uint32_t, t_coordenadas*, t_list*, t_list*, uint32_t, status_code);
 
 t_list* organizarPokemones(char**);
 
-uint32_t generar_id();
-
 t_nombrePokemon* crear_pokemon(char*);
 
+uint32_t generar_id();
+
 void ejecutarEntrenador(t_entrenador*);
+
+int llegoAlObjetivo(t_entrenador*);
+
+void moverAlEntrenador(uint32_t);
+
+void atraparPokemon(t_entrenador*);
 
 void hacerObjetivoTeam(t_list*,t_list*);
 
@@ -111,6 +121,8 @@ int sonIguales(t_nombrePokemon*, t_nombrePokemon*);
 t_entrenador* entrenadorMasCercano(t_newPokemon*);
 
 int distanciaA(t_coordenadas*, t_coordenadas*);
+
+void buscarPokemon(t_newPokemon*);
 
 void planificarSegun();
 
