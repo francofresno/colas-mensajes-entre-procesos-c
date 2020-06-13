@@ -15,6 +15,7 @@
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/config.h>
+#include <pthread.h>
 
 #include "nuestras-commons/conexion.h"
 #include "nuestras-commons/mensajes.h"
@@ -52,6 +53,13 @@ const static struct {
 		{GAMECARD, "GAMECARD"}
 };
 
+typedef struct {
+	int tiempo;
+	int socket_broker;
+} t_timeout_args;
+
+pthread_t thread;
+
 t_log* iniciar_logger(void);
 t_config* leer_config(void);
 void terminar_programa(int, t_log*, t_config*);
@@ -59,6 +67,7 @@ op_code stringACodigoOperacion(const char*);
 process_code stringACodigoProceso(const char*);
 void chequearSiEsSuscripcion(const char*, const char*, op_code*, process_code*);
 int asignarDatosConexion(t_config*, char**, char**, process_code);
-void recepcionMensajesDeCola(t_log*, int, const char*);
+void recepcionMensajesDeCola(t_log*, int, const char*, const char*);
+void lanzarTimeout(t_timeout_args* timeoutArgs);
 
 #endif /* GAMEBOY_H_ */

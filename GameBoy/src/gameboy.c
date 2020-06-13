@@ -9,6 +9,8 @@
 #include "gameboy.h"
 int main(int argc, char *argv[])
 {
+	argv[1] = "SUSCRIPTOR";
+	argv[2] = "NEW_POKEMON";
 	t_config* config = leer_config();
 	t_log* logger = iniciar_logger();
 
@@ -104,6 +106,7 @@ int main(int argc, char *argv[])
 			t_suscripcion_msg estructuraSuscripcion;
 			estructuraSuscripcion.id_proceso = atoi(config_get_string_value(config, "ID_PROCESO"));
 			estructuraSuscripcion.tipo_cola = stringACodigoOperacion(argv[2]);
+			estructuraSuscripcion.temporal = 1;
 			status = suscribirse_a_cola(&estructuraSuscripcion, socket_cliente);
 			break;
 		case ERROR_CODIGO: return -1; break;
@@ -113,7 +116,7 @@ int main(int argc, char *argv[])
 	if (status > 0)
 	{
 		if(codigoOperacion == SUSCRIPCION)
-			recepcionMensajesDeCola(logger, socket_cliente, argv[2]);
+			recepcionMensajesDeCola(logger, socket_cliente, argv[2], argv[3]);
 		else
 		{
 			uint32_t id_respuesta = recibir_id(socket_cliente);
@@ -181,7 +184,7 @@ int asignarDatosConexion(t_config* config, char** ip, char** puerto, process_cod
 	return 0;
 }
 
-void recepcionMensajesDeCola(t_log* logger, int socket_cliente, const char* argumento2)
+void recepcionMensajesDeCola(t_log* logger, int socket_cliente, const char* argumento2, const char* argumento3)
 {
 	uint32_t cant_paquetes;
 	t_list* paquetes = respuesta_suscripcion_obtener_paquetes(socket_cliente, &cant_paquetes);
@@ -200,11 +203,21 @@ void recepcionMensajesDeCola(t_log* logger, int socket_cliente, const char* argu
 
 	free(paquetes);
 
+	int tiempo = atoi(argumento3);
+	t_timeout_args* timeoutArgs = malloc(sizeof(*timeoutArgs));
+	timeoutArgs->tiempo = tiempo;
+	timeoutArgs->socket_broker = socket_cliente;
+	pthread_create(&thread,NULL,(void*)lanzarTimeout,timeoutArgs);
+	pthread_detach(thread);
+
 	while(1)
 	{
 		char* nombre_recibido = NULL;
 		uint32_t tamanio_recibido = 0;
 		t_paquete* paquete_recibido = recibir_paquete(socket_cliente, &nombre_recibido, &tamanio_recibido);
+		if (paquete_recibido == NULL) {
+			break;
+		}
 		printf("Recibi un mensaje con ID: %d\n", tamanio_recibido);
 		log_info(logger, "Recepcion de mensaje nuevo\nCODIGO DE OPERACION: %s.\nID: %d.\nID CORRELATIVO: %d.",
 				argumento2,
@@ -214,6 +227,17 @@ void recepcionMensajesDeCola(t_log* logger, int socket_cliente, const char* argu
 		informar_ack(socket_cliente);
 		free(paquete_recibido);
 	}
+
+
+	printf("Me desuscribi\n");
+}
+
+void lanzarTimeout(t_timeout_args* timeoutArgs)
+{
+	sleep(timeoutArgs->tiempo);
+	desuscribirse_de_cola(timeoutArgs->socket_broker);
+	close(timeoutArgs->socket_broker);
+	free(timeoutArgs);
 }
 
 t_log* iniciar_logger(void)
