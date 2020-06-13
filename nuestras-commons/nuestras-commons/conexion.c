@@ -329,7 +329,6 @@ void deserializar_paquete(void* stream, t_paquete* paquete_recibido, int* offset
 			break;
 		case CAUGHT_POKEMON: ;
 			t_caughtPokemon_msg* estructuraCaught = malloc(sizeof(*estructuraCaught));
-
 			copiar_variable(&(estructuraCaught->atrapado), stream, offset, sizeof(estructuraCaught->atrapado));
 
 			*nombre_recibido = NULL;

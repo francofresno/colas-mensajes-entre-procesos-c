@@ -11,11 +11,9 @@
 #include "funcionesUtilesTeam.h"
 
 // IP y PUERTO de team para iniciar servidor
-#define IP "127.0.0.2"
-#define PUERTO "6012"
 
 #define TEAM_LOG "team.log"
-#define TEAM_NAME "team" // No estamos seguras porq cada proceso tema tiene su propio archivo de log
+#define TEAM_NAME "team"
 #define TEAM_CONFIG "team.config"
 
 #include "nuestras-commons/conexion.h"
@@ -32,11 +30,15 @@ const static struct {
 
 pthread_t thread;
 
+void quedarseALaEscucha(int*);
+
 t_log* iniciar_logger(void);
 
 t_config* leer_config(void);
 
 void inicializarConfig(t_config*);
+
+void inicializarSemaforosYMutex();
 
 void suscribirseAppeared();
 
@@ -54,21 +56,19 @@ void process_request(int, uint32_t, void*, int);
 
 op_code stringACodigoOperacion(const char*);
 
-void enviarMensajes();
-
 void enviarMensajeGetABroker();
 
 t_list* eliminarRepetidos();
 
 void enviarMensajeGet(t_nombrePokemon*);
 
-void inicializarBinarios();
-
 void inicializarListas();
 
-void esperarId(int);
+void esperarIdGet(int);
 
-void requiere(t_nombrePokemon*, t_coordenadas);
+void esperarIdCatch(int);
+
+void requiere(t_nombrePokemon*, t_coordenadas*);
 
 void diferencia();
 

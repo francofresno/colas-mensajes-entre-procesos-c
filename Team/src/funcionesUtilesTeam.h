@@ -14,8 +14,9 @@
 #include<commons/string.h>
 #include<string.h>
 #include "nuestras-commons/conexion.h"
+#include<semaphore.h>
 
-
+#include "logger.h"
 
 #include<pthread.h>
 #include<commons/collections/list.h>
@@ -26,6 +27,9 @@ uint32_t ID_ENTRENADORES;
 
 t_list* organizarPokemones(char**);
 
+//semaforos
+sem_t* sem_entrenadores_ejecutar;
+sem_t sem_planificar;
 
 typedef enum{
 	NEW = 1,
@@ -37,24 +41,32 @@ typedef enum{
 
 typedef struct
 {
+	t_nombrePokemon* pokemon;
+	t_coordenadas* coordenadas;
+} t_newPokemon;
+
+typedef struct
+{
 	uint32_t id_entrenador;
 	t_coordenadas* coordenadas;
 	t_list* pokemonesQuePosee;
 	t_list* pokemonesQueQuiere;
 	uint32_t cantidad_pokemons;
+	t_newPokemon* pokemonInstantaneo;
 	status_code estado;
+
 } t_entrenador;
 
-typedef struct
-{
-	t_queue* colaListos;
-	t_queue* colaBloqueadosLLenos;
-	t_queue* colaBloqueadosEsperandoAtraparMas;
-	t_queue* colaBloqueadosEsperandoCaught;
-	t_queue* colaEnEjecucion;
-	t_queue* colaFinalizados;
-
-} t_estructuraCola;
+//typedef struct
+//{
+//	t_list* listaNuevos;
+//	t_list* listaReady;
+//	t_list* listaBloqueadosEsperandoPokemones;
+//	t_list* listaBloqueadosDeadlock;
+//	t_list* listaBloqueadosEsperandoMensaje;
+//	t_list* listaFinalizados;
+//
+//} t_estructuraListas;
 
 typedef enum{
 	FIFO = 1,
@@ -80,17 +92,23 @@ void ponerEntrenadoresEnLista(t_config*);
 
 void crearHilosEntrenadores();
 
+void inicializarListasDeEstados();
+
 t_entrenador* crear_entrenador(uint32_t, t_coordenadas*, t_list*, t_list*, uint32_t, status_code);
 
 t_list* organizarPokemones(char**);
 
-uint32_t generar_id();
-
 t_nombrePokemon* crear_pokemon(char*);
 
-void buscarPokemones();
+uint32_t generar_id();
 
-void gestionarPokemones(t_entrenador*);
+void ejecutarEntrenador(t_entrenador*);
+
+int llegoAlObjetivo(t_entrenador*);
+
+void moverAlEntrenador(uint32_t);
+
+void atraparPokemon(t_entrenador*);
 
 void hacerObjetivoTeam(t_list*,t_list*);
 
@@ -100,7 +118,13 @@ void contiene(t_list*, t_list*);
 
 int sonIguales(t_nombrePokemon*, t_nombrePokemon*);
 
-void planificarSegun(t_config*);
+t_entrenador* entrenadorMasCercano(t_newPokemon*);
+
+int distanciaA(t_coordenadas*, t_coordenadas*);
+
+void buscarPokemon(t_newPokemon*);
+
+void planificarSegun();
 
 void planificarSegunFifo();
 

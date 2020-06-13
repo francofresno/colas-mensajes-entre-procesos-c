@@ -67,7 +67,7 @@ void* memory_copy(t_copy_args* args)
 		data = memcpy(MEMORY + partition->base, args->data, args->data_size); // TODO funciona bien pero valgrind dice invalid read of size X
 		partition->data = data;
 
-		log_new_message_in_memory(partition->id_data, partition->base, LOGGER);
+		log_new_message_in_memory(partition->id_data, partition->base);
 	}
 
 	return data;
@@ -76,7 +76,7 @@ void* memory_copy(t_copy_args* args)
 void memory_dump()
 {
 	//TODO
-	log_dump(LOGGER);
+	log_dump();
 }
 
 int get_index_of_partition(t_list* partitions, uint32_t id_partition)
@@ -156,7 +156,7 @@ void notify_message_used(uint32_t id_message)
 
 		if (index >= 0) {
 			void* partition = list_remove(lru_list, index);
-			list_add(lru_list, partition);
+			add_to_lru(partition);
 		}
 		pthread_mutex_unlock(&mutex_lru_list);
 	}
