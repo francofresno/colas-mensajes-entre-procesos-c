@@ -53,7 +53,14 @@ int main(void) {
 
 	suscribirseAColas();
 
-
+	//Prueba catch no va acá
+	t_entrenador* entrenador = malloc(sizeof(t_entrenador));
+	entrenador->pokemonInstantaneo->coordenadas->posX=1;
+	entrenador->pokemonInstantaneo->coordenadas->posY=2;
+	entrenador->pokemonInstantaneo->pokemon->nombre = "Charmander";
+	entrenador->pokemonInstantaneo->pokemon->nombre_lenght = 11;
+	enviarMensajeCatch(entrenador);
+	free(entrenador);
 
 
 	puts("Soy un team!\n");
@@ -322,6 +329,7 @@ void enviarMensajeCatch(t_entrenador* entrenador){
 	if(status>=0){
 		esperarIdCatch(socket_cliente);
 		entrenador->estado = BLOCKED;
+		printf("Se envió el mensaje catch\n");
 		// Semaforo para bloquear al entrenador por espera de caught  //TODO
 	}
 

@@ -108,6 +108,8 @@ int llegoAlObjetivo(t_entrenador*);
 
 void moverAlEntrenador(uint32_t);
 
+void evaluarEstadoPrevioAAtrapar(t_entrenador*);
+
 void atraparPokemon(t_entrenador*);
 
 void hacerObjetivoTeam(t_list*,t_list*);

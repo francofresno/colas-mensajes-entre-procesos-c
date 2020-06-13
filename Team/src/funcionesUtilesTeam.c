@@ -259,7 +259,7 @@ void evaluarEstadoPrevioAAtrapar(t_entrenador* entrenador){
 
 	if(entrenador->estado == BLOCKED){
 		list_add(listaBloqueadosEsperandoMensaje, entrenador);
-		break; //Espera el mensaje caught correspondiente --> TODO semaforo esperando caught
+		//break; //Espera el mensaje caught correspondiente --> TODO semaforo esperando caught
 	} else{
 		atraparPokemon(entrenador);
 	}
