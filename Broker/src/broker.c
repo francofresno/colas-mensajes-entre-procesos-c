@@ -9,7 +9,7 @@
 
 #include "broker.h"
 
-//TODO notify msg used
+//TODO notify msg used for lru
 
 int main(void) {
 

@@ -7,6 +7,7 @@
  */
 
 #include "gameboy.h"
+
 int main(int argc, char *argv[])
 {
 	config = leer_config();
