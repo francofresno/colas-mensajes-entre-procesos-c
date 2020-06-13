@@ -49,7 +49,7 @@ void* dp_alloc(int size)
 			list_add(deleted_messages_ids, (void*) id_to_delete);
 			pthread_mutex_unlock(&mutex_deleted_messages_ids);
 
-			log_deleted_partition(partition->base, LOGGER);
+			log_deleted_partition(partition->base);
 
 			index_victim_chosen = list_add(FREE_PARTITIONS, (void*) partition);
 		}
@@ -109,7 +109,7 @@ void compact_memory()
 	if (SEARCH_FAILURE_COUNTER == COMPACTION_FREQUENCY) {
 
 		//TODO compacto, recordar freerear las particiones que se compactan
-		log_compactation(LOGGER);
+		log_compactation();
 		SEARCH_FAILURE_COUNTER = 0;
 	}
 }

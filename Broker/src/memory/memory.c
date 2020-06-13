@@ -67,7 +67,7 @@ void* memory_copy(t_copy_args* args)
 		data = memcpy(MEMORY + partition->base, args->data, args->data_size); // TODO funciona bien pero valgrind dice invalid read of size X
 		partition->data = data;
 
-		log_new_message_in_memory(partition->id_data, partition->base, LOGGER);
+		log_new_message_in_memory(partition->id_data, partition->base);
 	}
 
 	free(args->data);
@@ -77,7 +77,7 @@ void* memory_copy(t_copy_args* args)
 void memory_dump()
 {
 	//TODO
-	log_dump(LOGGER);
+	log_dump();
 }
 
 int get_index_of_partition(t_list* partitions, uint32_t id_partition)
