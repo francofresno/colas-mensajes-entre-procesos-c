@@ -24,6 +24,7 @@ t_list* pendientes;
 
 //extern t_list* hilosEntrenadores;
 t_list* id_mensajeGet;
+t_list* id_mensajeCatch;
 
 char* IP_TEAM;
 char* PUERTO_TEAM;
@@ -35,23 +36,24 @@ extern char* algoritmoPlanificacion;
 extern int quantum;
 extern int estimacionInicial;
 extern double alfa;
+extern int retardoCPU;
 
-
-extern pthread_mutex_t mutex_hay_pokemones;
 pthread_mutex_t mutex_send = PTHREAD_MUTEX_INITIALIZER;
 
 int main(void) {
 
-	inicializarBinarios();
 	inicializarListas();
+	inicializarSemaforosYMutex();
 	t_config* config = leer_config();
 	inicializarConfig(config);
 
 	ponerEntrenadoresEnLista(config);
 
+	enviarMensajeGetABroker();
+
 	suscribirseAColas();
 
-	enviarMensajes();
+
 
 
 	puts("Soy un team!\n");
@@ -60,7 +62,6 @@ int main(void) {
 //	int socket_servidor = iniciar_servidor(IP_TEAM, PUERTO_TEAM);
 //	pthread_create(&thread,NULL,(void*)quedarseALaEscucha,&socket_servidor);
 //	pthread_join(thread, NULL);
-
 
 
 	return EXIT_SUCCESS;
@@ -88,8 +89,8 @@ t_config* leer_config(void)
 
 void inicializarConfig(t_config* config){
 
-	IP_TEAM = config_get_string_value(config, "IP_TEAM");;
-	PUERTO_TEAM = config_get_string_value(config, "PUERTO_TEAM");;
+	IP_TEAM = config_get_string_value(config, "IP_TEAM");
+	PUERTO_TEAM = config_get_string_value(config, "PUERTO_TEAM");
 	ID_TEAM = config_get_int_value(config, "ID");
 	TIEMPO_RECONEXION = config_get_int_value(config, "TIEMPO_RECONEXION");
 	ipBroker = config_get_string_value(config, "IP_BROKER");
@@ -98,7 +99,15 @@ void inicializarConfig(t_config* config){
 	quantum= config_get_int_value(config, "QUANTUM");
 	estimacionInicial= config_get_int_value(config, "ESTIMACION_INICIAL");
 	alfa = config_get_double_value(config, "ALPHA");
+	retardoCPU = config_get_int_value(config, "RETARDO_CICLO_CPU");
+	char* team_log = config_get_string_value(config, "LOG_FILE");
+	LOGGER = log_create(team_log, PUERTO_TEAM, false, LOG_LEVEL_INFO);
 }
+
+void inicializarSemaforosYMutex(){
+	sem_init(&sem_planificar, 0, 1);
+}
+
 
 void suscribirseAppeared(){
 	suscribirseA(APPEARED_POKEMON);
@@ -119,7 +128,7 @@ void suscribirseAColas(){
 	pthread_create(&thread, NULL, (void*)suscribirseCaught, NULL);
 	pthread_detach(thread);
 	pthread_create(&thread, NULL, (void*)suscribirseLocalized, NULL);
-	pthread_detach(thread);
+	pthread_join(thread, NULL);
 
 }
 
@@ -135,7 +144,7 @@ void suscribirseA(op_code tipo_cola){
 	printf("que tul socket %d\n", socket_cliente);
 	while(socket_cliente<=0){
 		sleep(TIEMPO_RECONEXION);
-		printf("Termino el sleep\n");
+		log_reintento_conexion_broker();
 		socket_cliente = crear_conexion(ipBroker, puertoBroker);
 	}
 	printf("Conexion con broker en socket %d\n", socket_cliente);
@@ -169,12 +178,13 @@ void suscribirseA(op_code tipo_cola){
 
 	while(1){
 		char*nombre_recibido = NULL;
-		t_paquete*paquete_recibido = recibir_paquete(socket_cliente,&nombre_recibido);
+		uint32_t tamanioRecibido;
+		t_paquete*paquete_recibido = recibir_paquete(socket_cliente,&nombre_recibido, &tamanioRecibido);
 
 		if(paquete_recibido == NULL){
 			sleep(TIEMPO_RECONEXION);
+			log_reintento_conexion_broker();
 			suscribirseA(tipo_cola);
-			printf("me vuelvo a conectar a broker\n");
 		}
 
 		printf("------------------------\n");
@@ -191,8 +201,9 @@ void suscribirseA(op_code tipo_cola){
 void serve_client(int* socket_cliente)
 {
 	char* nombre_recibido = NULL;
+	uint32_t tamanioRecibido;
 
-	t_paquete* paquete_recibido = recibir_paquete(*socket_cliente, &nombre_recibido);
+	t_paquete* paquete_recibido = recibir_paquete(*socket_cliente, &nombre_recibido, &tamanioRecibido);
 
 	process_request(paquete_recibido->codigo_operacion, paquete_recibido->id_correlativo, paquete_recibido->mensaje, *socket_cliente);
 
@@ -248,10 +259,6 @@ op_code stringACodigoOperacion(const char* string)
 	return ERROR_CODIGO;
 }
 
-void enviarMensajes(){
-	enviarMensajeGetABroker();
-
-}
 
 void enviarMensajeGetABroker(){
 
@@ -297,25 +304,45 @@ void enviarMensajeGet(t_nombrePokemon* pokemon){
 	int status = enviar_mensaje(GET_POKEMON, 0, 0, estructuraPokemon, socket_cliente);
 
 	if(status>=0){
-		esperarId(socket_cliente);
+		esperarIdGet(socket_cliente);
 	}
 
 	liberar_conexion(socket_cliente);
 }
 
-void inicializarBinarios(){
-	pthread_mutex_lock(&mutex_hay_pokemones);
+void enviarMensajeCatch(t_entrenador* entrenador){
+
+
+	t_catchPokemon_msg* estructuraPokemon = malloc(sizeof(t_catchPokemon_msg));
+	estructuraPokemon->nombre_pokemon = *(entrenador->pokemonInstantaneo->pokemon) ;
+	estructuraPokemon->coordenadas = *(entrenador->pokemonInstantaneo->coordenadas);
+	int socket_cliente = crear_conexion(ipBroker, puertoBroker);
+	int status = enviar_mensaje(CATCH_POKEMON, 0, 0, estructuraPokemon, socket_cliente);
+
+	if(status>=0){
+		esperarIdCatch(socket_cliente);
+		entrenador->estado = BLOCKED;
+		// Semaforo para bloquear al entrenador por espera de caught  //TODO
+	}
+
+	liberar_conexion(socket_cliente);
 }
 
 void inicializarListas(){
 	id_mensajeGet = list_create();
+	id_mensajeCatch = list_create();
 	atrapados = list_create();
 	pendientes = list_create();
 }
 
-void esperarId(int socket_cliente){
+void esperarIdGet(int socket_cliente){
 	uint32_t id_respuesta = recibir_id(socket_cliente);
 	list_add(id_mensajeGet, &id_respuesta);
+}
+
+void esperarIdCatch(int socket_cliente){
+	uint32_t id_respuesta = recibir_id(socket_cliente);
+	list_add(id_mensajeCatch, &id_respuesta);
 }
 
 
@@ -325,7 +352,7 @@ void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
 	int a = list_size(pendientes);
 	int j=0;
 
-	t_newPokemon* pokemonNuevo;
+	t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
 	pokemonNuevo->pokemon = pokemon;
 	pokemonNuevo->coordenadas = coordenadas;
 
@@ -338,6 +365,7 @@ void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
 	}
 
 	if(j!=a){
+
 
 		//buscarPokemon(pokemonNuevo);hace lo que tenga que hacer --> poner a planificar al entrenador dormido o listo (con coordenadas y pokemon)
 	}

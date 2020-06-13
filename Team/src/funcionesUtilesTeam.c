@@ -23,10 +23,10 @@ char* algoritmoPlanificacion;
 int quantum;
 int estimacionInicial;
 double alfa;
+int retardoCPU;
 
 pthread_mutex_t mutex_id_entrenadores = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_entrenador = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex_entrenadores_ejecutar = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_hay_pokemones = PTHREAD_MUTEX_INITIALIZER;
 /*
   ============================================================================
@@ -88,13 +88,27 @@ void crearHilosEntrenadores() {
 
 	int cantidadEntrenadores = list_size(entrenadores);
 
+	sem_t sem_entrenadores[cantidadEntrenadores];
+
+	sem_entrenadores_ejecutar = sem_entrenadores;
+
 	pthread_t pthread_id[cantidadEntrenadores];
 
 	for (int a = 0; a < cantidadEntrenadores; a++) {
 
 		t_entrenador* entrenador = (t_entrenador*) list_get(entrenadores, a);
 
+		sem_t semaforoDelEntrenador;
+
+		sem_init(&semaforoDelEntrenador, 0, 0);
+
+		sem_entrenadores[a] = semaforoDelEntrenador;
+
 		pthread_create(&pthread_id[a], NULL, (void*) ejecutarEntrenador, entrenador);
+
+		pthread_detach(pthread_id[a]);
+
+
 
 		list_add(hilosEntrenadores, &pthread_id[a]);
 	}
@@ -172,17 +186,87 @@ t_nombrePokemon* crear_pokemon(char* pokemon) {
 
 uint32_t generar_id() {
 	pthread_mutex_lock(&mutex_id_entrenadores);
-	uint32_t id_generado = ++ID_ENTRENADORES;
+	uint32_t id_generado = ID_ENTRENADORES++;
 	pthread_mutex_unlock(&mutex_id_entrenadores);
 
 	return id_generado;
 }
 
 void ejecutarEntrenador(t_entrenador* entrenador){
-	printf("Soy el entrenador con el id %d\n", entrenador->id_entrenador);
-	entrenador->estado = FINISHED;
-		printf("El estado del entrenador de id %d es: %d\n", entrenador->id_entrenador, entrenador->estado);
-	pthread_mutex_lock(&mutex_entrenadores_ejecutar);
+
+	sem_wait(&sem_entrenadores_ejecutar[entrenador->id_entrenador]);
+
+	sleep(retardoCPU);
+
+	moverAlEntrenador(entrenador->id_entrenador); //Lo mueve 1 posicion
+
+	if(llegoAlObjetivo(entrenador)){
+		evaluarEstadoPrevioAAtrapar(entrenador);
+		//TODO terminar (catch)
+	}
+
+	sem_post(&sem_planificar);
+}
+
+int llegoAlObjetivo(t_entrenador* entrenador){
+	uint32_t posicionXEntrenador = entrenador->coordenadas->posX;
+	uint32_t posicionYEntrenador = entrenador->coordenadas->posY;
+
+	uint32_t posicionXPokemon = entrenador->pokemonInstantaneo->coordenadas->posX;
+	uint32_t posicionYPokemon = entrenador->pokemonInstantaneo->coordenadas->posY;
+
+	if(posicionXEntrenador == posicionXPokemon && posicionYEntrenador == posicionYPokemon){
+		return true;
+	} else{
+		return false;
+	}
+
+}
+
+void moverAlEntrenador(uint32_t idEntrenador){
+
+	t_entrenador* entrenador = list_get(entrenadores, idEntrenador);
+
+	uint32_t posicionXEntrenador = entrenador->coordenadas->posX;
+	uint32_t posicionYEntrenador = entrenador->coordenadas->posY;
+
+	uint32_t posicionXPokemon = entrenador->pokemonInstantaneo->coordenadas->posX;
+	uint32_t posicionYPokemon = entrenador->pokemonInstantaneo->coordenadas->posY;
+
+	uint32_t distanciaEnX = posicionXPokemon- posicionXEntrenador;
+	uint32_t distanciaEnY = posicionYPokemon- posicionYEntrenador;
+
+	if(posicionXEntrenador!= posicionXPokemon){
+
+		if(distanciaEnX>0){
+			entrenador->coordenadas->posX = posicionXEntrenador++;
+		}else if(distanciaEnX<0){
+			entrenador->coordenadas->posX = posicionXEntrenador--;
+		}
+
+	}else if(posicionYEntrenador!= posicionYPokemon){
+		if(distanciaEnY>0){
+			entrenador->coordenadas->posY = posicionYEntrenador++;
+		}else if(distanciaEnX<0){
+			entrenador->coordenadas->posY = posicionYEntrenador--;
+		}
+	}
+
+}
+
+void evaluarEstadoPrevioAAtrapar(t_entrenador* entrenador){
+	enviarMensajeCatch(entrenador);
+
+	if(entrenador->estado == BLOCKED){
+		list_add(listaBloqueadosEsperandoMensaje, entrenador);
+		break; //Espera el mensaje caught correspondiente --> TODO semaforo esperando caught
+	} else{
+		atraparPokemon(entrenador);
+	}
+}
+
+void atraparPokemon(t_entrenador* entrenador){
+	printf("Me voy a atrapar al pokemon\n");
 }
 
 void hacerObjetivoTeam(t_list* listaPokemonesTieneEntrenadores, t_list* listaPokemonesDeseaEntrenadores){ //Siempre Despues de Usar estas Listas
@@ -300,11 +384,15 @@ t_entrenador* entrenadorMasCercano(t_newPokemon* pokemon){
 		}
 	}
 
-	if(menorDistanciaNew <= menorDistanciaBlocked ){ //TODO despertar o poner a ejecutar.
+	if(menorDistanciaNew <= menorDistanciaBlocked ){
+		entrenadorMasCercanoNew->estado = READY;
+		list_add(listaReady, entrenadorMasCercanoNew);
 		entrenadorMasCercanoNew->pokemonInstantaneo = pokemon;
 		return entrenadorMasCercanoNew;
 
 	} else{
+		entrenadorMasCercanoNew->estado = READY;
+		list_add(listaReady, entrenadorMasCercanoNew);
 		entrenadorMasCercanoBlocked->pokemonInstantaneo = pokemon;
 		return entrenadorMasCercanoBlocked;
 	}
@@ -319,12 +407,10 @@ int distanciaA(t_coordenadas* desde, t_coordenadas* hasta){
 	return distanciaX + distanciaY;
 }
 
-void buscarPokemon(t_newPokemon* pokemon){
+void buscarPokemon(t_newPokemon* pokemon){  //Busca al entrenador más cercano y pone a planificar (para que ejecute, es decir, para que busque al pokemon en cuestión)
 
-	//pthread_mutex_lock(&mutex_entrenadores_ejecutar); //TODO hacer impide que otro entrenador ejecute a la par
+
 	t_entrenador* entrenador = entrenadorMasCercano(pokemon);
-
-	entrenador->estado = READY;
 
 	planificarSegun();
 
@@ -379,22 +465,22 @@ void planificarSegun() {
 void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 
 	int tamanio = list_size(listaReady);
+	int distancia;
 
 	for (int b = 0; b < tamanio; b++) {
 
 		t_entrenador* entrenador = (t_entrenador*) list_get(listaReady, b);
+		entrenador->estado=EXEC;
+		do{
+			sem_wait(&sem_planificar); //inicializa en?
 
-			entrenador->estado = EXEC;
-			ejecutarEntrenador(entrenador); //Buscar pokemones cambia el estado a finalizado o bloqueado.
+			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
 
-			if (entrenador->estado == FINISHED) {
-				list_add(listaFinalizados, entrenador);
-			}
+			sem_post(&sem_entrenadores_ejecutar[entrenador->id_entrenador]); //TODO hacer impide que otro entrenador ejecute a la par
+		}while(distancia !=0);
 
-			if (entrenador->estado == BLOCKED){
-				list_add(listaBloqueadosDeadlock, entrenador);
-			}
-		}
+
+	}
 
 }
 
@@ -407,12 +493,6 @@ algoritmo_code stringACodigoAlgoritmo(const char* string) {
 	}
 	return ERROR_CODIGO_ALGORITMO;
 }
-
-/*
-  ============================================================================
- 	 	 	 	 	 	 	 	 HITO 3
-  ============================================================================
-*/
 
 
 
