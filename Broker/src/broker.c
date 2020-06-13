@@ -131,6 +131,7 @@ void remove_subscriber_if_temporal(t_list* subscribers, t_subscriber* subscriber
 {
 	if (temporal > 0) {
 		sleep(temporal);
+		close(subscriber->socket_subscriber);
 		unsubscribe_process(subscribers, subscriber, mutex);
 		free(subscriber);
 	}

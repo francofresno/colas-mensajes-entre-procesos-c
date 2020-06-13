@@ -15,7 +15,6 @@
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/config.h>
-#include <pthread.h>
 
 #include "nuestras-commons/conexion.h"
 #include "nuestras-commons/mensajes.h"
@@ -54,19 +53,6 @@ const static struct {
 		{GAMECARD, "GAMECARD"}
 };
 
-typedef struct {
-	int tiempo;
-	int socket_broker;
-} t_timeout_args;
-
-typedef struct {
-	const char* tipo_cola;
-	int socket_broker;
-} t_suscripcion_args;
-
-pthread_t threadTimeout;
-pthread_t threadSuscripcion;
-
 t_config* config;
 
 t_log* iniciar_logger(void);
@@ -77,8 +63,6 @@ process_code stringACodigoProceso(const char*);
 void chequearSiEsSuscripcion(const char*, const char*, op_code*, process_code*);
 int asignarDatosConexion(t_config*, char**, char**, process_code);
 void recepcionMensajesDeCola(int, const char*, const char*);
-void lanzarTimeout(t_timeout_args* timeoutArgs);
-void procesarMensajesPorSuscripcion(t_suscripcion_args* suscArgs);
 void suscribirse(const char* tipo_cola, uint32_t tiempo, int socket_broker);
 
 #endif /* GAMEBOY_H_ */
