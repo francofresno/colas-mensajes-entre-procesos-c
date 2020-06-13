@@ -9,6 +9,8 @@
 #include "gameboy.h"
 int main(int argc, char *argv[])
 {
+	argv[1] = "SUSCRIPTOR";
+	argv[2] = "NEW_POKEMON";
 	t_config* config = leer_config();
 	t_log* logger = iniciar_logger();
 
@@ -33,6 +35,8 @@ int main(int argc, char *argv[])
 
 	log_info(logger, "Conexión con un proceso\nIP: %s\nPUERTO: %s", ip, puerto);
 
+	uint32_t idAEnviar = 0;
+	uint32_t idCorrAEnviar = 0;
 	switch(codigoOperacion)
 	{
 		case NEW_POKEMON: ;
@@ -42,7 +46,10 @@ int main(int argc, char *argv[])
 			estructuraNew.coordenadas.posX = atoi(argv[4]);
 			estructuraNew.coordenadas.posY = atoi(argv[5]);
 			estructuraNew.cantidad_pokemons = atoi(argv[6]);
-			status = enviar_mensaje(codigoOperacion, 1, 0, &estructuraNew, socket_cliente);
+			if (codigoProceso == GAMECARD) {
+				idAEnviar = atoi(argv[7]);
+			}
+			status = enviar_mensaje(codigoOperacion, idAEnviar, 0, &estructuraNew, socket_cliente);
 			break;
 		case APPEARED_POKEMON: ;
 			t_appearedPokemon_msg estructuraAppeared;
@@ -50,13 +57,19 @@ int main(int argc, char *argv[])
 			estructuraAppeared.nombre_pokemon.nombre_lenght = strlen(estructuraAppeared.nombre_pokemon.nombre)+1;
 			estructuraAppeared.coordenadas.posX = atoi(argv[4]);
 			estructuraAppeared.coordenadas.posY = atoi(argv[5]);
-			status = enviar_mensaje(codigoOperacion, 2, atoi(argv[6]), &estructuraAppeared, socket_cliente);
+			if (codigoProceso == BROKER) {
+				idCorrAEnviar =  atoi(argv[6]);
+			}
+			status = enviar_mensaje(codigoOperacion, 0, idCorrAEnviar, &estructuraAppeared, socket_cliente);
 			break;
 		case GET_POKEMON: ;
 			t_getPokemon_msg estructuraGet;
 			estructuraGet.nombre_pokemon.nombre = argv[3];
 			estructuraGet.nombre_pokemon.nombre_lenght = strlen(estructuraGet.nombre_pokemon.nombre)+1;
-			status = enviar_mensaje(codigoOperacion, atoi(argv[4]), 0, &estructuraGet, socket_cliente);
+			if (codigoProceso == GAMECARD) {
+				idAEnviar = atoi(argv[4]);
+			}
+			status = enviar_mensaje(codigoOperacion, idAEnviar, 0, &estructuraGet, socket_cliente);
 			break;
 		case LOCALIZED_POKEMON: ;
 			t_localizedPokemon_msg estructuraLocalized;
@@ -79,7 +92,10 @@ int main(int argc, char *argv[])
 			estructuraCatch.nombre_pokemon.nombre_lenght = strlen(estructuraCatch.nombre_pokemon.nombre)+1;
 			estructuraCatch.coordenadas.posX = atoi(argv[4]);
 			estructuraCatch.coordenadas.posY = atoi(argv[5]);
-			status = enviar_mensaje(codigoOperacion, atoi(argv[6]), 0, &estructuraCatch, socket_cliente);
+			if (codigoProceso == GAMECARD) {
+				idAEnviar = atoi(argv[6]);
+			}
+			status = enviar_mensaje(codigoOperacion, idAEnviar, 0, &estructuraCatch, socket_cliente);
 			break;
 		case CAUGHT_POKEMON: ;
 			t_caughtPokemon_msg estructuraCaught;
@@ -90,6 +106,7 @@ int main(int argc, char *argv[])
 			t_suscripcion_msg estructuraSuscripcion;
 			estructuraSuscripcion.id_proceso = atoi(config_get_string_value(config, "ID_PROCESO"));
 			estructuraSuscripcion.tipo_cola = stringACodigoOperacion(argv[2]);
+			estructuraSuscripcion.temporal = 1;
 			status = suscribirse_a_cola(&estructuraSuscripcion, socket_cliente);
 			break;
 		case ERROR_CODIGO: return -1; break;
@@ -99,11 +116,11 @@ int main(int argc, char *argv[])
 	if (status > 0)
 	{
 		if(codigoOperacion == SUSCRIPCION)
-			recepcionMensajesDeCola(logger, socket_cliente, argv[2]);
+			recepcionMensajesDeCola(logger, socket_cliente, argv[2], argv[3]);
 		else
 		{
 			uint32_t id_respuesta = recibir_id(socket_cliente);
-			id_respuesta++;
+			printf("ID MENSAJE: %d\n", id_respuesta);
 		}
 	}
 
@@ -167,7 +184,7 @@ int asignarDatosConexion(t_config* config, char** ip, char** puerto, process_cod
 	return 0;
 }
 
-void recepcionMensajesDeCola(t_log* logger, int socket_cliente, const char* argumento2)
+void recepcionMensajesDeCola(t_log* logger, int socket_cliente, const char* argumento2, const char* argumento3)
 {
 	uint32_t cant_paquetes;
 	t_list* paquetes = respuesta_suscripcion_obtener_paquetes(socket_cliente, &cant_paquetes);
@@ -186,10 +203,22 @@ void recepcionMensajesDeCola(t_log* logger, int socket_cliente, const char* argu
 
 	free(paquetes);
 
+	int tiempo = atoi(argumento3);
+	t_timeout_args* timeoutArgs = malloc(sizeof(*timeoutArgs));
+	timeoutArgs->tiempo = tiempo;
+	timeoutArgs->socket_broker = socket_cliente;
+	pthread_create(&thread,NULL,(void*)lanzarTimeout,timeoutArgs);
+	pthread_detach(thread);
+
 	while(1)
 	{
 		char* nombre_recibido = NULL;
-		t_paquete* paquete_recibido = recibir_paquete(socket_cliente, &nombre_recibido);
+		uint32_t tamanio_recibido = 0;
+		t_paquete* paquete_recibido = recibir_paquete(socket_cliente, &nombre_recibido, &tamanio_recibido);
+		if (paquete_recibido == NULL) {
+			break;
+		}
+		printf("Recibi un mensaje con ID: %d\n", tamanio_recibido);
 		log_info(logger, "Recepcion de mensaje nuevo\nCODIGO DE OPERACION: %s.\nID: %d.\nID CORRELATIVO: %d.",
 				argumento2,
 				paquete_recibido->id,
@@ -198,6 +227,17 @@ void recepcionMensajesDeCola(t_log* logger, int socket_cliente, const char* argu
 		informar_ack(socket_cliente);
 		free(paquete_recibido);
 	}
+
+
+	printf("Me desuscribi\n");
+}
+
+void lanzarTimeout(t_timeout_args* timeoutArgs)
+{
+	sleep(timeoutArgs->tiempo);
+	desuscribirse_de_cola(timeoutArgs->socket_broker);
+	close(timeoutArgs->socket_broker);
+	free(timeoutArgs);
 }
 
 t_log* iniciar_logger(void)

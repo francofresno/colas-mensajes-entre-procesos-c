@@ -83,6 +83,7 @@
 	 *  @RETURN: cantidad de bytes enviados o -1 en caso de falla
 	 */
 	int suscribirse_a_cola(t_suscripcion_msg* estructuraSuscripcion, int socket_servidor);
+	int desuscribirse_de_cola(int socket_servidor);
 	t_list* respuesta_suscripcion_obtener_paquetes(int socket_servidor, uint32_t* cant_paquetes_recibidos);
 
 #endif /* CONEXION_H_ */
