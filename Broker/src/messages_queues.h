@@ -23,7 +23,7 @@ typedef struct
 	uint32_t ID_correlativo;
 	t_list* subscribers_informed;
 	t_list* subscribers_ack;
-	void* message;
+	void* message; //TODO sacaar esto de aca y hacer get en memory.c
 } t_enqueued_message;
 
 typedef struct

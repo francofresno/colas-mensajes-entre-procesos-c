@@ -24,6 +24,7 @@ void load_memory(int size, int min_partition_size, int frequency, t_memory_algor
 
 	lru_list = list_create();
 	deleted_messages_ids = list_create();
+	ALL_PARTITIONS = list_create();
 
 	if (MEMORY_ALGORITHM == BUDDY_SYSTEM) {
 		buddy_init();
@@ -77,34 +78,6 @@ void memory_dump()
 {
 	//TODO
 	log_dump();
-}
-
-int get_index_of_partition(t_list* partitions, uint32_t id_partition)
-{
-	if (partitions->head == NULL)
-		return -1;
-
-	t_link_element *element = partitions->head;
-	t_partition* partition = (t_partition*) (partitions->head->data);
-
-	int index = 0;
-	while(element != NULL) {
-		if (partition->id_data == id_partition)
-			return index;
-
-		element = element->next;
-		partition = element == NULL ? NULL : element->data;
-		index++;
-	}
-
-	return -1;
-}
-
-int get_index_of_buddy(t_list* buddies, uint32_t id_partition)
-{
-	//TODO
-
-	return -1;
 }
 
 void* get_partition_by_id(t_list* partitions, uint32_t id_partition)

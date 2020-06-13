@@ -53,6 +53,7 @@ t_selection_algorithm VICTIM_SELECTION_ALGORITHM;
 
 t_list* lru_list;
 t_list* deleted_messages_ids;
+t_list* ALL_PARTITIONS;
 
 // Mutex
 extern pthread_mutex_t mutex_lru_list;

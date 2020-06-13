@@ -28,6 +28,7 @@ void dp_init()
 	initial_partition->size = MEMORY_SIZE;
 
 	list_add(FREE_PARTITIONS, (void*) initial_partition);
+	list_add(ALL_PARTITIONS, (void*) initial_partition);
 }
 
 void* dp_alloc(int size)
@@ -80,6 +81,8 @@ void* dp_alloc(int size)
 		}
 
 		list_add(FREE_PARTITIONS, (void*) new_partition);
+		int partition_index = get_index_of_partition(FREE_PARTITIONS, partition->id_data);
+		list_add_in_index(ALL_PARTITIONS, partition_index + 1, (void*) new_partition);
 	}
 
 	partition->free = 0;
@@ -110,15 +113,100 @@ t_partition* choose_victim_partition()
 	return NULL;
 }
 
+void compact_occupied_list(int* previous_occupied_base, int* previous_occupied_size)
+{
+	int occupied_list_size = list_size(OCCUPIED_PARTITIONS);
+	if (occupied_list_size > 0) {
+
+		t_partition* occupied_partition = list_get(OCCUPIED_PARTITIONS, 0);
+		occupied_partition->base = 0;
+
+		previous_occupied_base = occupied_partition->base;
+		previous_occupied_size = occupied_partition->size;
+
+		int index_occupied = 1;
+		while(index_occupied < occupied_list_size) {
+			occupied_partition = list_get(OCCUPIED_PARTITIONS, index_occupied);
+			occupied_partition->base = previous_occupied_base + previous_occupied_size;
+			previous_occupied_base = occupied_partition->base;
+			previous_occupied_size = occupied_partition->size;
+			index_occupied++;
+		}
+
+	}
+}
+
+void compact_free_list(int previous_base, int previous_size, int free_list_size)
+{
+	int size_compacted_partition = 0;
+	t_partition* compacted_partition = malloc(sizeof(*compacted_partition));
+	compacted_partition->data = NULL;
+	compacted_partition->id_data = 0;
+	compacted_partition->free = 1;
+	compacted_partition->base = previous_base + previous_size;
+
+	for (int i=0; i < free_list_size; i++) {
+		t_partition* free_partition = list_get(FREE_PARTITIONS, i);
+		size_compacted_partition += free_partition->size;
+		list_remove(FREE_PARTITIONS, i);
+		free(free_partition);
+	}
+
+	compacted_partition->size = size_compacted_partition;
+	list_add(FREE_PARTITIONS, (void*) compacted_partition);
+}
+
+void sort_all_partitions_by_base()
+{
+	int all_partitions_size = list_size(ALL_PARTITIONS);
+   int i, j;
+   for (i = 0; i < all_partitions_size-1; i++)
+	   for (j = 0; j < all_partitions_size-i-1; j++) {
+		   t_partition* partition = list_get(ALL_PARTITIONS, j);
+		   t_partition* other_partition = list_get(ALL_PARTITIONS, j+1);
+		   if (partition->base > other_partition->base) {
+			   list_replace(ALL_PARTITIONS, j, (void*) other_partition);
+			   list_replace(ALL_PARTITIONS, j+1, (void*) partition);
+		   }
+	   }
+}
+
 void compact_memory()
 {
 	SEARCH_FAILURE_COUNTER++;
 	if (SEARCH_FAILURE_COUNTER == COMPACTION_FREQUENCY) {
-
-		//TODO compacto, recordar freerear las particiones que se compactan
+		int free_list_size = list_size(FREE_PARTITIONS);
+		if (free_list_size > 1) {
+			int previous_base = 0;
+			int previous_size = 0;
+			compact_occupied_list(&previous_base, &previous_size);
+			compact_free_list(previous_base, previous_size, free_list_size);
+			sort_all_partitions_by_base();
+		}
 		log_compactation();
 		SEARCH_FAILURE_COUNTER = 0;
 	}
+}
+
+int get_index_of_partition(t_list* partitions, uint32_t id_partition)
+{
+	if (partitions->head == NULL)
+		return -1;
+
+	t_link_element *element = partitions->head;
+	t_partition* partition = (t_partition*) (partitions->head->data);
+
+	int index = 0;
+	while(element != NULL) {
+		if (partition->id_data == id_partition)
+			return index;
+
+		element = element->next;
+		partition = element == NULL ? NULL : element->data;
+		index++;
+	}
+
+	return -1;
 }
 
 t_partition* first_fit_find_free_partition(int size)
