@@ -48,8 +48,8 @@ void element_destroyer_mq(void* data);
 int size_message_queue(t_queue* queue);
 int is_empty_message_queue(t_queue* queue);
 void free_message_queue(t_queue* queue);
-void add_new_informed_subscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber, t_log* logger);
-void add_new_ack_suscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber, t_log* logger);
+void add_new_informed_subscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber);
+void add_new_ack_suscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber);
 
 void subscribe_process(t_list* subscribers, t_subscriber* subscriber, pthread_mutex_t mutex);
 void unsubscribe_process(t_list* subscribers, t_subscriber* subscriber, pthread_mutex_t mutex);

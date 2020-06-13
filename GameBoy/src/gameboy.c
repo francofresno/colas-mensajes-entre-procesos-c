@@ -7,12 +7,11 @@
  */
 
 #include "gameboy.h"
+
 int main(int argc, char *argv[])
 {
-	argv[1] = "SUSCRIPTOR";
-	argv[2] = "NEW_POKEMON";
-	t_config* config = leer_config();
-	t_log* logger = iniciar_logger();
+	config = leer_config();
+	LOGGER = iniciar_logger();
 
 	if(leer_config() == NULL || iniciar_logger() == NULL)
 		return -1;
@@ -33,7 +32,7 @@ int main(int argc, char *argv[])
 	if(socket_cliente == -1)
 		return -1;
 
-	log_info(logger, "Conexión con un proceso\nIP: %s\nPUERTO: %s", ip, puerto);
+	log_conexion_a_proceso(ip, puerto);
 
 	uint32_t idAEnviar = 0;
 	uint32_t idCorrAEnviar = 0;
@@ -99,33 +98,72 @@ int main(int argc, char *argv[])
 			break;
 		case CAUGHT_POKEMON: ;
 			t_caughtPokemon_msg estructuraCaught;
-			estructuraCaught.atrapado = atoi(argv[4]);
+			uint32_t atrapado = fueAtrapado(argv[4]);
+			estructuraCaught.atrapado = atrapado;
 			status = enviar_mensaje(codigoOperacion, 6, atoi(argv[3]), &estructuraCaught, socket_cliente);
 			break;
 		case SUSCRIPCION: ;
-			t_suscripcion_msg estructuraSuscripcion;
-			estructuraSuscripcion.id_proceso = atoi(config_get_string_value(config, "ID_PROCESO"));
-			estructuraSuscripcion.tipo_cola = stringACodigoOperacion(argv[2]);
-			estructuraSuscripcion.temporal = 1;
-			status = suscribirse_a_cola(&estructuraSuscripcion, socket_cliente);
+			uint32_t tiempo = (uint32_t) atoi(argv[3]);
+			suscribirse(argv[2], tiempo, socket_cliente);
 			break;
 		case ERROR_CODIGO: return -1; break;
 		default: return -1; break;
 	}
 
-	if (status > 0)
-	{
-		if(codigoOperacion == SUSCRIPCION)
-			recepcionMensajesDeCola(logger, socket_cliente, argv[2], argv[3]);
-		else
-		{
-			uint32_t id_respuesta = recibir_id(socket_cliente);
-			printf("ID MENSAJE: %d\n", id_respuesta);
+	if (status >= 0) {
+		recibir_id(socket_cliente);
+	}
+
+	terminar_programa(socket_cliente, LOGGER, config);
+	return EXIT_SUCCESS;
+}
+
+void suscribirse(const char* tipo_cola, uint32_t tiempo, int socket_broker)
+{
+	t_suscripcion_msg* estructuraSuscripcion = malloc(sizeof(*estructuraSuscripcion));
+	estructuraSuscripcion->id_proceso = atoi(config_get_string_value(config, "ID_PROCESO"));
+	estructuraSuscripcion->tipo_cola = stringACodigoOperacion(tipo_cola);
+	estructuraSuscripcion->temporal = tiempo;
+
+	int status_susc = suscribirse_a_cola(estructuraSuscripcion, socket_broker);
+
+	if (status_susc >= 0) {
+		uint32_t cant_paquetes;
+		t_list* paquetes = respuesta_suscripcion_obtener_paquetes(socket_broker, &cant_paquetes);
+
+		informar_ack(socket_broker);
+
+		for(int i=0; i < cant_paquetes; i++) {
+			t_paquete* paquete_recibido = list_get(paquetes, i);
+			log_nuevo_mensaje(tipo_cola, paquete_recibido->id, paquete_recibido->id_correlativo);
+		}
+
+		free(estructuraSuscripcion);
+
+		while(1) {
+			char* nombre_recibido = NULL;
+			uint32_t size = 0;
+			t_paquete* paquete_recibido = recibir_paquete(socket_broker, &nombre_recibido, &size);
+
+			if (paquete_recibido == NULL) {
+				break;
+			}
+			log_nuevo_mensaje(tipo_cola, paquete_recibido->id, paquete_recibido->id_correlativo);
+
+			informar_ack(socket_broker);
 		}
 	}
 
-	terminar_programa(socket_cliente, logger, config);
-	return EXIT_SUCCESS;
+}
+
+t_log* iniciar_logger(void)
+{
+	return log_create(GAMEBOY_LOG, GAMEBOY_NAME, false, LOG_LEVEL_INFO);
+}
+
+t_config* leer_config(void)
+{
+	return config_create(GAMEBOY_CONFIG);
 }
 
 op_code stringACodigoOperacion(const char* string)
@@ -146,6 +184,16 @@ process_code stringACodigoProceso(const char* string)
 			return conversionCodigoProceso[i].codigoProceso;
 	}
 	return ERROR_PROCESO;
+}
+
+uint32_t fueAtrapado(const char* estadoAtrapado)
+{
+	if(strcmp(estadoAtrapado, "OK") == 0) {
+		return 1;
+	} else if (strcmp(estadoAtrapado, "FAIL") == 0) {
+		return 0;
+	}
+	return 0;
 }
 
 void chequearSiEsSuscripcion(const char* argumento1, const char* argumento2, op_code* codigoOperacion, process_code* codigoProceso)
@@ -183,73 +231,6 @@ int asignarDatosConexion(t_config* config, char** ip, char** puerto, process_cod
 	}
 	return 0;
 }
-
-void recepcionMensajesDeCola(t_log* logger, int socket_cliente, const char* argumento2, const char* argumento3)
-{
-	uint32_t cant_paquetes;
-	t_list* paquetes = respuesta_suscripcion_obtener_paquetes(socket_cliente, &cant_paquetes);
-	log_info(logger, "Se realizo la suscripcion a una cola de tipo: %s.", argumento2);
-
-	for(int i=0; i < cant_paquetes; i++)
-	{
-		t_paquete* paquete_recibido = list_get(paquetes, i);
-		log_info(logger, "Recepcion de mensaje en cola\nCODIGO DE OPERACION: %s.\nID: %d.\nID CORRELATIVO: %d.",
-				argumento2,
-				paquete_recibido->id,
-				paquete_recibido->id_correlativo
-		);
-		free(paquete_recibido);
-	}
-
-	free(paquetes);
-
-	int tiempo = atoi(argumento3);
-	t_timeout_args* timeoutArgs = malloc(sizeof(*timeoutArgs));
-	timeoutArgs->tiempo = tiempo;
-	timeoutArgs->socket_broker = socket_cliente;
-	pthread_create(&thread,NULL,(void*)lanzarTimeout,timeoutArgs);
-	pthread_detach(thread);
-
-	while(1)
-	{
-		char* nombre_recibido = NULL;
-		uint32_t tamanio_recibido = 0;
-		t_paquete* paquete_recibido = recibir_paquete(socket_cliente, &nombre_recibido, &tamanio_recibido);
-		if (paquete_recibido == NULL) {
-			break;
-		}
-		printf("Recibi un mensaje con ID: %d\n", tamanio_recibido);
-		log_info(logger, "Recepcion de mensaje nuevo\nCODIGO DE OPERACION: %s.\nID: %d.\nID CORRELATIVO: %d.",
-				argumento2,
-				paquete_recibido->id,
-				paquete_recibido->id_correlativo
-		);
-		informar_ack(socket_cliente);
-		free(paquete_recibido);
-	}
-
-
-	printf("Me desuscribi\n");
-}
-
-void lanzarTimeout(t_timeout_args* timeoutArgs)
-{
-	sleep(timeoutArgs->tiempo);
-	desuscribirse_de_cola(timeoutArgs->socket_broker);
-	close(timeoutArgs->socket_broker);
-	free(timeoutArgs);
-}
-
-t_log* iniciar_logger(void)
-{
-	return log_create(GAMEBOY_LOG, GAMEBOY_NAME, false, LOG_LEVEL_INFO);
-}
-
-t_config* leer_config(void)
-{
-	return config_create(GAMEBOY_CONFIG);
-}
-
 
 //TODO
 void terminar_programa(int conexion, t_log* logger, t_config* config)

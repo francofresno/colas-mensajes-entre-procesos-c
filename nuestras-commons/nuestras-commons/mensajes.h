@@ -85,7 +85,7 @@ typedef struct
 {
 	uint32_t id_proceso;
 	op_code tipo_cola;
-	uint32_t temporal; // 0: indeterminado 1: determinado
+	uint32_t temporal; // 0: indeterminado 0 < tiempo hasta el timeout
 } t_suscripcion_msg;
 
 #endif /* MENSAJES_H_ */
