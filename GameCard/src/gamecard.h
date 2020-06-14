@@ -34,8 +34,9 @@ typedef struct {
 	op_code tipoCola;
 } t_datosHilo;
 
-void conectarseYSuscribirse(t_datosHilo*);
-t_config* leer_config(void);
-void recepcionMensajesDeCola(int socket_cliente);
+void conectarseYSuscribirse(t_suscripcion_msg*);
+t_config* setear_config(void);
+void recepcionMensajesDeCola(t_suscripcion_msg*, int);
+void devolverMensajeCorrespondiente(t_paquete*);
 
 #endif /* GAMECARD_H_ */
