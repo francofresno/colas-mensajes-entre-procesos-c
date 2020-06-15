@@ -25,7 +25,6 @@ void dp_init()
 
 void* dp_alloc(int size)
 {
-	int index_victim_chosen = -1;
 	t_partition* partition = find_free_partition(size);
 
 	while (partition == NULL || partition->size < size) {

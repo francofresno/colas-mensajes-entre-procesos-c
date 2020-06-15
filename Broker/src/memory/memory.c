@@ -87,13 +87,13 @@ void* memory_copy(t_copy_args* args)
 
 void write_dump_time_info(FILE* dump_file)
 {
-
+	//TODO
 }
 
 void write_partitions_info(FILE* dump_file)
 {
 	int partition_number = 1;
-	int base, limit, size, lru, id, free;
+	int base, limit, size, lru, id, is_free;
 	char* queue;
 
 	int partitions_size = list_size(ALL_PARTITIONS);
@@ -105,7 +105,7 @@ void write_partitions_info(FILE* dump_file)
 			limit = base + size;
 			queue = op_code_a_string(buddy->queue);
 			id = buddy->id_data;
-			free = buddy->free;
+			is_free = buddy->free;
 			lru = 0; //TODO both
 		} else if (MEMORY_ALGORITHM == DYNAMIC_PARTITIONS) {
 			t_partition* partition = (t_partition*) list_get(ALL_PARTITIONS, i);
@@ -114,13 +114,13 @@ void write_partitions_info(FILE* dump_file)
 			limit = base + size;
 			queue = op_code_a_string(partition->queue);
 			id = partition->id_data;
-			free = partition->free;
+			is_free = partition->free;
 			lru = 0;
 		}
-		if (free)
-			fprintf(dump_file,"Partición %d: %d - %d.    [X]    Size: %db    LRU:<%d>    Cola:<%s>    ID:<%d>\n", partition_number, base, limit, size, lru, queue, id);
-		else
+		if (is_free)
 			fprintf(dump_file,"Partición %d: %d - %d.    [L]    Size: %db\n", partition_number, base, limit, size);
+		else
+			fprintf(dump_file,"Partición %d: %d - %d.    [X]    Size: %db    LRU:<%d>    Cola:<%s>    ID:<%d>\n", partition_number, base, limit, size, lru, queue, id);
 
 		partition_number++;
 	}
