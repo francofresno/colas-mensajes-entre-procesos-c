@@ -9,6 +9,7 @@
 #ifndef MEMORY_COMMONS_H_
 #define MEMORY_COMMONS_H_
 
+#include <stdio.h>
 #include <stddef.h>
 #include <pthread.h>
 #include <stdint.h>
@@ -40,6 +41,8 @@ int COMPACTION_FREQUENCY;
 t_memory_algorithm MEMORY_ALGORITHM;
 t_selection_algorithm PARTITION_SELECTION_ALGORITHM;
 t_selection_algorithm VICTIM_SELECTION_ALGORITHM;
+
+char* DUMP_PATH;
 
 t_list* lru_list;
 t_list* deleted_messages_ids;

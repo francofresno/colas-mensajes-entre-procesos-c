@@ -11,7 +11,15 @@
 
 //TODO notify msg used for lru
 
+void sig_handler(int signo)
+{
+    if (signo == SIGUSR1)
+    	memory_dump();
+}
+
 int main(void) {
+
+	signal(SIGUSR1, sig_handler);
 
 	init_config();
 	init_memory();
@@ -94,7 +102,7 @@ void process_suscription(t_suscripcion_msg* subscription_msg, int socket_subscri
 	remove_subscriber_if_temporal(suscriptores, subscriber, subscription_msg->temporal, mutex);
 }
 
-void process_new_message(int cod_op, uint32_t id_correlative, void* received_message, uint32_t size_message, int socket_cliente)
+void process_new_message(op_code cod_op, uint32_t id_correlative, void* received_message, uint32_t size_message, int socket_cliente)
 {
 	uint32_t id_message = generate_id();
 
@@ -107,6 +115,7 @@ void process_new_message(int cod_op, uint32_t id_correlative, void* received_mes
 		net_size_message--; // TODO ojo esto
 	}
 	t_copy_args* args = malloc(sizeof(*args));
+	args->queue = cod_op; //TODO ARREGLAR ALGORITMOS BS Y DP Para incluir esto
 	args->id = id_message;
 	args->data = received_message;
 	args->data_size = net_size_message;
@@ -313,8 +322,7 @@ t_selection_algorithm choose_victim_algorithm()
 
 void init_memory()
 {
-	char* size_memory = config_get_string_value(CONFIG,"TAMANO_MEMORIA");
-	int size = atoi(size_memory);
+	int size_memory = config_get_int_value(CONFIG,"TAMANO_MEMORIA");
 
 	t_memory_algorithm memory_alg;
 	t_selection_algorithm victim_alg;
@@ -331,13 +339,11 @@ void init_memory()
 		partition_alg = NONE;
 	}
 
-	char* min_par_size = config_get_string_value(CONFIG,"TAMANO_MINIMO_PARTICION");
-	int min_part_size = atoi(min_par_size);
+	int min_part_size = config_get_int_value(CONFIG,"TAMANO_MINIMO_PARTICION");
+	int freq_compact  = config_get_int_value(CONFIG,"FRECUENCIA_COMPACTACION");
+	char* dump_path = config_get_string_value(CONFIG,"DUMP_FILE");
 
-	char* frequency = config_get_string_value(CONFIG,"FRECUENCIA_COMPACTACION");
-	int freq_compact = atoi(frequency);
-
-	load_memory(size, min_part_size, freq_compact, memory_alg, victim_alg, partition_alg);
+	load_memory(size_memory, min_part_size, freq_compact, memory_alg, victim_alg, partition_alg, dump_path);
 }
 
 void init_message_queues()
@@ -398,7 +404,6 @@ void init_config()
 {
 	CONFIG = config_create(BROKER_CONFIG);
 }
-
 
 void destroy_all_mutex()
 {

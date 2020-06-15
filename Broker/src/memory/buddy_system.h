@@ -18,6 +18,7 @@ typedef struct
 	int free;
 	int base;
 	int size;
+	op_code queue;
 } t_buddy;
 
 void buddy_init();
