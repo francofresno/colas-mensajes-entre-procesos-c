@@ -9,8 +9,6 @@
 
 #include "broker.h"
 
-//TODO notify msg used for lru
-
 void sig_handler(int signo)
 {
     if (signo == SIGUSR1)
@@ -115,7 +113,7 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 		net_size_message--; // TODO ojo esto
 	}
 	t_copy_args* args = malloc(sizeof(*args));
-	args->queue = cod_op; //TODO ARREGLAR ALGORITMOS BS Y DP Para incluir esto
+	args->queue = cod_op;
 	args->id = id_message;
 	args->data = received_message;
 	args->data_size = net_size_message;
@@ -203,9 +201,9 @@ void receive_multiples_ack(op_code codigo, uint32_t id, t_list* suscriptores_inf
 	list_destroy(mensajes_encolados);
 }
 
-void reply_to_new_subscriber(op_code codigo, t_queue* message_queue, t_subscriber* subscriber, uint32_t* cantidad_mensajes, t_list* mensajes_encolados)
+void reply_to_new_subscriber(op_code code, t_queue* message_queue, t_subscriber* subscriber, uint32_t* messages_count, t_list* enqueue_messages)
 {
-	printf("Cantidad de mensajes en cola: %d\n", *cantidad_mensajes);
+	printf("Cantidad de mensajes en cola: %d\n", *messages_count);
 	printf("Socket suscriptor: %d\n", subscriber->socket_subscriber);
 	fflush(stdout);
 
@@ -213,29 +211,28 @@ void reply_to_new_subscriber(op_code codigo, t_queue* message_queue, t_subscribe
 	t_list* tamanio_paquetes = list_create();
 	uint32_t tamanio_stream = 0;
 
-	pthread_mutex_t mutex = MUTEX_COLAS[codigo];
+	pthread_mutex_t mutex = MUTEX_COLAS[code];
 	pthread_mutex_lock(&mutex);
-	for (int i=0; i < *cantidad_mensajes; i++) {
+	for (int i=0; i < *messages_count; i++) {
 		uint32_t bytes;
 		t_enqueued_message* mensaje_encolado = get_message_by_index(message_queue, i);
-		//TODO si mensaje_encolado->message == NULL, sacar de la cola y no enviar a nadie
 
-		if(!isSubscriberListed(mensaje_encolado->subscribers_ack, subscriber->id_subscriber)) {
-			void* a_enviar = serializar_paquete(codigo, mensaje_encolado->ID, mensaje_encolado->ID_correlativo, mensaje_encolado->message, &bytes);
+		if(mensaje_encolado->message != NULL && !isSubscriberListed(mensaje_encolado->subscribers_ack, subscriber->id_subscriber)) {
+			void* a_enviar = serializar_paquete(code, mensaje_encolado->ID, mensaje_encolado->ID_correlativo, mensaje_encolado->message, &bytes);
 			bytes += sizeof(bytes);
 
 			list_add(paquetes_serializados, a_enviar);
 			list_add(tamanio_paquetes, &bytes);
 			tamanio_stream += bytes;
-			list_add(mensajes_encolados, (void*) mensaje_encolado);
+			list_add(enqueue_messages, (void*) mensaje_encolado);
 		}
 
 	}
 	pthread_mutex_unlock(&mutex);
 
-	*cantidad_mensajes = list_size(paquetes_serializados);
+	*messages_count = list_size(paquetes_serializados);
 
-	send_enqueued_messages(*cantidad_mensajes, tamanio_stream, paquetes_serializados, tamanio_paquetes, mensajes_encolados, subscriber);
+	send_enqueued_messages(*messages_count, tamanio_stream, paquetes_serializados, tamanio_paquetes, enqueue_messages, subscriber);
 
 	list_destroy(tamanio_paquetes);
 	list_destroy_and_destroy_elements(paquetes_serializados, free);

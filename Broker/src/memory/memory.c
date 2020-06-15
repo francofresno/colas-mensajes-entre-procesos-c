@@ -87,7 +87,11 @@ void* memory_copy(t_copy_args* args)
 
 void write_dump_time_info(FILE* dump_file)
 {
-	//TODO
+  time_t now = time(NULL);
+  struct tm* timeinfo;
+  setenv("TZ", "America/Buenos_Aires", 1);
+  timeinfo = localtime(&now);
+  fprintf(dump_file, "\n%d/%d/%d %d:%d:%d\n",timeinfo->tm_mday, timeinfo->tm_mon + 1, timeinfo->tm_year + 1900, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
 }
 
 void write_partitions_info(FILE* dump_file)
@@ -141,18 +145,6 @@ void memory_dump()
 	log_dump();
 	fclose(dump_file);
 }
-
-//const char* dump_time = "%d/%d/%d %d:%d:%d\n";
-
-//time_t rawtime;
-//   struct tm * timeinfo;
-//
-//   time ( &rawtime );
-//   timeinfo = localtime ( &rawtime );
-//
-//   printf("\n%d/%d/%d %d:%d:%d\n",timeinfo->tm_mday, timeinfo->tm_mon + 1, timeinfo->tm_year + 1900, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-
-
 
 void* get_partition_by_id(t_list* partitions, uint32_t id_partition)
 {
