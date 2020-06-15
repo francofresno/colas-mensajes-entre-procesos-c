@@ -88,4 +88,6 @@ typedef struct
 	uint32_t temporal; // 0: indeterminado 0 < tiempo hasta el timeout
 } t_suscripcion_msg;
 
+char* op_code_a_string(op_code code);
+
 #endif /* MENSAJES_H_ */
