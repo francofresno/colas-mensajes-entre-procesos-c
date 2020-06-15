@@ -17,15 +17,17 @@ void log_new_connection(int socket_client)
 
 void log_new_subscriber(uint32_t id_subscriber, op_code queue)
 {
+	char* code = op_code_a_string(queue);
 	char log_msg[100];
-	sprintf(log_msg, "El proceso id: %d se ha suscripto a la cola id: %d",id_subscriber, queue);
+	sprintf(log_msg, "El proceso id: %d se ha suscripto a la cola: %s",id_subscriber, code);
 	log_info(LOGGER,log_msg);
 }
 
 void log_new_message(uint32_t id_message, op_code queue)
 {
+	char* code = op_code_a_string(queue);
 	char log_msg[100];
-	sprintf(log_msg, "El mensaje id: %d ha llegado a la cola id: %d", id_message, queue);
+	sprintf(log_msg, "El mensaje id: %d ha llegado a la cola: %s", id_message, code);
 	log_info(LOGGER,log_msg);
 }
 
@@ -77,4 +79,3 @@ void log_dump()
 	sprintf(log_msg, "La Dump de cache ha sido solicitada");
 	log_info(LOGGER,log_msg);
 }
-

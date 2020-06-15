@@ -11,20 +11,25 @@
 
 #include "memory_commons.h"
 
-t_list* FREE_PARTITIONS;
-t_list* OCCUPIED_PARTITIONS;
+typedef struct
+{
+	uint32_t id_data;
+	void* data;
+	int free;
+	int base;
+	int size;
+	op_code queue;
+} t_partition;
 
 int SEARCH_FAILURE_COUNTER;
 
-// Mutex
-extern pthread_mutex_t mutex_free_list;
-extern pthread_mutex_t mutex_occupied_list;
-
 void dp_init();
 void* dp_alloc(int size);
+void adjust_partition_size(t_partition* partition, int size);
 t_partition* find_free_partition(int size);
 t_partition* choose_victim_partition();
 void compact_memory();
+int get_index_of_partition_by_base(t_list* partitions, uint32_t base_partition);
 
 t_partition* first_fit_find_free_partition(int size);
 t_partition* best_fit_find_free_partition(int size);
