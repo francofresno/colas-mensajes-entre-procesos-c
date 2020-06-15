@@ -62,6 +62,8 @@ t_list* eliminarRepetidos();
 
 void enviarMensajeGet(t_nombrePokemon*);
 
+void enviarMensajeCatch(t_entrenador*);
+
 void inicializarListas();
 
 void esperarIdGet(int);

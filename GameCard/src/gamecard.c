@@ -14,73 +14,68 @@ int tiempoReconexion;
 
 int main(void) {
 
-	t_config* config = config_create(GAMECARD_CONFIG);
-	ip = config_get_string_value(config, "IP_BROKER");
-	puerto = config_get_string_value(config, "PUERTO_BROKER");
-	tiempoReconexion =  config_get_int_value(config, "TIEMPO_DE_REINTENTO_CONEXION");
+	t_config* config = setear_config();
 
-	printf("%s\n%s\n",ip,puerto);
+	t_suscripcion_msg datosHiloNP;
+	datosHiloNP.id_proceso = config_get_int_value(config, "ID_HILO_NP");
+	datosHiloNP.tipo_cola = NEW_POKEMON;
+	datosHiloNP.temporal = 0;
 
-	t_datosHilo datosHiloNP;
-	datosHiloNP.id_hilo = config_get_int_value(config, "ID_HILO_NP");
-	datosHiloNP.tipoCola = NEW_POKEMON;
-	t_datosHilo datosHiloGP;
-	datosHiloGP.id_hilo = config_get_int_value(config, "ID_HILO_GP");
-	datosHiloGP.tipoCola = GET_POKEMON;
-	t_datosHilo datosHiloCP;
-	datosHiloCP.id_hilo = config_get_int_value(config, "ID_HILO_CP");
-	datosHiloCP.tipoCola = CATCH_POKEMON;
+	t_suscripcion_msg datosHiloGP;
+	datosHiloGP.id_proceso = config_get_int_value(config, "ID_HILO_GP");
+	datosHiloGP.tipo_cola = GET_POKEMON;
+	datosHiloGP.temporal = 0;
+
+	t_suscripcion_msg datosHiloCP;
+	datosHiloCP.id_proceso = config_get_int_value(config, "ID_HILO_CP");
+	datosHiloCP.tipo_cola = CATCH_POKEMON;
+	datosHiloCP.temporal = 0;
 
 	pthread_create(&threadNewPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloNP);
-	printf("Creado threadNewPokemon\n");
-	fflush(stdout);
 	pthread_create(&threadGetPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloGP);
-	printf("Creado threadGetPokemon\n");
-	fflush(stdout);
 	pthread_create(&threadCatchPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloCP);
-	printf("Creado threadCatchPokemon\n");
-	fflush(stdout);
+
 	pthread_join(threadNewPokemon, NULL);
 	pthread_join(threadGetPokemon, NULL);
 	pthread_join(threadCatchPokemon, NULL);
+
 	config_destroy(config);
 	return EXIT_SUCCESS;
 }
 
-t_config* leer_config(void)
+t_config* setear_config(void)
 {
-	return config_create(GAMECARD_CONFIG);
+	t_config* config = config_create(GAMECARD_CONFIG);
+	ip = config_get_string_value(config, "IP_BROKER");
+	puerto = config_get_string_value(config, "PUERTO_BROKER");
+	tiempoReconexion =  config_get_int_value(config, "TIEMPO_DE_REINTENTO_CONEXION");
+	return config;
 }
 
-void conectarseYSuscribirse(t_datosHilo* datosHilo)
+void conectarseYSuscribirse(t_suscripcion_msg* datosHilo)
 {
-	printf("Intento de conexion\n");
 	fflush(stdout);
 	int socket_cliente = crear_conexion(ip, puerto);
-	printf("Llegue al principio del if");
-	t_suscripcion_msg estructuraSuscripcion;
-	estructuraSuscripcion.id_proceso = datosHilo->id_hilo;
-	estructuraSuscripcion.tipo_cola = datosHilo->tipoCola;
-	int status = suscribirse_a_cola(&estructuraSuscripcion, socket_cliente);
 
-	if(status < 0)
+	while(socket_cliente < 0)
 	{
-		printf("Conexion fallida. Reintentando...");
+		printf("Intentando reconectar...\n");
 		sleep(tiempoReconexion);
-		printf("Termino el sleep");
-		conectarseYSuscribirse(datosHilo);
+		socket_cliente = crear_conexion(ip, puerto);
 	}
-	else
-	{
-		printf("Conectado correctamente\n");
-		recepcionMensajesDeCola(socket_cliente);
-	}
+	printf("Conectado!\n");
+
+	suscribirse_a_cola(datosHilo, socket_cliente);
+
+	recepcionMensajesDeCola(datosHilo, socket_cliente);
 }
 
-void recepcionMensajesDeCola(int socket_cliente)
+void recepcionMensajesDeCola(t_suscripcion_msg* datosHilo, int socket_cliente)
 {
 	uint32_t cant_paquetes;
 	t_list* paquetes = respuesta_suscripcion_obtener_paquetes(socket_cliente, &cant_paquetes);
+
+	informar_ack(socket_cliente);
 
 	for(int i=0; i < cant_paquetes; i++)
 	{
@@ -90,6 +85,9 @@ void recepcionMensajesDeCola(int socket_cliente)
 		printf("COD OP: %d\n", paquete_recibido->codigo_operacion);
 		printf("ID: %d\n", paquete_recibido->id);
 		printf("ID_CORRELATIVO: %d\n", paquete_recibido->id_correlativo);
+
+		devolverMensajeCorrespondiente(paquete_recibido);
+
 		free(paquete_recibido);
 	}
 
@@ -98,12 +96,73 @@ void recepcionMensajesDeCola(int socket_cliente)
 	while(1)
 	{
 		char* nombre_recibido = NULL;
-		t_paquete* paquete_recibido = recibir_paquete(socket_cliente, &nombre_recibido);
+		uint32_t tamanio_recibido;
+		t_paquete* paquete_recibido = recibir_paquete(socket_cliente, &nombre_recibido, &tamanio_recibido);
+
+		while(paquete_recibido == NULL)
+		{
+			printf("Intentando reconectar...\n");
+			sleep(tiempoReconexion);
+			conectarseYSuscribirse(datosHilo);
+		}
+
 		printf("----------------------\n");
 		printf("COD OP: %d\n", paquete_recibido->codigo_operacion);
 		printf("ID: %d\n", paquete_recibido->id);
 		printf("ID_CORRELATIVO: %d\n", paquete_recibido->id_correlativo);
 		informar_ack(socket_cliente);
+
+		devolverMensajeCorrespondiente(paquete_recibido);
+
 		free(paquete_recibido);
 	}
+}
+
+void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
+{
+	int socketTemporal = crear_conexion(ip, puerto);
+	op_code codigoOperacion = paquete_recibido->codigo_operacion;
+	switch(codigoOperacion)
+	{
+		case NEW_POKEMON: ;
+			t_newPokemon_msg* estructuraNew = malloc(sizeof(t_newPokemon_msg));
+			estructuraNew = (t_newPokemon_msg*) paquete_recibido->mensaje;
+
+			t_appearedPokemon_msg estructuraAppeared;
+			estructuraAppeared.coordenadas = estructuraNew->coordenadas;
+			estructuraAppeared.nombre_pokemon = estructuraNew->nombre_pokemon;
+
+			enviar_mensaje(APPEARED_POKEMON, 0, paquete_recibido->id, &estructuraAppeared, socketTemporal);
+			free(estructuraNew);
+			break;
+		case GET_POKEMON: ;
+			t_getPokemon_msg* estructuraGet = malloc(sizeof(t_getPokemon_msg));
+			estructuraGet = (t_getPokemon_msg*) paquete_recibido->mensaje;
+
+			t_localizedPokemon_msg estructuraLocalized;
+			estructuraLocalized.cantidad_coordenadas = 1;
+			estructuraLocalized.nombre_pokemon = estructuraGet->nombre_pokemon;
+			estructuraLocalized.coordenadas = malloc(sizeof(uint32_t) * estructuraLocalized.cantidad_coordenadas * 2);
+			for(int i = 0; i < estructuraLocalized.cantidad_coordenadas; i++)
+			{
+				estructuraLocalized.coordenadas[i].posX = 1;
+				estructuraLocalized.coordenadas[i].posY = 1;
+			}
+
+			enviar_mensaje(LOCALIZED_POKEMON, 0, paquete_recibido->id, &estructuraLocalized, socketTemporal);
+			free(estructuraGet);
+			break;
+		case CATCH_POKEMON: ;
+			t_catchPokemon_msg* estructuraCatch = malloc(sizeof(t_catchPokemon_msg));
+			estructuraCatch = (t_catchPokemon_msg*) paquete_recibido->mensaje;
+
+			t_caughtPokemon_msg estructuraCaught;
+			estructuraCaught.atrapado = 1;
+
+			enviar_mensaje(CAUGHT_POKEMON, 0, paquete_recibido->id, &estructuraCaught, socketTemporal);
+			free(estructuraCatch);
+			break;
+		default: break;
+	}
+	liberar_conexion(socketTemporal);
 }

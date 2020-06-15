@@ -23,7 +23,7 @@ t_list* pendientes;
 
 
 //extern t_list* hilosEntrenadores;
-t_list* id_mensajeGet;
+t_list* id_mensajeGet; //TODO no esta guardando el id del mensaje get ¿Por que?
 t_list* id_mensajeCatch;
 
 char* IP_TEAM;
@@ -51,9 +51,30 @@ int main(void) {
 
 	enviarMensajeGetABroker();
 
-	suscribirseAColas();
+//	for(int i=0; i<2; i++){
+//		uint32_t* valor_id = list_get(id_mensajeGet, i);
+//		printf("El valor del id de los mensajes devueltos por broker es %d\n", valor_id);
+//	}
 
+	//suscribirseAColas();
 
+	//Prueba catch no va acá
+	t_entrenador entrenadorPrueba;
+	t_newPokemon* pokemonInstantaneo = malloc(sizeof(t_newPokemon));
+	t_nombrePokemon* nombreP =  malloc(sizeof(t_nombrePokemon));
+	t_coordenadas* coords = malloc(sizeof(t_nombrePokemon));
+
+	coords->posX=1;
+	coords->posY=2;
+
+	nombreP->nombre = "Charmander";
+	nombreP->nombre_lenght = 11;
+	pokemonInstantaneo->coordenadas = coords;
+	pokemonInstantaneo->pokemon = nombreP;
+
+	entrenadorPrueba.pokemonInstantaneo = pokemonInstantaneo;
+
+	enviarMensajeCatch(&entrenadorPrueba);
 
 
 	puts("Soy un team!\n");
@@ -322,6 +343,7 @@ void enviarMensajeCatch(t_entrenador* entrenador){
 	if(status>=0){
 		esperarIdCatch(socket_cliente);
 		entrenador->estado = BLOCKED;
+		printf("Se envió el mensaje catch\n");
 		// Semaforo para bloquear al entrenador por espera de caught  //TODO
 	}
 
