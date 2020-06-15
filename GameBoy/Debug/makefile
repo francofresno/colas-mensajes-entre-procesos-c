@@ -23,22 +23,22 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: GameBoy
+all: gameboy
 
 dependents:
 	-cd /home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug && $(MAKE) clean all
 
 # Tool invocations
-GameBoy: $(OBJS) $(USER_OBJS) /home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug/libnuestras-commons.so
+gameboy: $(OBJS) $(USER_OBJS) /home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug/libnuestras-commons.so
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -L"/home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug" -o "GameBoy" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L"/home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug" -o "gameboy" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(EXECUTABLES)$(OBJS)$(C_DEPS) GameBoy
+	-$(RM) $(EXECUTABLES)$(OBJS)$(C_DEPS) gameboy
 	-@echo ' '
 
 .PHONY: all clean dependents

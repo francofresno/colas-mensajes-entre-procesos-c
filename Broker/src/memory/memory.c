@@ -24,6 +24,8 @@ void load_memory(int size, int min_partition_size, int frequency, t_memory_algor
 
 	lru_list = list_create();
 	deleted_messages_ids = list_create();
+	FREE_PARTITIONS = list_create();
+	OCCUPIED_PARTITIONS = list_create();
 	ALL_PARTITIONS = list_create();
 
 	if (MEMORY_ALGORITHM == BUDDY_SYSTEM) {
@@ -85,9 +87,9 @@ void* get_partition_by_id(t_list* partitions, uint32_t id_partition)
 	int index = -1;
 
 	if (MEMORY_ALGORITHM == BUDDY_SYSTEM) {
-		index = get_index_of_buddy(partitions, id_partition);
+		index = get_index_of_buddy_by_base(partitions, id_partition);
 	} else if (MEMORY_ALGORITHM == DYNAMIC_PARTITIONS) {
-		index = get_index_of_partition(partitions, id_partition);
+		index = get_index_of_partition_by_base(partitions, id_partition);
 	}
 
 	return index >= 0 ? list_get(partitions, index) : NULL;
@@ -122,9 +124,9 @@ void notify_message_used(uint32_t id_message)
 		int index = -1;
 
 		if (MEMORY_ALGORITHM == BUDDY_SYSTEM) {
-			index = get_index_of_buddy(lru_list, id_message);
+			index = get_index_of_buddy_by_base(lru_list, id_message);
 		} else if (MEMORY_ALGORITHM == DYNAMIC_PARTITIONS) {
-			index = get_index_of_partition(lru_list, id_message);
+			index = get_index_of_partition_by_base(lru_list, id_message);
 		}
 
 		if (index >= 0) {

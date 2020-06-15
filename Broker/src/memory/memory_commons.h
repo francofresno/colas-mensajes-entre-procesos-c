@@ -32,16 +32,6 @@ typedef enum {
 	NONE
 } t_selection_algorithm;
 
-// Particion
-typedef struct
-{
-	uint32_t id_data;
-	void* data;
-	int free;
-	int base;
-	int size;
-} t_partition;
-
 // Constantes
 void* MEMORY;
 int MEMORY_SIZE;
@@ -53,6 +43,8 @@ t_selection_algorithm VICTIM_SELECTION_ALGORITHM;
 
 t_list* lru_list;
 t_list* deleted_messages_ids;
+t_list* FREE_PARTITIONS;
+t_list* OCCUPIED_PARTITIONS;
 t_list* ALL_PARTITIONS;
 
 // Mutex
@@ -60,5 +52,6 @@ extern pthread_mutex_t mutex_lru_list;
 
 extern pthread_mutex_t mutex_deleted_messages_ids;
 
+void* get_first(t_list* partitions);
 
 #endif /* MEMORY_COMMONS_H_ */

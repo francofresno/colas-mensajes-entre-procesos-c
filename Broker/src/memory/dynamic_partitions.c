@@ -8,16 +8,8 @@
 
 #include "dynamic_partitions.h"
 
-pthread_mutex_t mutex_free_list = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex_occupied_list = PTHREAD_MUTEX_INITIALIZER;
-
-//TODO SINCRO
-
 void dp_init()
 {
-	FREE_PARTITIONS = list_create();
-	OCCUPIED_PARTITIONS = list_create();
-
 	SEARCH_FAILURE_COUNTER = 0;
 
 	t_partition* initial_partition = malloc(sizeof(*initial_partition));
@@ -36,12 +28,11 @@ void* dp_alloc(int size)
 	int index_victim_chosen = -1;
 	t_partition* partition = find_free_partition(size);
 
-	if (partition == NULL) {
+	while (partition == NULL || partition->size < size) {
 		compact_memory();
 		partition = choose_victim_partition();
 		if (partition != NULL) {
 			partition->free = 1;
-			//free(partition->data); VALGRIND tira invalid free TODO
 			partition->data = NULL;
 
 			uint32_t* id_to_delete = malloc(sizeof(*id_to_delete));
@@ -52,45 +43,43 @@ void* dp_alloc(int size)
 
 			log_deleted_partition(partition->base);
 
-			index_victim_chosen = list_add(FREE_PARTITIONS, (void*) partition);
+			list_add(FREE_PARTITIONS, (void*) partition);
 		}
-	}
-
-	if (partition == NULL || partition->size < size) {
-		dp_alloc(size);
-	}
-
-	if (index_victim_chosen >= 0) {
-		list_remove(FREE_PARTITIONS, index_victim_chosen);
 	}
 
 	if (partition->size > size && partition->size - size >= MIN_PARTITION_SIZE) {
-		t_partition* new_partition = malloc(sizeof(*new_partition));
-		new_partition->data = NULL;
-		new_partition->id_data = 0;
-		new_partition->free = 1;
-
-		if (size <= MIN_PARTITION_SIZE) {
-			new_partition->size = partition->size - MIN_PARTITION_SIZE;
-			new_partition->base = partition->base + MIN_PARTITION_SIZE;
-			partition->size = MIN_PARTITION_SIZE;
-		} else {
-			new_partition->size = partition->size - size;
-			new_partition->base = partition->base + size;
-			partition->size = size;
-		}
-
-		list_add(FREE_PARTITIONS, (void*) new_partition);
-		int partition_index = get_index_of_partition(FREE_PARTITIONS, partition->id_data);
-		list_add_in_index(ALL_PARTITIONS, partition_index + 1, (void*) new_partition);
+		adjust_partition_size(partition, size);
 	}
 
 	partition->free = 0;
+	list_remove(FREE_PARTITIONS, get_index_of_partition_by_base(FREE_PARTITIONS, partition->base));
 	list_add(OCCUPIED_PARTITIONS, (void*) partition);
 
 	SEARCH_FAILURE_COUNTER = 0;
 
 	return (void*) partition;
+}
+
+void adjust_partition_size(t_partition* partition, int size)
+{
+	t_partition* new_partition = malloc(sizeof(*new_partition));
+	new_partition->data = NULL;
+	new_partition->id_data = 0;
+	new_partition->free = 1;
+
+	if (size <= MIN_PARTITION_SIZE) {
+		new_partition->size = partition->size - MIN_PARTITION_SIZE;
+		new_partition->base = partition->base + MIN_PARTITION_SIZE;
+		partition->size = MIN_PARTITION_SIZE;
+	} else {
+		new_partition->size = partition->size - size;
+		new_partition->base = partition->base + size;
+		partition->size = size;
+	}
+
+	list_add(FREE_PARTITIONS, (void*) new_partition);
+	int index_of_partition = get_index_of_partition_by_base(ALL_PARTITIONS, partition->base);
+	list_add_in_index(ALL_PARTITIONS, index_of_partition + 1, (void*) new_partition);
 }
 
 t_partition* find_free_partition(int size)
@@ -106,9 +95,9 @@ t_partition* find_free_partition(int size)
 t_partition* choose_victim_partition()
 {
 	if (VICTIM_SELECTION_ALGORITHM == FIFO) {
-		return fifo_find_victim_partition(OCCUPIED_PARTITIONS);
+		return fifo_find_victim_partition();
 	} else if (VICTIM_SELECTION_ALGORITHM == LRU) {
-		return lru_find_victim_partition(OCCUPIED_PARTITIONS);
+		return lru_find_victim_partition();
 	}
 	return NULL;
 }
@@ -121,18 +110,19 @@ void compact_occupied_list(int* previous_occupied_base, int* previous_occupied_s
 		t_partition* occupied_partition = list_get(OCCUPIED_PARTITIONS, 0);
 		occupied_partition->base = 0;
 
-		previous_occupied_base = occupied_partition->base;
-		previous_occupied_size = occupied_partition->size;
+		int previous_base = occupied_partition->base;
+		int previous_size = occupied_partition->size;
 
 		int index_occupied = 1;
 		while(index_occupied < occupied_list_size) {
 			occupied_partition = list_get(OCCUPIED_PARTITIONS, index_occupied);
-			occupied_partition->base = previous_occupied_base + previous_occupied_size;
-			previous_occupied_base = occupied_partition->base;
-			previous_occupied_size = occupied_partition->size;
+			occupied_partition->base = previous_base + previous_size;
+			previous_base = occupied_partition->base;
+			previous_size = occupied_partition->size;
 			index_occupied++;
 		}
-
+		*previous_occupied_base = previous_base;
+		*previous_occupied_size = previous_size;
 	}
 }
 
@@ -159,16 +149,15 @@ void compact_free_list(int previous_base, int previous_size, int free_list_size)
 void sort_all_partitions_by_base()
 {
 	int all_partitions_size = list_size(ALL_PARTITIONS);
-   int i, j;
-   for (i = 0; i < all_partitions_size-1; i++)
-	   for (j = 0; j < all_partitions_size-i-1; j++) {
-		   t_partition* partition = list_get(ALL_PARTITIONS, j);
-		   t_partition* other_partition = list_get(ALL_PARTITIONS, j+1);
-		   if (partition->base > other_partition->base) {
-			   list_replace(ALL_PARTITIONS, j, (void*) other_partition);
-			   list_replace(ALL_PARTITIONS, j+1, (void*) partition);
-		   }
-	   }
+	for (int i = 0; i < all_partitions_size-1; i++)
+		for (int j = 0; j < all_partitions_size-i-1; j++) {
+			t_partition* partition = list_get(ALL_PARTITIONS, j);
+			t_partition* other_partition = list_get(ALL_PARTITIONS, j+1);
+			if (partition->base > other_partition->base) {
+				list_replace(ALL_PARTITIONS, j, (void*) other_partition);
+				list_replace(ALL_PARTITIONS, j+1, (void*) partition);
+			}
+		}
 }
 
 void compact_memory()
@@ -188,7 +177,7 @@ void compact_memory()
 	}
 }
 
-int get_index_of_partition(t_list* partitions, uint32_t id_partition)
+int get_index_of_partition_by_base(t_list* partitions, uint32_t base_partition)
 {
 	if (partitions->head == NULL)
 		return -1;
@@ -198,7 +187,7 @@ int get_index_of_partition(t_list* partitions, uint32_t id_partition)
 
 	int index = 0;
 	while(element != NULL) {
-		if (partition->id_data == id_partition)
+		if (partition->base == base_partition)
 			return index;
 
 		element = element->next;
@@ -265,16 +254,10 @@ t_partition* best_fit_find_free_partition(int size)
 
 t_partition* fifo_find_victim_partition()
 {
-	if (OCCUPIED_PARTITIONS->head == NULL)
-		return NULL;
-
-	return (t_partition*) list_remove(OCCUPIED_PARTITIONS, 0);
+	return (t_partition*) get_first(OCCUPIED_PARTITIONS);
 }
 
 t_partition* lru_find_victim_partition()
 {
-	if (lru_list->head == NULL)
-		return NULL;
-
-	return (t_partition*) list_remove(lru_list, 0);
+	return (t_partition*) get_first(lru_list);
 }

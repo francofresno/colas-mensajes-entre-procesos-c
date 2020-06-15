@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
 				estructuraLocalized.coordenadas[i].posY = atoi(argv[j+1]);
 				j+=2;
 			}
-			status = enviar_mensaje(codigoOperacion, 4, 3, &estructuraLocalized, socket_cliente);
+			status = enviar_mensaje(codigoOperacion, 0, 0, &estructuraLocalized, socket_cliente);
 			break;
 		case CATCH_POKEMON: ;
 			t_catchPokemon_msg estructuraCatch;
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 			t_caughtPokemon_msg estructuraCaught;
 			uint32_t atrapado = fueAtrapado(argv[4]);
 			estructuraCaught.atrapado = atrapado;
-			status = enviar_mensaje(codigoOperacion, 6, atoi(argv[3]), &estructuraCaught, socket_cliente);
+			status = enviar_mensaje(codigoOperacion, 0, atoi(argv[3]), &estructuraCaught, socket_cliente);
 			break;
 		case SUSCRIPCION: ;
 			uint32_t tiempo = (uint32_t) atoi(argv[3]);
