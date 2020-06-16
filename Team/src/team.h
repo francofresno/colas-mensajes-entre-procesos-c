@@ -16,8 +16,6 @@
 #define TEAM_NAME "team"
 #define TEAM_CONFIG "team.config"
 
-#include "nuestras-commons/conexion.h"
-
 const static struct {
 	op_code codigoOperacion;
 	const char* str;

@@ -13,16 +13,16 @@ extern t_list* objetivoTeam;
 t_list* atrapados;
 t_list* pendientes;
 
-////Listas de entrenadores segun estado
+//////Listas de entrenadores segun estado
 //extern t_list* listaNuevos;
 //extern t_list* listaReady;
 //extern t_list* listaBloqueadosDeadlock;
 //extern t_list* listaBloqueadosEsperandoMensaje;
 //extern t_list* listaBloqueadosEsperandoPokemones;
 //extern t_list* listaFinalizados;
+//
 
-
-//extern t_list* hilosEntrenadores;
+extern t_list* hilosEntrenadores;
 t_list* id_mensajeGet; //TODO no esta guardando el id del mensaje get ¿Por que?
 t_list* id_mensajeCatch;
 
@@ -51,48 +51,31 @@ int main(void) {
 
 	enviarMensajeGetABroker();
 
-//	for(int i=0; i<2; i++){
-//		uint32_t* valor_id = list_get(id_mensajeGet, i);
-//		printf("El valor del id de los mensajes devueltos por broker es %d\n", valor_id);
-//	}
+	for(int i=0; i<2; i++){ //TODO test
+		uint32_t* valor_id = (uint32_t*) list_get(id_mensajeGet, i);
+		printf("El valor del id de los mensajes devueltos por broker es %d\n", *valor_id);
+	}
 
-	//suscribirseAColas();
-
-	//Prueba catch no va acá
-	t_entrenador entrenadorPrueba;
-	t_newPokemon* pokemonInstantaneo = malloc(sizeof(t_newPokemon));
-	t_nombrePokemon* nombreP =  malloc(sizeof(t_nombrePokemon));
-	t_coordenadas* coords = malloc(sizeof(t_nombrePokemon));
-
-	coords->posX=1;
-	coords->posY=2;
-
-	nombreP->nombre = "Charmander";
-	nombreP->nombre_lenght = 11;
-	pokemonInstantaneo->coordenadas = coords;
-	pokemonInstantaneo->pokemon = nombreP;
-
-	entrenadorPrueba.pokemonInstantaneo = pokemonInstantaneo;
-
-	enviarMensajeCatch(&entrenadorPrueba);
-
+	suscribirseAColas();
 
 	puts("Soy un team!\n");
 
-
-//	int socket_servidor = iniciar_servidor(IP_TEAM, PUERTO_TEAM);
+	int socket_servidor = iniciar_servidor(IP_TEAM, PUERTO_TEAM);
+	quedarseALaEscucha(&socket_servidor);
 //	pthread_create(&thread,NULL,(void*)quedarseALaEscucha,&socket_servidor);
 //	pthread_join(thread, NULL);
-
 
 	return EXIT_SUCCESS;
 }
 
-void quedarseALaEscucha(int* socket_servidor){
+void quedarseALaEscucha(int* socket_servidor) {
 	while(1) {
-		int client_socket = esperar_cliente(*socket_servidor);
-		if(client_socket > 0) {
-			serve_client(&client_socket);
+		int socket_potencial = esperar_cliente(*socket_servidor);
+		if(socket_potencial > 0) {
+			int* socket_cliente = (int*) malloc(sizeof(int));
+			*socket_cliente = socket_potencial;
+			pthread_create(&thread,NULL,(void*)serve_client,socket_cliente);
+			pthread_detach(thread);
 		}
 	}
 }
@@ -190,7 +173,8 @@ void suscribirseA(op_code tipo_cola){
 
 	for(int i = 0; i<cant_paquetes; i++){
 		t_paquete* paquete_recibido = list_get(paquetes, i);
-		printf("Fijarse que hacer con los paquetes con codigo de op %d\n", paquete_recibido->codigo_operacion);
+		process_request(paquete_recibido->codigo_operacion, paquete_recibido->id, paquete_recibido->mensaje, socket_cliente);
+		printf("Recibi un mensaje por haberme suscripto: %d\n", paquete_recibido->codigo_operacion);
 	}
 
 	free(estructuraSuscripcion);
@@ -200,7 +184,7 @@ void suscribirseA(op_code tipo_cola){
 	while(1){
 		char*nombre_recibido = NULL;
 		uint32_t tamanioRecibido;
-		t_paquete*paquete_recibido = recibir_paquete(socket_cliente,&nombre_recibido, &tamanioRecibido);
+		t_paquete* paquete_recibido = recibir_paquete(socket_cliente,&nombre_recibido, &tamanioRecibido);
 
 		if(paquete_recibido == NULL){
 			sleep(TIEMPO_RECONEXION);
@@ -212,6 +196,7 @@ void suscribirseA(op_code tipo_cola){
 		printf("COD OP: %d\n", paquete_recibido->codigo_operacion);
 		printf("ID: %d\n", paquete_recibido->id);
 		printf("ID_CORRELATIVO: %d\n", paquete_recibido->id_correlativo);
+		process_request(paquete_recibido->codigo_operacion, paquete_recibido->id, paquete_recibido->mensaje, socket_cliente);
 
 		int status_ack = informar_ack(socket_cliente);
 		printf("informe ACK con status %d\n", status_ack);
@@ -235,19 +220,17 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 {
 	switch(cod_op)
 	{
-
 		case APPEARED_POKEMON: ;
 
-		t_appearedPokemon_msg* estructura = malloc(sizeof(t_appearedPokemon_msg));
+			t_appearedPokemon_msg* estructura = malloc(sizeof(t_appearedPokemon_msg));
 
-		t_nombrePokemon pokemon = estructura->nombre_pokemon;
+			t_nombrePokemon pokemon = estructura->nombre_pokemon;
 
-		t_coordenadas coordenadas = estructura->coordenadas;
+			t_coordenadas coordenadas = estructura->coordenadas;
 
-		requiere(&pokemon, &coordenadas);
+			requiere(&pokemon, &coordenadas);
 
-
-			break;
+		break;
 
 		case LOCALIZED_POKEMON: ;
 
@@ -359,7 +342,7 @@ void inicializarListas(){
 
 void esperarIdGet(int socket_cliente){
 	uint32_t id_respuesta = recibir_id(socket_cliente);
-	list_add(id_mensajeGet, &id_respuesta);
+	list_add(id_mensajeGet,(void*) &id_respuesta);
 }
 
 void esperarIdCatch(int socket_cliente){
@@ -381,14 +364,12 @@ void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
 
 	for(int i=0; i < a; i++){
 
-		if(sonIguales(pokemon, list_get(pendientes, i))!=0){
+		if(!sonIguales(pokemon, list_get(pendientes, i))){
 			j++;
 		}
 	}
 
 	if(j!=a){
-
-
 		//buscarPokemon(pokemonNuevo);hace lo que tenga que hacer --> poner a planificar al entrenador dormido o listo (con coordenadas y pokemon)
 	}
 }
@@ -401,7 +382,7 @@ void diferencia(){ 		//llenar lista pendientes  //TODO probar
 
 		int j=0;
 
-		while((j < b) && (sonIguales(list_get(atrapados,j), list_get(objetivoTeam, i))!=0)){
+		while((j < b) && !sonIguales(list_get(atrapados,j), list_get(objetivoTeam, i))){
 			j++;
 		}
 
@@ -409,5 +390,4 @@ void diferencia(){ 		//llenar lista pendientes  //TODO probar
 			list_add(pendientes, (t_nombrePokemon*)list_get(objetivoTeam, i));
 		}
 	}
-
 }

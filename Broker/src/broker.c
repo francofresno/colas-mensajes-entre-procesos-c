@@ -37,7 +37,6 @@ int main(void) {
 			int* client_socket = (int*) malloc(sizeof(int));
 			*client_socket = potential_client_socket;
 			log_new_connection(*client_socket);
-			fflush(stdout);
 			pthread_create(&thread,NULL,(void*)serve_client,client_socket);
 			pthread_detach(thread);
 		}
