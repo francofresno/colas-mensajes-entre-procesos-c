@@ -78,7 +78,7 @@ void serve_client(int* socket_client);
 void process_new_message(op_code cod_op, uint32_t id_correlative, void* received_message, uint32_t size_message, int socket_client);
 void process_suscription(t_suscripcion_msg* estructuraSuscripcion, int socket_suscriptor);
 t_list* inform_subscribers(op_code codigo, void* mensaje, uint32_t id, uint32_t id_correlative, t_list* suscriptores, pthread_mutex_t mutex);
-void reply_to_new_subscriber(op_code codigo, t_queue* message_queue, t_subscriber* subscriber, uint32_t* cantidad_mensajes, t_list* mensajes_encolados);
+void reply_to_new_subscriber(op_code code, t_queue* message_queue, t_subscriber* subscriber, uint32_t* messages_count, t_list* enqueue_messages);
 void send_enqueued_messages(uint32_t cantidad_mensajes, uint32_t tamanio_stream, t_list* paquetes_serializados, t_list* tamanio_paquetes,
 		t_list* mensajes_encolados, t_subscriber* subscriber);
 void remove_subscriber_if_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t tiempo, pthread_mutex_t mutex);

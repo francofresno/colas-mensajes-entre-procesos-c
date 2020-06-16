@@ -25,10 +25,11 @@ void dp_init()
 
 void* dp_alloc(int size)
 {
-	int index_victim_chosen = -1;
 	t_partition* partition = find_free_partition(size);
 
+	int index_of_victim = -1;
 	while (partition == NULL || partition->size < size) {
+		index_of_victim = -1;
 		compact_memory();
 		partition = choose_victim_partition();
 		if (partition != NULL) {
@@ -43,7 +44,7 @@ void* dp_alloc(int size)
 
 			log_deleted_partition(partition->base);
 
-			list_add(FREE_PARTITIONS, (void*) partition);
+			index_of_victim = list_add(FREE_PARTITIONS, (void*) partition);
 		}
 	}
 
@@ -52,8 +53,9 @@ void* dp_alloc(int size)
 	}
 
 	partition->free = 0;
-	list_remove(FREE_PARTITIONS, get_index_of_partition_by_base(FREE_PARTITIONS, partition->base));
 	list_add(OCCUPIED_PARTITIONS, (void*) partition);
+	if (index_of_victim >= 0)
+		list_remove(FREE_PARTITIONS, get_index_of_partition_by_base(FREE_PARTITIONS, partition->base));
 
 	SEARCH_FAILURE_COUNTER = 0;
 
