@@ -23,7 +23,7 @@ t_list* pendientes;
 //
 
 extern t_list* hilosEntrenadores;
-t_list* id_mensajeGet; //TODO no esta guardando el id del mensaje get ¿Por que?
+t_list* id_mensajeGet;
 t_list* id_mensajeCatch;
 
 char* IP_TEAM;
@@ -52,17 +52,18 @@ int main(void) {
 
 	enviarMensajeGetABroker();
 
-	for(int i=0; i<2; i++){ //TODO test
+	int tamanioLista = list_size(id_mensajeGet);
+	for(int i=0; i<tamanioLista; i++){ //TODO test
 		uint32_t* valor_id = (uint32_t*) list_get(id_mensajeGet, i);
 		printf("El valor del id de los mensajes devueltos por broker es %d\n", *valor_id);
 	}
 
-	suscribirseAColas();
+	suscribirseAColas(); //TODO preguntar a franco si una vez enviada la suscripcion, si el broker se cae el team lo tiene que volver a enviar?
 
 	puts("Soy un team!\n");
 
 	int socket_servidor = iniciar_servidor(IP_TEAM, PUERTO_TEAM);
-	quedarseALaEscucha(&socket_servidor);
+//	quedarseALaEscucha(&socket_servidor);
 //	pthread_create(&thread,NULL,(void*)quedarseALaEscucha,&socket_servidor);
 //	pthread_join(thread, NULL);
 
@@ -339,13 +340,19 @@ void inicializarListas(){
 }
 
 void esperarIdGet(int socket_cliente){
-	uint32_t id_respuesta = recibir_id(socket_cliente);
-	list_add(id_mensajeGet,(void*) &id_respuesta);
+	uint32_t* id_respuesta = malloc(sizeof(uint32_t));
+	*id_respuesta = recibir_id(socket_cliente);
+	printf("recibi el id %d\n", *id_respuesta);
+	list_add(id_mensajeGet,(void*) id_respuesta);
+
 }
 
 void esperarIdCatch(int socket_cliente){
-	uint32_t id_respuesta = recibir_id(socket_cliente);
-	list_add(id_mensajeCatch, &id_respuesta);
+	uint32_t* id_respuesta = malloc(sizeof(uint32_t));
+	*id_respuesta = recibir_id(socket_cliente);
+	printf("recibi el id %d\n", *id_respuesta);
+	list_add(id_mensajeCatch,(void*) id_respuesta);
+
 }
 
 

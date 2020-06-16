@@ -243,7 +243,7 @@ void evaluarEstadoPrevioAAtrapar(t_entrenador* entrenador){
 }
 
 void atraparPokemon(t_entrenador* entrenador){
-	printf("Me voy a atrapar al pokemon\n");
+	return;
 }
 
 void hacerObjetivoTeam(t_list* listaPokemonesTieneEntrenadores, t_list* listaPokemonesDeseaEntrenadores){ //Siempre Despues de Usar estas Listas
