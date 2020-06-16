@@ -60,7 +60,7 @@ t_list* eliminarRepetidos();
 
 void enviarMensajeGet(t_nombrePokemon*);
 
-void enviarMensajeCatch(t_entrenador*);
+void enviarMensajeCatch(t_newPokemon*);
 
 void inicializarListas();
 

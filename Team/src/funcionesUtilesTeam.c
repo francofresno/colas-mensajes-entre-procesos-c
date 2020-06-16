@@ -228,14 +228,18 @@ void moverAlEntrenador(uint32_t idEntrenador){
 }
 
 void evaluarEstadoPrevioAAtrapar(t_entrenador* entrenador){
-	enviarMensajeCatch(entrenador);
+	enviarMensajeCatch(entrenador->pokemonInstantaneo);
 
-	if(entrenador->estado == BLOCKED){
-		list_add(listaBloqueadosEsperandoMensaje, entrenador);
-		//break; //Espera el mensaje caught correspondiente --> TODO semaforo esperando caught
-	} else{
-		atraparPokemon(entrenador);
-	}
+// 1. Tiene que pasar a blocked para que planifique a otros.
+// 2. Si no se establece la conexion -> direc va a atraparlo.
+// 3. Me dijo el chabon que la planificacion es por hilos.
+
+//	if(entrenador->estado == BLOCKED){
+//		list_add(listaBloqueadosEsperandoMensaje, entrenador);
+//		//break; //Espera el mensaje caught correspondiente --> TODO semaforo esperando caught
+//	} else{
+//		atraparPokemon(entrenador);
+//	}
 }
 
 void atraparPokemon(t_entrenador* entrenador){

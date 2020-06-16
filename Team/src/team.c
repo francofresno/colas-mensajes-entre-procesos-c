@@ -48,6 +48,7 @@ int main(void) {
 	inicializarConfig(config);
 
 	ponerEntrenadoresEnLista(config);
+	//crearHilosEntrenadores(); //TODO fijarnos si anda.
 
 	enviarMensajeGetABroker();
 
@@ -266,8 +267,7 @@ op_code stringACodigoOperacion(const char* string)
 
 void enviarMensajeGetABroker(){
 
-	t_list* objetivoTeamSinRepe = list_create();
-	objetivoTeamSinRepe = eliminarRepetidos();
+	t_list* objetivoTeamSinRepe = eliminarRepetidos();
 
 	int tamanioObjTeamSinRepetidos = list_size(objetivoTeamSinRepe);
 
@@ -314,20 +314,18 @@ void enviarMensajeGet(t_nombrePokemon* pokemon){
 	liberar_conexion(socket_cliente);
 }
 
-void enviarMensajeCatch(t_entrenador* entrenador){
+void enviarMensajeCatch(t_newPokemon* pokemon){
 
 
 	t_catchPokemon_msg* estructuraPokemon = malloc(sizeof(t_catchPokemon_msg));
-	estructuraPokemon->nombre_pokemon = *(entrenador->pokemonInstantaneo->pokemon) ;
-	estructuraPokemon->coordenadas = *(entrenador->pokemonInstantaneo->coordenadas);
+
+	estructuraPokemon->coordenadas = *(pokemon->coordenadas);
+	estructuraPokemon->nombre_pokemon = *(pokemon->pokemon);
 	int socket_cliente = crear_conexion(ipBroker, puertoBroker);
 	int status = enviar_mensaje(CATCH_POKEMON, 0, 0, estructuraPokemon, socket_cliente);
 
 	if(status>=0){
 		esperarIdCatch(socket_cliente);
-		entrenador->estado = BLOCKED;
-		printf("Se envió el mensaje catch\n");
-		// Semaforo para bloquear al entrenador por espera de caught  //TODO
 	}
 
 	liberar_conexion(socket_cliente);
