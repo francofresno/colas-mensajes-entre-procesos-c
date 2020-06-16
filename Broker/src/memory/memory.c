@@ -87,13 +87,17 @@ void* memory_copy(t_copy_args* args)
 
 void write_dump_time_info(FILE* dump_file)
 {
-
+  time_t now = time(NULL);
+  struct tm* timeinfo;
+  setenv("TZ", "America/Buenos_Aires", 1);
+  timeinfo = localtime(&now);
+  fprintf(dump_file, "\n%d/%d/%d %d:%d:%d\n",timeinfo->tm_mday, timeinfo->tm_mon + 1, timeinfo->tm_year + 1900, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
 }
 
 void write_partitions_info(FILE* dump_file)
 {
 	int partition_number = 1;
-	int base, limit, size, lru, id, free;
+	int base, limit, size, lru, id, is_free;
 	char* queue;
 
 	int partitions_size = list_size(ALL_PARTITIONS);
@@ -105,7 +109,7 @@ void write_partitions_info(FILE* dump_file)
 			limit = base + size;
 			queue = op_code_a_string(buddy->queue);
 			id = buddy->id_data;
-			free = buddy->free;
+			is_free = buddy->free;
 			lru = 0; //TODO both
 		} else if (MEMORY_ALGORITHM == DYNAMIC_PARTITIONS) {
 			t_partition* partition = (t_partition*) list_get(ALL_PARTITIONS, i);
@@ -114,13 +118,13 @@ void write_partitions_info(FILE* dump_file)
 			limit = base + size;
 			queue = op_code_a_string(partition->queue);
 			id = partition->id_data;
-			free = partition->free;
+			is_free = partition->free;
 			lru = 0;
 		}
-		if (free)
-			fprintf(dump_file,"Partición %d: %d - %d.    [X]    Size: %db    LRU:<%d>    Cola:<%s>    ID:<%d>\n", partition_number, base, limit, size, lru, queue, id);
-		else
+		if (is_free)
 			fprintf(dump_file,"Partición %d: %d - %d.    [L]    Size: %db\n", partition_number, base, limit, size);
+		else
+			fprintf(dump_file,"Partición %d: %d - %d.    [X]    Size: %db    LRU:<%d>    Cola:<%s>    ID:<%d>\n", partition_number, base, limit, size, lru, queue, id);
 
 		partition_number++;
 	}
@@ -141,18 +145,6 @@ void memory_dump()
 	log_dump();
 	fclose(dump_file);
 }
-
-//const char* dump_time = "%d/%d/%d %d:%d:%d\n";
-
-//time_t rawtime;
-//   struct tm * timeinfo;
-//
-//   time ( &rawtime );
-//   timeinfo = localtime ( &rawtime );
-//
-//   printf("\n%d/%d/%d %d:%d:%d\n",timeinfo->tm_mday, timeinfo->tm_mon + 1, timeinfo->tm_year + 1900, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-
-
 
 void* get_partition_by_id(t_list* partitions, uint32_t id_partition)
 {
