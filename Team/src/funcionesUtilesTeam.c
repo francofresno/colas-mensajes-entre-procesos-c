@@ -11,20 +11,6 @@ t_list* entrenadores;
 t_list* hilosEntrenadores;
 t_list* objetivoTeam;
 
-//Listas de entrenadores segun estado
-t_list* listaNuevos;
-t_list* listaReady;
-t_list* listaBloqueadosDeadlock;
-t_list* listaBloqueadosEsperandoMensaje;
-t_list* listaBloqueadosEsperandoPokemones;
-t_list* listaFinalizados;
-
-char* algoritmoPlanificacion;
-int quantum;
-int estimacionInicial;
-double alfa;
-int retardoCPU;
-
 pthread_mutex_t mutex_id_entrenadores = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_entrenador = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_hay_pokemones = PTHREAD_MUTEX_INITIALIZER;
@@ -115,17 +101,6 @@ void crearHilosEntrenadores() {
 
 }
 
-void inicializarListasDeEstados(){
-
-listaNuevos = list_create();
-listaReady = list_create();
-listaBloqueadosDeadlock= list_create();
-listaBloqueadosEsperandoMensaje= list_create();
-listaBloqueadosEsperandoPokemones = list_create();
-listaFinalizados = list_create();
-
-}
-
 t_entrenador* crear_entrenador(uint32_t id_entrenador,
 		t_coordenadas* coordenadas, t_list* pokemonesQuePosee,
 		t_list* pokemonesQueQuiere, uint32_t cantidad_pokemons,
@@ -204,8 +179,6 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 		evaluarEstadoPrevioAAtrapar(entrenador);
 		//TODO terminar (catch)
 	}
-
-	sem_post(&sem_planificar);
 }
 
 int llegoAlObjetivo(t_entrenador* entrenador){
@@ -278,7 +251,6 @@ void hacerObjetivoTeam(t_list* listaPokemonesTieneEntrenadores, t_list* listaPok
 	 listaMini = aplanarDobleLista(listaPokemonesTieneEntrenadores);
 
 	 contiene(listaGrande, listaMini);
-
 }
 
 t_list* aplanarDobleLista(t_list* lista){
@@ -399,16 +371,7 @@ t_entrenador* entrenadorMasCercano(t_newPokemon* pokemon){
 
 }
 
-int distanciaA(t_coordenadas* desde, t_coordenadas* hasta){
-
-	int distanciaX = abs(desde->posX - hasta->posX);
-	int distanciaY = abs(desde->posY - hasta->posY);
-
-	return distanciaX + distanciaY;
-}
-
 void buscarPokemon(t_newPokemon* pokemon){  //Busca al entrenador más cercano y pone a planificar (para que ejecute, es decir, para que busque al pokemon en cuestión)
-
 
 	t_entrenador* entrenador = entrenadorMasCercano(pokemon);
 
@@ -417,81 +380,6 @@ void buscarPokemon(t_newPokemon* pokemon){  //Busca al entrenador más cercano y
 	//pthread_mutex_unlock(&mutex_entrenador); 		//a un entrenador no se le asignen más de un pokemon al haber un appeard
 	//pthread_mutex_unlock(&mutex_entrenador_hilo); //signal al hilo del entrenador que va a ejecutar
 
-}
-
-void planificarSegun() {
-
-
-	switch (stringACodigoAlgoritmo(algoritmoPlanificacion)) {
-
-	case FIFO:
-
-		planificarSegunFifo(entrenadores);
-
-		break;
-
-	case RR:
-
-		puts("Planifico segun RR \n");
-
-		break;
-
-	case SJFCD:
-
-		puts("Planifico segun SFJ-CD \n");
-
-		break;
-	case SJFSD:
-
-		puts("Planifico segun SFJ-SD \n");
-
-		break;
-
-	case ERROR_CODIGO_ALGORITMO:
-
-		puts("Se recibio mal el codigo\n");
-		break;
-
-	default:
-
-		puts("Error desconocido\n");
-
-		break;
-
-	}
-
-}
-
-void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
-
-	int tamanio = list_size(listaReady);
-	int distancia;
-
-	for (int b = 0; b < tamanio; b++) {
-
-		t_entrenador* entrenador = (t_entrenador*) list_get(listaReady, b);
-		entrenador->estado=EXEC;
-		do{
-			sem_wait(&sem_planificar); //inicializa en?
-
-			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-
-			sem_post(&sem_entrenadores_ejecutar[entrenador->id_entrenador]); //TODO hacer impide que otro entrenador ejecute a la par
-		}while(distancia !=0);
-
-
-	}
-
-}
-
-algoritmo_code stringACodigoAlgoritmo(const char* string) {
-	for (int i = 0;
-			i < sizeof(conversionAlgoritmo) / sizeof(conversionAlgoritmo[0]);
-			i++) {
-		if (!strcmp(string, conversionAlgoritmo[i].str))
-			return conversionAlgoritmo[i].codigo_algoritmo;
-	}
-	return ERROR_CODIGO_ALGORITMO;
 }
 
 
