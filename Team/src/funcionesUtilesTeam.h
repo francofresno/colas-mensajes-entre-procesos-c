@@ -64,7 +64,7 @@ t_list* aplanarDobleLista(t_list*);
 
 void contiene(t_list*, t_list*);
 
-int sonIguales(t_nombrePokemon*, t_nombrePokemon*);
+bool sonIguales(t_nombrePokemon*, t_nombrePokemon*);
 
 t_entrenador* entrenadorMasCercano(t_newPokemon*);
 

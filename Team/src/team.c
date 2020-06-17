@@ -192,11 +192,11 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 	{
 		case APPEARED_POKEMON: ;
 
-			t_appearedPokemon_msg* estructura = malloc(sizeof(t_appearedPokemon_msg));
+			t_appearedPokemon_msg* mensajeAppeared = (t_appearedPokemon_msg*) mensaje_recibido;
 
-			t_nombrePokemon pokemon = estructura->nombre_pokemon;
+			t_nombrePokemon pokemon = mensajeAppeared->nombre_pokemon;
 
-			t_coordenadas coordenadas = estructura->coordenadas;
+			t_coordenadas coordenadas = mensajeAppeared->coordenadas;
 
 			requiere(&pokemon, &coordenadas);
 
@@ -204,20 +204,23 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 		case LOCALIZED_POKEMON: ;
 
-//		t_nombrePokemon nombre_pokemon;
-//			uint32_t cantidad_coordenadas;
-//			t_coordenadas* coordenadas;
-//		} t_localizedPokemon_msg;
+			t_localizedPokemon_msg* mensajeLocalized = (t_localizedPokemon_msg*) mensaje_recibido;
 
-		puts("Llego un localized al Team!\n");
-		 //TODO no es para appeard (planificar)
+	//		t_nombrePokemon nombre_pokemon;
+	//			uint32_t cantidad_coordenadas;
+	//			t_coordenadas* coordenadas;
+	//		} t_localizedPokemon_msg;
+
+			printf("Llego un localized con nombre: %s\n", mensajeLocalized->nombre_pokemon.nombre);
+			 //TODO no es para appeard (planificar)
 
 
 			break;
 
 		case CAUGHT_POKEMON: ;
 
-		puts("Llego un caught al Team!\n");
+		t_caughtPokemon_msg* mensajeCaught = (t_caughtPokemon_msg*) mensaje_recibido;
+		printf("Llego un caught al Team con Atrapado: %d\n", mensajeCaught->atrapado);
 
 			break;
 	}
@@ -324,43 +327,34 @@ void esperarIdCatch(int socket_cliente){
 }
 
 
-void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
+void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas) {
 
-	diferencia();
-	int a = list_size(pendientes);
-	int j=0;
+	llenarListaPokemonsPendientes();
 
 	t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
 	pokemonNuevo->pokemon = pokemon;
 	pokemonNuevo->coordenadas = coordenadas;
 
-
-	for(int i=0; i < a; i++){
-
-		if(!sonIguales(pokemon, list_get(pendientes, i))){
-			j++;
-		}
+	bool condicion(void* elemento) {
+		return sonIguales(pokemon, (t_nombrePokemon*) elemento);
 	}
 
-	if(j!=a){
+	if (list_any_satisfy(pendientes, condicion)) {
 		//buscarPokemon(pokemonNuevo);hace lo que tenga que hacer --> poner a planificar al entrenador dormido o listo (con coordenadas y pokemon)
 	}
 }
 
-void diferencia(){ 		//llenar lista pendientes  //TODO probar
-	int a = list_size(objetivoTeam);
-	int b = list_size(atrapados);
+void llenarListaPokemonsPendientes() { 	//TODO probar
+	int sizeObjetivoTeamLst = list_size(objetivoTeam);
 
-	for(int i=0; i < a; i++){
+	for (int i=0; i < sizeObjetivoTeamLst; i++) {
 
-		int j=0;
-
-		while((j < b) && !sonIguales(list_get(atrapados,j), list_get(objetivoTeam, i))){
-			j++;
+		bool condicion(void* elemento) {
+			return sonIguales(list_get(objetivoTeam, i), (t_nombrePokemon*) elemento);
 		}
 
-		if(j==b){
-			list_add(pendientes, (t_nombrePokemon*)list_get(objetivoTeam, i));
-		}
+		if (!list_any_satisfy(atrapados, condicion))
+			list_add(pendientes, list_get(objetivoTeam, i));
+
 	}
 }

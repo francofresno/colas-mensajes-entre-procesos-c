@@ -276,7 +276,7 @@ void contiene(t_list* listaA, t_list* listaB){ 		//listaGrande A lista chica B
 		int b = list_size(listaB);
 		int j=0;
 
-		while((j < b) && (sonIguales(list_get(listaB,j), list_get(listaA, i))!=0)){
+		while((j < b) && !sonIguales(list_get(listaB,j), list_get(listaA, i))){
 			j++;
 		}
 
@@ -289,8 +289,8 @@ void contiene(t_list* listaA, t_list* listaB){ 		//listaGrande A lista chica B
 	}
 }
 
-int sonIguales(t_nombrePokemon* pokemon1, t_nombrePokemon* pokemon2){
-	return strcmp(pokemon1->nombre, pokemon2->nombre);					//retorna un 0 si cumple
+bool sonIguales(t_nombrePokemon* pokemon1, t_nombrePokemon* pokemon2){
+	return strcmp(pokemon1->nombre, pokemon2->nombre) == 0;
 }
 
 t_entrenador* entrenadorMasCercano(t_newPokemon* pokemon){
