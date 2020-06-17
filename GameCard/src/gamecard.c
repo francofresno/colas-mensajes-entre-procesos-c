@@ -11,10 +11,13 @@
 char* ip;
 char* puerto;
 int tiempoReconexion;
+t_config* config;
+t_log* logger;
 
 int main(void) {
 
-	t_config* config = setear_config();
+	config = setear_config();
+	logger = log_create(GAMECARD_LOG, "gamecard.log", false, LOG_LEVEL_INFO);
 
 	t_suscripcion_msg datosHiloNP;
 	datosHiloNP.id_proceso = config_get_int_value(config, "ID_HILO_NP");
@@ -34,6 +37,7 @@ int main(void) {
 	pthread_create(&threadNewPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloNP);
 	pthread_create(&threadGetPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloGP);
 	pthread_create(&threadCatchPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloCP);
+	pthread_create(&threadMessages, NULL, (void*)esperarMensajes, NULL);
 
 	pthread_join(threadNewPokemon, NULL);
 	pthread_join(threadGetPokemon, NULL);
@@ -132,7 +136,9 @@ void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
 			estructuraAppeared.coordenadas = estructuraNew->coordenadas;
 			estructuraAppeared.nombre_pokemon = estructuraNew->nombre_pokemon;
 
-			enviar_mensaje(APPEARED_POKEMON, 0, paquete_recibido->id, &estructuraAppeared, socketTemporal);
+			if(chequearMensajeBroker(socketTemporal))
+				enviar_mensaje(APPEARED_POKEMON, 0, paquete_recibido->id, &estructuraAppeared, socketTemporal);
+
 			free(estructuraNew);
 			break;
 		case GET_POKEMON: ;
@@ -149,7 +155,9 @@ void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
 				estructuraLocalized.coordenadas[i].posY = 1;
 			}
 
-			enviar_mensaje(LOCALIZED_POKEMON, 0, paquete_recibido->id, &estructuraLocalized, socketTemporal);
+			if(chequearMensajeBroker(socketTemporal))
+				enviar_mensaje(LOCALIZED_POKEMON, 0, paquete_recibido->id, &estructuraLocalized, socketTemporal);
+
 			free(estructuraGet);
 			break;
 		case CATCH_POKEMON: ;
@@ -159,10 +167,50 @@ void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
 			t_caughtPokemon_msg estructuraCaught;
 			estructuraCaught.atrapado = 1;
 
-			enviar_mensaje(CAUGHT_POKEMON, 0, paquete_recibido->id, &estructuraCaught, socketTemporal);
+			if(chequearMensajeBroker(socketTemporal))
+				enviar_mensaje(CAUGHT_POKEMON, 0, paquete_recibido->id, &estructuraCaught, socketTemporal);
+
 			free(estructuraCatch);
 			break;
 		default: break;
 	}
 	liberar_conexion(socketTemporal);
+}
+
+void esperarMensajes(void)
+{
+	char* ipLocal = config_get_string_value(config, "IP_GAMECARD");
+	char* puertoLocal = config_get_string_value(config, "PUERTO_GAMECARD");
+	int socket_servidor = iniciar_servidor(ipLocal, puertoLocal);
+	while(1) {
+		printf("Esperando cliente...\n");
+		int clientePotencial = esperar_cliente(socket_servidor);
+		if(clientePotencial > 0) {
+			int* socket_cliente = (int*) malloc(sizeof(int));
+			*socket_cliente = clientePotencial;
+			serve_client(socket_cliente);
+		}
+	}
+}
+
+void serve_client(int* client_socket)
+{
+	char* nombre_recibido = NULL;
+	uint32_t size_message = 0;
+	t_paquete* paquete_recibido = recibir_paquete(*client_socket, &nombre_recibido, &size_message);
+
+	devolverMensajeCorrespondiente(paquete_recibido);
+
+	free(paquete_recibido);
+}
+
+bool chequearMensajeBroker(int socketTemporal)
+{
+	if(socketTemporal<=0)
+	{
+		log_error(logger, "No se pudo enviar el mensaje a broker.");
+		return false;
+	}
+	else
+		return true;
 }
