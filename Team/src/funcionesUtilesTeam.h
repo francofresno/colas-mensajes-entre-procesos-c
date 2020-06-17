@@ -17,6 +17,10 @@ uint32_t ID_ENTRENADORES;
 t_list* entrenadores;
 t_list* hilosEntrenadores;
 t_list* objetivoTeam;
+t_list* atrapados;
+t_list* pendientes;
+t_list* id_mensajeGet;
+t_list* id_mensajeCatch;
 
 // Mutexs
 extern pthread_mutex_t mutex_id_entrenadores;
@@ -64,7 +68,7 @@ t_list* aplanarDobleLista(t_list*);
 
 void contiene(t_list*, t_list*);
 
-bool sonIguales(t_nombrePokemon*, t_nombrePokemon*);
+int sonIguales(t_nombrePokemon*, t_nombrePokemon*);
 
 t_entrenador* entrenadorMasCercano(t_newPokemon*);
 

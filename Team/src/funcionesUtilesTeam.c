@@ -61,6 +61,9 @@ void ponerEntrenadoresEnLista(t_config* config) {
 	}
 
 	hacerObjetivoTeam(listaDePokemonesDeEntrenadores, listaDePokemonesObjetivoDeEntrenadores);
+
+	list_destroy_and_destroy_elements(listaDePokemonesDeEntrenadores, list_destroy);
+	list_destroy_and_destroy_elements(listaDePokemonesObjetivoDeEntrenadores, list_destroy);
 }
 
 void crearHilosEntrenadores() {
@@ -237,13 +240,18 @@ void atraparPokemon(t_entrenador* entrenador){
 
 void hacerObjetivoTeam(t_list* listaPokemonesTieneEntrenadores, t_list* listaPokemonesDeseaEntrenadores){ //Siempre Despues de Usar estas Listas
 
-	 t_list* listaGrande = list_create();
-	 t_list* listaMini = list_create();
+	t_list* losQueDeseo = list_create();
+	t_list* losQueTengo = list_create();
 
-	 listaGrande = aplanarDobleLista(listaPokemonesDeseaEntrenadores);
-	 listaMini = aplanarDobleLista(listaPokemonesTieneEntrenadores);
+	losQueDeseo = aplanarDobleLista(listaPokemonesDeseaEntrenadores);
+	losQueTengo = aplanarDobleLista(listaPokemonesTieneEntrenadores);
 
-	 contiene(listaGrande, listaMini);
+	contiene(losQueDeseo, losQueTengo);
+
+	pendientes = list_duplicate(objetivoTeam);
+
+	list_destroy(losQueDeseo);
+	list_destroy(losQueTengo);
 }
 
 t_list* aplanarDobleLista(t_list* lista){
@@ -254,42 +262,40 @@ t_list* aplanarDobleLista(t_list* lista){
 
 		for(int b=0; b<tamanioListaSuprema ;b++){
 
-			 int tamanioSubLista = list_size(list_get(lista, b));  //aca esta el error
+			 int tamanioSubLista = list_size(list_get(lista, b));
 
 			 for(int a=0; a<tamanioSubLista; a++){
 
-				 list_add(listaAplanada, (t_nombrePokemon*)list_get(list_get(lista, b), a));
+				 list_add(listaAplanada, list_get(list_get(lista, b), a));
 			 }
 		}
 
 	return listaAplanada;
 }
 
-void contiene(t_list* listaA, t_list* listaB){ 		//listaGrande A lista chica B
+void contiene(t_list* losQueDeseo, t_list* losQueTengo){
 
-	objetivoTeam = list_create();
+	int sizeLosQueDeseo = list_size(losQueDeseo);
 
-	int a = list_size(listaA);
+	for(int i=0; i < sizeLosQueDeseo; i++){
 
-	for(int i=0; i < a; i++){
-
-		int b = list_size(listaB);
+		int sizeLosQueTengo = list_size(losQueTengo);
 		int j=0;
 
-		while((j < b) && !sonIguales(list_get(listaB,j), list_get(listaA, i))){
+		while((j < sizeLosQueTengo) && !sonIguales(list_get(losQueTengo,j), list_get(losQueDeseo, i))){
 			j++;
 		}
 
-		if(j==b){
-			list_add(objetivoTeam, (t_nombrePokemon*)list_get(listaA, i));
+		if(j==sizeLosQueTengo){
+			list_add(objetivoTeam, list_get(losQueDeseo, i));
 		}else{
-			list_remove(listaB, j);
+			list_remove(losQueTengo, j);
 		}
 
 	}
 }
 
-bool sonIguales(t_nombrePokemon* pokemon1, t_nombrePokemon* pokemon2){
+int sonIguales(t_nombrePokemon* pokemon1, t_nombrePokemon* pokemon2){
 	return strcmp(pokemon1->nombre, pokemon2->nombre) == 0;
 }
 

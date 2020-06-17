@@ -36,12 +36,6 @@ int ID_TEAM;
 int TIEMPO_RECONEXION;
 pthread_t thread;
 
-// Listas
-t_list* atrapados;
-t_list* pendientes;
-t_list* id_mensajeGet;
-t_list* id_mensajeCatch;
-
 // Mutexs
 extern pthread_mutex_t mutex_send;
 

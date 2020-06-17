@@ -307,7 +307,7 @@ void inicializarListas(){
 	id_mensajeGet = list_create();
 	id_mensajeCatch = list_create();
 	atrapados = list_create();
-	pendientes = list_create();
+	objetivoTeam = list_create();
 }
 
 void esperarIdGet(int socket_cliente){
@@ -329,32 +329,15 @@ void esperarIdCatch(int socket_cliente){
 
 void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas) {
 
-	llenarListaPokemonsPendientes();
-
-	t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
-	pokemonNuevo->pokemon = pokemon;
-	pokemonNuevo->coordenadas = coordenadas;
-
 	bool condicion(void* elemento) {
 		return sonIguales(pokemon, (t_nombrePokemon*) elemento);
 	}
 
 	if (list_any_satisfy(pendientes, condicion)) {
+		t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
+		pokemonNuevo->pokemon = pokemon;
+		pokemonNuevo->coordenadas = coordenadas;
 		//buscarPokemon(pokemonNuevo);hace lo que tenga que hacer --> poner a planificar al entrenador dormido o listo (con coordenadas y pokemon)
 	}
 }
 
-void llenarListaPokemonsPendientes() { 	//TODO probar
-	int sizeObjetivoTeamLst = list_size(objetivoTeam);
-
-	for (int i=0; i < sizeObjetivoTeamLst; i++) {
-
-		bool condicion(void* elemento) {
-			return sonIguales(list_get(objetivoTeam, i), (t_nombrePokemon*) elemento);
-		}
-
-		if (!list_any_satisfy(atrapados, condicion))
-			list_add(pendientes, list_get(objetivoTeam, i));
-
-	}
-}
