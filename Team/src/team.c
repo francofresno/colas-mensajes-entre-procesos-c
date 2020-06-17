@@ -8,36 +8,6 @@
 
 #include "team.h"
 
-extern t_list* entrenadores;
-extern t_list* objetivoTeam;
-t_list* atrapados;
-t_list* pendientes;
-
-//////Listas de entrenadores segun estado
-//extern t_list* listaNuevos;
-//extern t_list* listaReady;
-//extern t_list* listaBloqueadosDeadlock;
-//extern t_list* listaBloqueadosEsperandoMensaje;
-//extern t_list* listaBloqueadosEsperandoPokemones;
-//extern t_list* listaFinalizados;
-//
-
-extern t_list* hilosEntrenadores;
-t_list* id_mensajeGet;
-t_list* id_mensajeCatch;
-
-char* IP_TEAM;
-char* PUERTO_TEAM;
-char* ipBroker;
-char* puertoBroker;
-int ID_TEAM;
-int TIEMPO_RECONEXION;
-extern char* algoritmoPlanificacion;
-extern int quantum;
-extern int estimacionInicial;
-extern double alfa;
-extern int retardoCPU;
-
 pthread_mutex_t mutex_send = PTHREAD_MUTEX_INITIALIZER;
 
 int main(void) {
@@ -63,7 +33,7 @@ int main(void) {
 	puts("Soy un team!\n");
 
 	int socket_servidor = iniciar_servidor(IP_TEAM, PUERTO_TEAM);
-//	quedarseALaEscucha(&socket_servidor);
+	quedarseALaEscucha(&socket_servidor);
 //	pthread_create(&thread,NULL,(void*)quedarseALaEscucha,&socket_servidor);
 //	pthread_join(thread, NULL);
 

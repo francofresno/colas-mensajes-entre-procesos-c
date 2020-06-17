@@ -10,9 +10,18 @@
 
 #include "planificador.h"
 
+//Variables Globales
 uint32_t ID_ENTRENADORES;
 
-t_list* organizarPokemones(char**);
+// Listas
+t_list* entrenadores;
+t_list* hilosEntrenadores;
+t_list* objetivoTeam;
+
+// Mutexs
+extern pthread_mutex_t mutex_id_entrenadores;
+extern pthread_mutex_t mutex_entrenador;
+extern pthread_mutex_t mutex_hay_pokemones;
 
 //typedef struct
 //{
@@ -24,6 +33,8 @@ t_list* organizarPokemones(char**);
 //	t_list* listaFinalizados;
 //
 //} t_estructuraListas;
+
+t_list* organizarPokemones(char**);
 
 void ponerEntrenadoresEnLista(t_config*);
 

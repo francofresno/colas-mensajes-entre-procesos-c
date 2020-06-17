@@ -1,9 +1,10 @@
 /*
- * team.h
- *
- *  Created on: 18 abr. 2020
- *      Author: utnso
- */
+ ============================================================================
+ Name        : Team
+ Author      : Fran and Co
+ Description : Proceso Team Header
+ ============================================================================
+*/
 
 #ifndef TEAM_H_
 #define TEAM_H_
@@ -26,7 +27,23 @@ const static struct {
 
 };
 
+// Variables globales
+char* IP_TEAM;
+char* PUERTO_TEAM;
+char* ipBroker;
+char* puertoBroker;
+int ID_TEAM;
+int TIEMPO_RECONEXION;
 pthread_t thread;
+
+// Listas
+t_list* atrapados;
+t_list* pendientes;
+t_list* id_mensajeGet;
+t_list* id_mensajeCatch;
+
+// Mutexs
+extern pthread_mutex_t mutex_send;
 
 void quedarseALaEscucha(int*);
 

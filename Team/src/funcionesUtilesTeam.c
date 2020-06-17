@@ -7,13 +7,10 @@
 
 #include "funcionesUtilesTeam.h"
 
-t_list* entrenadores;
-t_list* hilosEntrenadores;
-t_list* objetivoTeam;
-
 pthread_mutex_t mutex_id_entrenadores = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_entrenador = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_hay_pokemones = PTHREAD_MUTEX_INITIALIZER;
+
 /*
   ============================================================================
  	 	 	 	 	 	 	 	 HITO 2
