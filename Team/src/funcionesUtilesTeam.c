@@ -50,9 +50,7 @@ void ponerEntrenadoresEnLista(t_config* config) {
 
 		uint32_t id_entrenador = generar_id();
 
-		t_entrenador* entrenador = crear_entrenador(id_entrenador, coords,
-				pokemonesQueTiene, pokemonesQueDesea,
-				list_size(pokemonesQueTiene), NEW);
+		t_entrenador* entrenador = crear_entrenador(id_entrenador, coords, pokemonesQueTiene, pokemonesQueDesea, list_size(pokemonesQueTiene), NEW);
 
 		list_add(entrenadores, entrenador);
 		list_add(listaNuevos, entrenador);
@@ -68,40 +66,33 @@ void ponerEntrenadoresEnLista(t_config* config) {
 void crearHilosEntrenadores() {
 
 	hilosEntrenadores = list_create();
+	sem_entrenadores_ejecutar = list_create();
 
 	int cantidadEntrenadores = list_size(entrenadores);
 
-	sem_t sem_entrenadores[cantidadEntrenadores];
-
-	sem_entrenadores_ejecutar = sem_entrenadores;
-
 	pthread_t pthread_id[cantidadEntrenadores];
 
-	for (int a = 0; a < cantidadEntrenadores; a++) {
+	for (int i = 0; i < cantidadEntrenadores; i++) {
 
-		t_entrenador* entrenador = (t_entrenador*) list_get(entrenadores, a);
+		t_entrenador* entrenador = (t_entrenador*) list_get(entrenadores, i);
 
 		sem_t semaforoDelEntrenador;
 
 		sem_init(&semaforoDelEntrenador, 0, 0);
 
-		sem_entrenadores[a] = semaforoDelEntrenador;
+		list_add(sem_entrenadores_ejecutar, (void*) &semaforoDelEntrenador);
 
-		pthread_create(&pthread_id[a], NULL, (void*) ejecutarEntrenador, entrenador);
+		pthread_create(&pthread_id[i], NULL, (void*) ejecutarEntrenador, entrenador);
 
-		pthread_detach(pthread_id[a]);
+		pthread_detach(pthread_id[i]);
 
 
-
-		list_add(hilosEntrenadores, &pthread_id[a]);
+		list_add(hilosEntrenadores, &pthread_id[i]);
 	}
 
 }
 
-t_entrenador* crear_entrenador(uint32_t id_entrenador,
-		t_coordenadas* coordenadas, t_list* pokemonesQuePosee,
-		t_list* pokemonesQueQuiere, uint32_t cantidad_pokemons,
-		status_code estado) {
+t_entrenador* crear_entrenador(uint32_t id_entrenador, t_coordenadas* coordenadas, t_list* pokemonesQuePosee, t_list* pokemonesQueQuiere, uint32_t cantidad_pokemons, status_code estado) {
 	t_entrenador* entrenador = malloc(sizeof(t_entrenador));
 
 	entrenador->id_entrenador = id_entrenador;
@@ -166,7 +157,8 @@ uint32_t generar_id() {
 
 void ejecutarEntrenador(t_entrenador* entrenador){
 
-	sem_wait(&sem_entrenadores_ejecutar[entrenador->id_entrenador]);
+	sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+	sem_wait(semaforoDelEntrenador);
 
 	sleep(retardoCPU);
 

@@ -64,7 +64,8 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 		sem_wait(&sem_planificar); //inicializa en?
 		do{
 			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-			sem_post(&sem_entrenadores_ejecutar[entrenador->id_entrenador]); //TODO hacer impide que otro entrenador ejecute a la par
+			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+			sem_post(semaforoDelEntrenador);//TODO hacer impide que otro entrenador ejecute a la par
 		}while(distancia !=0);
 		sem_post(&sem_planificar);
 

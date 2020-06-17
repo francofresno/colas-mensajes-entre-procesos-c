@@ -18,7 +18,7 @@ int main(void) {
 	inicializarConfig(config);
 
 	ponerEntrenadoresEnLista(config);
-	//crearHilosEntrenadores(); //TODO fijarnos si anda.
+	crearHilosEntrenadores(); //TODO fijarnos si anda.
 
 	enviarMensajeGetABroker();
 
@@ -28,14 +28,12 @@ int main(void) {
 		printf("El valor del id de los mensajes devueltos por broker es %d\n", *valor_id);
 	}
 
-	suscribirseAColas(); //TODO preguntar a franco si una vez enviada la suscripcion, si el broker se cae el team lo tiene que volver a enviar?
+	suscribirseAColas();
 
 	puts("Soy un team!\n");
 
 	int socket_servidor = iniciar_servidor(IP_TEAM, PUERTO_TEAM);
 	quedarseALaEscucha(&socket_servidor);
-//	pthread_create(&thread,NULL,(void*)quedarseALaEscucha,&socket_servidor);
-//	pthread_join(thread, NULL);
 
 	return EXIT_SUCCESS;
 }

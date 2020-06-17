@@ -40,7 +40,7 @@ t_list* listaBloqueadosEsperandoPokemones;
 t_list* listaFinalizados;
 
 //semaforos
-sem_t* sem_entrenadores_ejecutar;
+t_list* sem_entrenadores_ejecutar;
 sem_t sem_planificar;
 
 typedef enum{
