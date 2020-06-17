@@ -10,9 +10,22 @@
 
 #include "planificador.h"
 
+//Variables Globales
 uint32_t ID_ENTRENADORES;
 
-t_list* organizarPokemones(char**);
+// Listas
+t_list* entrenadores;
+t_list* hilosEntrenadores;
+t_list* objetivoTeam;
+t_list* atrapados;
+t_list* pendientes;
+t_list* id_mensajeGet;
+t_list* id_mensajeCatch;
+
+// Mutexs
+extern pthread_mutex_t mutex_id_entrenadores;
+extern pthread_mutex_t mutex_entrenador;
+extern pthread_mutex_t mutex_hay_pokemones;
 
 //typedef struct
 //{
@@ -24,6 +37,8 @@ t_list* organizarPokemones(char**);
 //	t_list* listaFinalizados;
 //
 //} t_estructuraListas;
+
+t_list* organizarPokemones(char**);
 
 void ponerEntrenadoresEnLista(t_config*);
 
@@ -41,7 +56,7 @@ void ejecutarEntrenador(t_entrenador*);
 
 int llegoAlObjetivo(t_entrenador*);
 
-void moverAlEntrenador(uint32_t);
+void moverAlEntrenadorHastaUnPokemon(uint32_t);
 
 void evaluarEstadoPrevioAAtrapar(t_entrenador*);
 
@@ -51,14 +66,14 @@ void hacerObjetivoTeam(t_list*,t_list*);
 
 t_list* aplanarDobleLista(t_list*);
 
-void contiene(t_list*, t_list*);
-
-int sonIguales(t_nombrePokemon*, t_nombrePokemon*);
-
 t_entrenador* entrenadorMasCercano(t_newPokemon*);
 
 void buscarPokemon(t_newPokemon*);
 
+void moverAlEntrenadorHastaOtroEntrenador(uint32_t, uint32_t);
 
+void intercambiarPokemones(uint32_t, uint32_t);
+
+void damePokemonQueQuiero(t_entrenador*, t_entrenador*);
 
 #endif /* FUNCIONESUTILESTEAM_H_ */

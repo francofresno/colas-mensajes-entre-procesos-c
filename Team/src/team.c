@@ -8,36 +8,6 @@
 
 #include "team.h"
 
-extern t_list* entrenadores;
-extern t_list* objetivoTeam;
-t_list* atrapados;
-t_list* pendientes;
-
-//////Listas de entrenadores segun estado
-//extern t_list* listaNuevos;
-//extern t_list* listaReady;
-//extern t_list* listaBloqueadosDeadlock;
-//extern t_list* listaBloqueadosEsperandoMensaje;
-//extern t_list* listaBloqueadosEsperandoPokemones;
-//extern t_list* listaFinalizados;
-//
-
-extern t_list* hilosEntrenadores;
-t_list* id_mensajeGet;
-t_list* id_mensajeCatch;
-
-char* IP_TEAM;
-char* PUERTO_TEAM;
-char* ipBroker;
-char* puertoBroker;
-int ID_TEAM;
-int TIEMPO_RECONEXION;
-extern char* algoritmoPlanificacion;
-extern int quantum;
-extern int estimacionInicial;
-extern double alfa;
-extern int retardoCPU;
-
 pthread_mutex_t mutex_send = PTHREAD_MUTEX_INITIALIZER;
 
 int main(void) {
@@ -48,7 +18,8 @@ int main(void) {
 	inicializarConfig(config);
 
 	ponerEntrenadoresEnLista(config);
-	//crearHilosEntrenadores(); //TODO fijarnos si anda.
+	crearHilosEntrenadores(); //TODO fijarnos si anda.
+
 
 	enviarMensajeGetABroker();
 
@@ -58,18 +29,16 @@ int main(void) {
 		printf("El valor del id de los mensajes devueltos por broker es %d\n", *valor_id);
 	}
 
-	suscribirseAColas(); //TODO preguntar a franco si una vez enviada la suscripcion, si el broker se cae el team lo tiene que volver a enviar?
+	suscribirseAColas();
 
 	puts("Soy un team!\n");
 
 	int socket_servidor = iniciar_servidor(IP_TEAM, PUERTO_TEAM);
-//	quedarseALaEscucha(&socket_servidor);
-//	pthread_create(&thread,NULL,(void*)quedarseALaEscucha,&socket_servidor);
-//	pthread_join(thread, NULL);
+	quedarseALaEscucha(&socket_servidor);
+
 
 	return EXIT_SUCCESS;
 }
-
 void quedarseALaEscucha(int* socket_servidor) {
 	while(1) {
 		int socket_potencial = esperar_cliente(*socket_servidor);
@@ -224,11 +193,11 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 	{
 		case APPEARED_POKEMON: ;
 
-			t_appearedPokemon_msg* estructura = malloc(sizeof(t_appearedPokemon_msg));
+			t_appearedPokemon_msg* mensajeAppeared = (t_appearedPokemon_msg*) mensaje_recibido;
 
-			t_nombrePokemon pokemon = estructura->nombre_pokemon;
+			t_nombrePokemon pokemon = mensajeAppeared->nombre_pokemon;
 
-			t_coordenadas coordenadas = estructura->coordenadas;
+			t_coordenadas coordenadas = mensajeAppeared->coordenadas;
 
 			requiere(&pokemon, &coordenadas);
 
@@ -236,20 +205,23 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 		case LOCALIZED_POKEMON: ;
 
-//		t_nombrePokemon nombre_pokemon;
-//			uint32_t cantidad_coordenadas;
-//			t_coordenadas* coordenadas;
-//		} t_localizedPokemon_msg;
+			t_localizedPokemon_msg* mensajeLocalized = (t_localizedPokemon_msg*) mensaje_recibido;
 
-		puts("Llego un localized al Team!\n");
-		 //TODO no es para appeard (planificar)
+	//		t_nombrePokemon nombre_pokemon;
+	//			uint32_t cantidad_coordenadas;
+	//			t_coordenadas* coordenadas;
+	//		} t_localizedPokemon_msg;
+
+			printf("Llego un localized con nombre: %s\n", mensajeLocalized->nombre_pokemon.nombre);
+			 //TODO no es para appeard (planificar)
 
 
 			break;
 
 		case CAUGHT_POKEMON: ;
 
-		puts("Llego un caught al Team!\n");
+		t_caughtPokemon_msg* mensajeCaught = (t_caughtPokemon_msg*) mensaje_recibido;
+		printf("Llego un caught al Team con Atrapado: %d\n", mensajeCaught->atrapado);
 
 			break;
 	}
@@ -336,7 +308,7 @@ void inicializarListas(){
 	id_mensajeGet = list_create();
 	id_mensajeCatch = list_create();
 	atrapados = list_create();
-	pendientes = list_create();
+	objetivoTeam = list_create();
 }
 
 void esperarIdGet(int socket_cliente){
@@ -356,16 +328,11 @@ void esperarIdCatch(int socket_cliente){
 }
 
 
+
 void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
 
-	diferencia();
 	int a = list_size(pendientes);
 	int j=0;
-
-	t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
-	pokemonNuevo->pokemon = pokemon;
-	pokemonNuevo->coordenadas = coordenadas;
-
 
 	for(int i=0; i < a; i++){
 
@@ -375,24 +342,10 @@ void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
 	}
 
 	if(j!=a){
+		t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
+		pokemonNuevo->pokemon = pokemon;
+		pokemonNuevo->coordenadas = coordenadas;
 		//buscarPokemon(pokemonNuevo);hace lo que tenga que hacer --> poner a planificar al entrenador dormido o listo (con coordenadas y pokemon)
 	}
 }
 
-void diferencia(){ 		//llenar lista pendientes  //TODO probar
-	int a = list_size(objetivoTeam);
-	int b = list_size(atrapados);
-
-	for(int i=0; i < a; i++){
-
-		int j=0;
-
-		while((j < b) && !sonIguales(list_get(atrapados,j), list_get(objetivoTeam, i))){
-			j++;
-		}
-
-		if(j==b){
-			list_add(pendientes, (t_nombrePokemon*)list_get(objetivoTeam, i));
-		}
-	}
-}

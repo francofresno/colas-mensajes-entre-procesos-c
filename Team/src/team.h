@@ -1,9 +1,10 @@
 /*
- * team.h
- *
- *  Created on: 18 abr. 2020
- *      Author: utnso
- */
+ ============================================================================
+ Name        : Team
+ Author      : Fran and Co
+ Description : Proceso Team Header
+ ============================================================================
+*/
 
 #ifndef TEAM_H_
 #define TEAM_H_
@@ -26,7 +27,17 @@ const static struct {
 
 };
 
+// Variables globales
+char* IP_TEAM;
+char* PUERTO_TEAM;
+char* ipBroker;
+char* puertoBroker;
+int ID_TEAM;
+int TIEMPO_RECONEXION;
 pthread_t thread;
+
+// Mutexs
+extern pthread_mutex_t mutex_send;
 
 void quedarseALaEscucha(int*);
 
@@ -69,8 +80,6 @@ void esperarIdGet(int);
 void esperarIdCatch(int);
 
 void requiere(t_nombrePokemon*, t_coordenadas*);
-
-void diferencia();
 
 //void terminar_programa(int socket, t_log* logger, t_config* config);
 
