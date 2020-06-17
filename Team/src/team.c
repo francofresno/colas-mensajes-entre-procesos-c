@@ -20,6 +20,7 @@ int main(void) {
 	ponerEntrenadoresEnLista(config);
 	crearHilosEntrenadores(); //TODO fijarnos si anda.
 
+
 	enviarMensajeGetABroker();
 
 	int tamanioLista = list_size(id_mensajeGet);
@@ -35,9 +36,9 @@ int main(void) {
 	int socket_servidor = iniciar_servidor(IP_TEAM, PUERTO_TEAM);
 	quedarseALaEscucha(&socket_servidor);
 
+
 	return EXIT_SUCCESS;
 }
-
 void quedarseALaEscucha(int* socket_servidor) {
 	while(1) {
 		int socket_potencial = esperar_cliente(*socket_servidor);
@@ -327,13 +328,20 @@ void esperarIdCatch(int socket_cliente){
 }
 
 
-void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas) {
 
-	bool condicion(void* elemento) {
-		return sonIguales(pokemon, (t_nombrePokemon*) elemento);
+void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
+
+	int a = list_size(pendientes);
+	int j=0;
+
+	for(int i=0; i < a; i++){
+
+		if(!sonIguales(pokemon, list_get(pendientes, i))){
+			j++;
+		}
 	}
 
-	if (list_any_satisfy(pendientes, condicion)) {
+	if(j!=a){
 		t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
 		pokemonNuevo->pokemon = pokemon;
 		pokemonNuevo->coordenadas = coordenadas;
