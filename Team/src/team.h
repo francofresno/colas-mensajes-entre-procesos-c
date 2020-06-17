@@ -70,8 +70,6 @@ void esperarIdCatch(int);
 
 void requiere(t_nombrePokemon*, t_coordenadas*);
 
-void diferencia();
-
 //void terminar_programa(int socket, t_log* logger, t_config* config);
 
 #endif /* TEAM_H_ */

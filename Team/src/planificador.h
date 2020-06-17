@@ -39,6 +39,12 @@ t_list* listaBloqueadosEsperandoMensaje;
 t_list* listaBloqueadosEsperandoPokemones;
 t_list* listaFinalizados;
 
+
+//listas de pokemones
+t_list* atrapados;
+t_list* pendientes;
+t_list* objetivoTeam;
+
 //semaforos
 sem_t* sem_entrenadores_ejecutar;
 sem_t sem_planificar;
@@ -90,9 +96,19 @@ typedef struct
 } t_entrenador;
 
 void planificarSegun();
+
 void planificarSegunFifo();
+
 algoritmo_code stringACodigoAlgoritmo(const char*);
+
 int distanciaA(t_coordenadas*, t_coordenadas*);
+
+int tieneTodoLoQueQuiere(t_entrenador*);
+
+void diferenciaYCargarLista(t_list*, t_list*, t_list*);
+
+int sonIguales(t_nombrePokemon*, t_nombrePokemon*);
+
 void inicializarListasDeEstados();
 
 #endif /* PLANIFICADOR_H_ */

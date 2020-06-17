@@ -10,8 +10,7 @@
 
 extern t_list* entrenadores;
 extern t_list* objetivoTeam;
-t_list* atrapados;
-t_list* pendientes;
+
 
 //////Listas de entrenadores segun estado
 //extern t_list* listaNuevos;
@@ -50,6 +49,7 @@ int main(void) {
 	ponerEntrenadoresEnLista(config);
 	//crearHilosEntrenadores(); //TODO fijarnos si anda.
 
+
 	enviarMensajeGetABroker();
 
 	int tamanioLista = list_size(id_mensajeGet);
@@ -58,18 +58,15 @@ int main(void) {
 		printf("El valor del id de los mensajes devueltos por broker es %d\n", *valor_id);
 	}
 
-	suscribirseAColas(); //TODO preguntar a franco si una vez enviada la suscripcion, si el broker se cae el team lo tiene que volver a enviar?
-
+	suscribirseAColas();
 	puts("Soy un team!\n");
 
 	int socket_servidor = iniciar_servidor(IP_TEAM, PUERTO_TEAM);
-//	quedarseALaEscucha(&socket_servidor);
-//	pthread_create(&thread,NULL,(void*)quedarseALaEscucha,&socket_servidor);
-//	pthread_join(thread, NULL);
+	quedarseALaEscucha(&socket_servidor);
+
 
 	return EXIT_SUCCESS;
 }
-
 void quedarseALaEscucha(int* socket_servidor) {
 	while(1) {
 		int socket_potencial = esperar_cliente(*socket_servidor);
@@ -358,14 +355,8 @@ void esperarIdCatch(int socket_cliente){
 
 void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
 
-	diferencia();
 	int a = list_size(pendientes);
 	int j=0;
-
-	t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
-	pokemonNuevo->pokemon = pokemon;
-	pokemonNuevo->coordenadas = coordenadas;
-
 
 	for(int i=0; i < a; i++){
 
@@ -375,24 +366,10 @@ void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
 	}
 
 	if(j!=a){
+		t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
+		pokemonNuevo->pokemon = pokemon;
+		pokemonNuevo->coordenadas = coordenadas;
 		//buscarPokemon(pokemonNuevo);hace lo que tenga que hacer --> poner a planificar al entrenador dormido o listo (con coordenadas y pokemon)
 	}
 }
 
-void diferencia(){ 		//llenar lista pendientes  //TODO probar
-	int a = list_size(objetivoTeam);
-	int b = list_size(atrapados);
-
-	for(int i=0; i < a; i++){
-
-		int j=0;
-
-		while((j < b) && !sonIguales(list_get(atrapados,j), list_get(objetivoTeam, i))){
-			j++;
-		}
-
-		if(j==b){
-			list_add(pendientes, (t_nombrePokemon*)list_get(objetivoTeam, i));
-		}
-	}
-}

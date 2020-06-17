@@ -51,14 +51,14 @@ void hacerObjetivoTeam(t_list*,t_list*);
 
 t_list* aplanarDobleLista(t_list*);
 
-void contiene(t_list*, t_list*);
-
-int sonIguales(t_nombrePokemon*, t_nombrePokemon*);
-
 t_entrenador* entrenadorMasCercano(t_newPokemon*);
 
 void buscarPokemon(t_newPokemon*);
 
+void moverAlEntrenadorHastaOtroEntrenador(uint32_t, uint32_t);
 
+void intercambiarPokemones(uint32_t, uint32_t);
+
+void damePokemonQueQuiero(t_entrenador*, t_entrenador*);
 
 #endif /* FUNCIONESUTILESTEAM_H_ */
