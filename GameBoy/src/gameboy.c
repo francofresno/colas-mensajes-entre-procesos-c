@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 		default: return -1; break;
 	}
 
-	if (status >= 0) {
+	if (status >= 0 && codigoProceso == BROKER) {
 		recibir_id(socket_cliente);
 	}
 
