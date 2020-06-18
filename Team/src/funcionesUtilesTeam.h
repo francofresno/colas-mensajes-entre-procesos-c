@@ -74,6 +74,10 @@ void moverAlEntrenadorHastaOtroEntrenador(uint32_t, uint32_t);
 
 void intercambiarPokemones(uint32_t, uint32_t);
 
-void damePokemonQueQuiero(t_entrenador*, t_entrenador*);
+void dameTuPokemon(t_entrenador*, t_entrenador*);
+
+t_entrenador* elegirConQuienIntercambiar(t_entrenador*);
+
+int tengoAlgunPokemonQueQuiere2(t_entrenador*,t_entrenador*);
 
 #endif /* FUNCIONESUTILESTEAM_H_ */

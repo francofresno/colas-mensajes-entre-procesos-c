@@ -64,8 +64,7 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 		sem_wait(&sem_planificar); //inicializa en?
 		do{
 			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-			sem_post(semaforoDelEntrenador);//TODO hacer impide que otro entrenador ejecute a la par
+			sem_post(&sem_entrenadores_ejecutar[entrenador->id_entrenador]); //TODO hacer impide que otro entrenador ejecute a la par
 		}while(distancia !=0);
 		sem_post(&sem_planificar);
 
@@ -73,7 +72,7 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 
 		list_add(entrenador->pokemonesQuePosee, (void*) entrenador->pokemonInstantaneo);
 		entrenador->cantidad_pokemons++;
-		list_add(atrapados,(void*) entrenador->pokemonInstantaneo);
+		list_add(atrapados,(void*) entrenador->pokemonInstantaneo); //TODO semaforo lista global
 
 		if(entrenador->cantidad_pokemons == list_size(entrenador->pokemonesQueQuiere)){
 			if(tieneTodoLoQueQuiere(entrenador)){
@@ -161,17 +160,17 @@ void diferenciaYCargarLista(t_list* listaA, t_list* listaB, t_list* listaACargar
 }
 
 int sonIguales(t_nombrePokemon* pokemon1, t_nombrePokemon* pokemon2){
-	return strcmp(pokemon1->nombre, pokemon2->nombre) == 0;
+	return strcmp(pokemon1->nombre, pokemon2->nombre) == 0;					//retorna un 0 si cumple
 }
 
 void inicializarListasDeEstados(){
 
-	listaNuevos = list_create();
-	listaReady = list_create();
-	listaBloqueadosDeadlock= list_create();
-	listaBloqueadosEsperandoMensaje= list_create();
-	listaBloqueadosEsperandoPokemones = list_create();
-	listaFinalizados = list_create();
+listaNuevos = list_create();
+listaReady = list_create();
+listaBloqueadosDeadlock= list_create();
+listaBloqueadosEsperandoMensaje= list_create();
+listaBloqueadosEsperandoPokemones = list_create();
+listaFinalizados = list_create();
 
 }
 
