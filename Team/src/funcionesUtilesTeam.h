@@ -27,17 +27,6 @@ extern pthread_mutex_t mutex_id_entrenadores;
 extern pthread_mutex_t mutex_entrenador;
 extern pthread_mutex_t mutex_hay_pokemones;
 
-//typedef struct
-//{
-//	t_list* listaNuevos;
-//	t_list* listaReady;
-//	t_list* listaBloqueadosEsperandoPokemones;
-//	t_list* listaBloqueadosDeadlock;
-//	t_list* listaBloqueadosEsperandoMensaje;
-//	t_list* listaFinalizados;
-//
-//} t_estructuraListas;
-
 t_list* organizarPokemones(char**);
 
 void ponerEntrenadoresEnLista(t_config*);

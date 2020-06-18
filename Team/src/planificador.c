@@ -64,7 +64,8 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 		sem_wait(&sem_planificar); //inicializa en?
 		do{
 			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-			sem_post(&sem_entrenadores_ejecutar[entrenador->id_entrenador]); //TODO hacer impide que otro entrenador ejecute a la par
+			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+			sem_post(semaforoDelEntrenador);//TODO hacer impide que otro entrenador ejecute a la par
 		}while(distancia !=0);
 		sem_post(&sem_planificar);
 
@@ -94,7 +95,7 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 	for (int b = 0; b < tamanioDeadlock; b++) {
 
 		t_entrenador* entrenador = (t_entrenador*) list_remove(listaBloqueadosDeadlock, 0);
-		entrenador->estado=EXEC;
+		entrenador->estado = EXEC;
 
 		int tamanioModificado = list_size(listaBloqueadosDeadlock);
 		for(int a=0; a<tamanioModificado ; a++){
@@ -151,7 +152,7 @@ void diferenciaYCargarLista(t_list* listaA, t_list* listaB, t_list* listaACargar
 		}
 
 		if(j==b){
-			list_add(listaACargar, (t_nombrePokemon*)list_get(listaA, i));
+			list_add(listaACargar, list_get(listaA, i));
 		}else{
 			list_remove(listaB, j);
 		}
@@ -160,17 +161,17 @@ void diferenciaYCargarLista(t_list* listaA, t_list* listaB, t_list* listaACargar
 }
 
 int sonIguales(t_nombrePokemon* pokemon1, t_nombrePokemon* pokemon2){
-	return strcmp(pokemon1->nombre, pokemon2->nombre) == 0;					//retorna un 0 si cumple
+	return strcmp(pokemon1->nombre, pokemon2->nombre) == 0;
 }
 
 void inicializarListasDeEstados(){
 
-listaNuevos = list_create();
-listaReady = list_create();
-listaBloqueadosDeadlock= list_create();
-listaBloqueadosEsperandoMensaje= list_create();
-listaBloqueadosEsperandoPokemones = list_create();
-listaFinalizados = list_create();
+	listaNuevos = list_create();
+	listaReady = list_create();
+	listaBloqueadosDeadlock= list_create();
+	listaBloqueadosEsperandoMensaje= list_create();
+	listaBloqueadosEsperandoPokemones = list_create();
+	listaFinalizados = list_create();
 
 }
 

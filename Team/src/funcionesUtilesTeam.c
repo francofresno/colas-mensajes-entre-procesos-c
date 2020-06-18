@@ -391,36 +391,35 @@ void intercambiarPokemones(uint32_t idEntrenador1, uint32_t idEntrenador2){
 
 }
 
-void dameTuPokemon(t_entrenador* entrenador1, t_entrenador* entrenador2){ //ya se que E2 tiene uno que quiere E1
+void dameTuPokemon(t_entrenador* entrenador1, t_entrenador* entrenador2){
 
-	t_list* listaQuiere1 = list_create(); //TODO destruirlas bien
-	t_list* listaPosee1 = list_create();
-	t_list* listaQuiere2 = list_create();
-	t_list* listaPosee2 = list_create();
+	t_list* listaQuiere1 = list_duplicate(entrenador1->pokemonesQueQuiere);
+	t_list* listaPosee1 = list_duplicate(entrenador1->pokemonesQuePosee);
+	t_list* listaQuiere2 = list_duplicate(entrenador2->pokemonesQueQuiere);
+	t_list* listaPosee2 = list_duplicate(entrenador2->pokemonesQuePosee);
 
 	t_list* leFaltanParaObj1 = list_create();
 	t_list* tienePeroNoQuiere2 = list_create();
 	t_list* pokemonesDe2QueQuiere1 = list_create();
 
-	listaQuiere1 = entrenador1->pokemonesQueQuiere;
-	listaPosee1 = entrenador1->pokemonesQuePosee;
-
 	diferenciaYCargarLista(listaQuiere1, listaPosee1, leFaltanParaObj1);
-
-	listaQuiere2 = entrenador2->pokemonesQueQuiere;
-	listaPosee2 = entrenador2->pokemonesQuePosee;
-
 	diferenciaYCargarLista(listaPosee2, listaQuiere2, tienePeroNoQuiere2);
-
 	diferenciaYCargarLista(leFaltanParaObj1, tienePeroNoQuiere2, pokemonesDe2QueQuiere1);
 
-	if(list_is_empty(pokemonesDe2QueQuiere1)){
-		//	list_add(entrenador1->pokemonesQuePosee, list_find(entrenador2->pokemonesQuePosee, bool(*closure)(void*))); //sea igual al primero de la lista de tiene pero no quiere 2
-		//	list_remove_by_condition(entrenador2->pokemonesQuePosee, )); //TODO funcion interna con sonIguales
-	} else{
-		//  list_add(entrenador1->pokemonesQuePosee, list_find(entrenador2->pokemonesQuePosee, bool(*closure)(void*))); //sea igual al primero de la lista pokemonesDe2QueQuiere1
-		//	list_remove_by_condition(entrenador2->pokemonesQuePosee, )); //TODO funcion interna con sonIguales
+	t_list* listaParaCondicion;
+
+	if(list_is_empty(pokemonesDe2QueQuiere1)) {
+		listaParaCondicion = tienePeroNoQuiere2;
+	} else {
+		listaParaCondicion = pokemonesDe2QueQuiere1;
 	}
+
+	bool condicion(void* elemento) {
+		return sonIguales((t_nombrePokemon*) list_get(listaParaCondicion, 0), (t_nombrePokemon*) elemento);
+	}
+
+	void* elementoRemovido = list_remove_by_condition(entrenador2->pokemonesQuePosee, condicion);
+	list_add(entrenador1->pokemonesQuePosee, elementoRemovido);
 
 
 	list_destroy(listaQuiere1);
@@ -429,7 +428,7 @@ void dameTuPokemon(t_entrenador* entrenador1, t_entrenador* entrenador2){ //ya s
 	list_destroy(listaPosee2);
 	list_destroy(leFaltanParaObj1);
 	list_destroy(tienePeroNoQuiere2);
-	list_destroy(pokemonesDe2QueQuiere1); //TODO destruir elementos tambien?
+	list_destroy(pokemonesDe2QueQuiere1);
 }
 
 t_entrenador* elegirConQuienIntercambiar(t_entrenador* entrenador){ //TODO probar
