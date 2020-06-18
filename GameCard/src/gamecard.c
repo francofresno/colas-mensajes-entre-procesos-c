@@ -18,6 +18,7 @@ int main(void) {
 
 	config = setear_config();
 	logger = log_create(GAMECARD_LOG, "gamecard.log", false, LOG_LEVEL_INFO);
+	PUNTO_MONTAJE = config_get_string_value(config, "PUNTO_MONTAJE_TALLGRASS");
 
 	t_suscripcion_msg datosHiloNP;
 	datosHiloNP.id_proceso = config_get_int_value(config, "ID_HILO_NP");

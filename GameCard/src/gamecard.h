@@ -9,16 +9,7 @@
 #ifndef GAMECARD_H_
 #define GAMECARD_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <commons/log.h>
-#include <commons/string.h>
-#include <commons/config.h>
-#include <pthread.h>
-// INCLUDES LOCALES
-#include "nuestras-commons/conexion.h"
-#include "nuestras-commons/mensajes.h"
+#include "filesystem.h"
 
 // DEFINES
 #define GAMECARD_CONFIG "gamecard.config"
