@@ -143,7 +143,7 @@ t_nombrePokemon* crear_pokemon(char* pokemon) {
 
 	t_nombrePokemon* nuevoPokemon = malloc(sizeof(t_nombrePokemon));
 
-	nuevoPokemon->nombre_lenght = strlen(pokemon) + 1;
+	nuevoPokemon->nombre_lenght = strlen(pokemon);
 	nuevoPokemon->nombre = pokemon;
 
 	return nuevoPokemon;
