@@ -108,9 +108,7 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 	pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
 
 	uint32_t net_size_message = size_message - sizeof(uint32_t)*3; // Se resta el tamanio del cod. op, id e id correlativo que son 3 uint32_t
-	if (cod_op != CAUGHT_POKEMON) {
-		net_size_message--; // TODO ojo esto
-	}
+
 	t_copy_args* args = malloc(sizeof(*args));
 	args->queue = cod_op;
 	args->id = id_message;
@@ -134,7 +132,7 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 	}
 	pthread_mutex_unlock(&mutex_deleted_messages_ids);
 
-	t_enqueued_message* mensaje_encolado = push_message_queue(queue, id_message, id_correlative, allocated_message, mutex);
+	t_enqueued_message* mensaje_encolado = push_message_queue(queue, id_message, id_correlative, mutex);
 
 	enviar_id_respuesta(id_message, socket_cliente);
 	t_list* suscriptores_informados = inform_subscribers(cod_op, allocated_message, id_message, id_correlative, subscribers, mutex);
@@ -215,9 +213,10 @@ void reply_to_new_subscriber(op_code code, t_queue* message_queue, t_subscriber*
 	for (int i=0; i < *messages_count; i++) {
 		uint32_t bytes;
 		t_enqueued_message* mensaje_encolado = get_message_by_index(message_queue, i);
+		void* message = memory_get(mensaje_encolado->ID);
 
-		if(mensaje_encolado->message != NULL && !isSubscriberListed(mensaje_encolado->subscribers_ack, subscriber->id_subscriber)) {
-			void* a_enviar = serializar_paquete(code, mensaje_encolado->ID, mensaje_encolado->ID_correlativo, mensaje_encolado->message, &bytes);
+		if(message != NULL && !isSubscriberListed(mensaje_encolado->subscribers_ack, subscriber->id_subscriber)) {
+			void* a_enviar = serializar_paquete(code, mensaje_encolado->ID, mensaje_encolado->ID_correlativo, message, &bytes);
 			bytes += sizeof(bytes);
 
 			list_add(paquetes_serializados, a_enviar);

@@ -6,8 +6,6 @@
  ============================================================================
  */
 
-#include <string.h>
-
 #include "memory.h"
 
 pthread_mutex_t mutex_memory = PTHREAD_MUTEX_INITIALIZER;
@@ -82,6 +80,19 @@ void* memory_copy(t_copy_args* args)
 		log_new_message_in_memory(partition->id_data, partition->base);
 	}
 
+	return data;
+}
+
+void* memory_get(uint32_t id)
+{
+	void* data = NULL;
+	pthread_mutex_lock(&mutex_memory);
+	if (MEMORY_ALGORITHM == BUDDY_SYSTEM) {
+		data = find_data_buddy_by_id(id);
+	} else if (MEMORY_ALGORITHM == DYNAMIC_PARTITIONS) {
+		data = find_data_partition_by_id(id);
+	}
+	pthread_mutex_unlock(&mutex_memory);
 	return data;
 }
 
