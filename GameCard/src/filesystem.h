@@ -14,10 +14,12 @@
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/config.h>
+#include <commons/bitarray.h>
 #include <pthread.h>
 // INCLUDES FILESYSTEM
 #include <dirent.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 // INCLUDES LOCALES
 #include "nuestras-commons/conexion.h"
 #include "nuestras-commons/mensajes.h"

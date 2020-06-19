@@ -1,6 +1,10 @@
 #include "filesystem.h"
 
 char* directoriosACrear[] = {"Metadata", "Files", "Blocks"};
+char* BLOCKS = "5192";
+char* BLOCK_SIZE = "64";
+char* MAGIC_NUMBER = "TALL_GRASS";
+t_bitarray* bitarray;
 
 char* obtenerRutaTotal(char* path)
 {
@@ -33,44 +37,55 @@ void verificarDirectorio(char* path)
 void verificarMetadata(char* path)
 {
 	char* pathActual = obtenerRutaTotal(path);
+	char* pathDirectorio = obtenerRutaTotal(path);
 	string_append(&pathActual, "/Metadata.bin");
-	FILE* archivoActual = fopen(pathActual, "wb");
+	FILE* archivoActual = fopen(pathActual, "rb");
+
+	if(!archivoActual)
+	{
+		archivoActual = fopen(pathActual, "wb");
+		if(strcmp(path, "Metadata") == 0)
+			fprintf(archivoActual, "BLOCK_SIZE=64\nBLOCKS=5192\nMAGIC_NUMBER=TALL_GRASS");
+		else
+			fprintf(archivoActual, "DIRECTORY=Y");
+	}
+	fclose(archivoActual);
 
 	if(strcmp(path, "Metadata") == 0)
 	{
 		t_config* config = config_create(pathActual);
-		config_set_value(config, "BLOCKS", "5192");
-		config_set_value(config, "BLOCK_SIZE", "64");
-		config_set_value(config, "MAGIC_NUMBER", "TALL_GRASS");
-		config_save_in_file(config, pathActual);
-
-		char* pathMetadata = obtenerRutaTotal(path);
-		verificarBitmap(pathMetadata, config);
-
+		verificarBitmap(pathDirectorio, config);
 		config_destroy(config);
 	}
-	else
-		fprintf(archivoActual, "DIRECTORY=Y");
+	else if(strcmp(path, "Bloques") == 0){
 
-	fclose(archivoActual);
+	}
 }
 
 void verificarBitmap(char* pathActual, t_config* config)
 {
 	string_append(&pathActual, "/Bitmap.bin");
+	int cantidadBloques = config_get_int_value(config, "BLOCKS");
 
 	FILE* archivoActual = fopen(pathActual, "rb");
 	if(!archivoActual)
 	{
 		archivoActual = fopen(pathActual, "wb");
-		int cantidadBloques = config_get_int_value(config, "BLOCKS");
-		char* seteoInicial = string_repeat('1', cantidadBloques);
+		char* seteoInicial = string_repeat('0', cantidadBloques);
 		fprintf(archivoActual, "%s", seteoInicial);
+		fclose(archivoActual);
 	}
-	else
-	{
-		//cargarEnMemoria...
-	}
+
+	char* bitarrayFlujo = malloc(cantidadBloques);
+	archivoActual = fopen(pathActual, "rb");
+	fread(bitarrayFlujo, 1, cantidadBloques, archivoActual);
+	bitarray = bitarray_create_with_mode(bitarrayFlujo, cantidadBloques/8, LSB_FIRST);
+	if(!bitarray_test_bit(bitarray, 3))
+		printf("Dio false");
 
 	fclose(archivoActual);
 }
+//void verificarBloques(char* path)
+//{
+////	for(int i; i < atoi(BLOCKS))
+//}
