@@ -293,13 +293,6 @@ void deserializar_paquete(void* stream, t_paquete* paquete_recibido, int* offset
 
 			*nombre_recibido = estructuraNew->nombre_pokemon.nombre;
 			paquete_recibido->mensaje = estructuraNew;
-
-			printf("Nombre: %s\n", estructuraNew->nombre_pokemon.nombre);
-			printf("Largo: %d\n", estructuraNew->nombre_pokemon.nombre_lenght);
-			printf("PosX: %d\n", estructuraNew->coordenadas.posX);
-			printf("PosY: %d\n", estructuraNew->coordenadas.posY);
-			printf("Cant: %d\n", estructuraNew->cantidad_pokemons);
-
 			break;
 		case APPEARED_POKEMON: ;
 			t_appearedPokemon_msg* estructuraAppeared = malloc(sizeof(*estructuraAppeared));
@@ -309,7 +302,6 @@ void deserializar_paquete(void* stream, t_paquete* paquete_recibido, int* offset
 
 			*nombre_recibido = estructuraAppeared->nombre_pokemon.nombre;
 			paquete_recibido->mensaje = estructuraAppeared;
-
 			break;
 		case GET_POKEMON: ;
 			t_getPokemon_msg* estructuraGet = malloc(sizeof(*estructuraGet));

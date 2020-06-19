@@ -159,7 +159,7 @@ void sort_all_partitions_by_base()
 	list_sort(ALL_PARTITIONS, sort_by_base);
 }
 
-void sort_memory_by_base(t_list* all_duplicated)
+void sort_memory_by_base()
 {
 	int backup_size = 0;
 	void get_backup_size(void* element) {
@@ -192,11 +192,8 @@ void compact_memory()
 			int previous_size = 0;
 			compact_occupied_list(&previous_base, &previous_size);
 			compact_free_list(previous_base, previous_size, free_list_size);
-
-//			t_list* all_duplicated = list_duplicate(ALL_PARTITIONS); TODO
 			sort_all_partitions_by_base();
-//			sort_memory_by_base(all_duplicated);
-//			list_destroy(all_duplicated);
+			sort_memory_by_base();
 		}
 		log_compactation();
 		SEARCH_FAILURE_COUNTER = 0;
