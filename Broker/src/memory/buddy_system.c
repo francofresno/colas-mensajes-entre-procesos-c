@@ -189,6 +189,29 @@ t_buddy* lru_find_victim_buddy()
 	return (t_buddy*) get_first(lru_list);
 }
 
+void* find_data_buddy_by_id(uint32_t id)
+{
+	t_buddy* buddy = find_buddy_by_id(id);
+	return buddy != NULL ? buddy->data : NULL;
+}
+
+t_buddy* find_buddy_by_id(uint32_t id)
+{
+	t_link_element* element = OCCUPIED_PARTITIONS->head;
+
+	if (element == NULL)
+		return NULL;
+
+	t_buddy* buddy = (t_buddy*) (element->data);
+
+	while(element != NULL && buddy->id_data != id) {
+		element = element->next;
+		buddy = element == NULL ? NULL : element->data;
+	}
+
+	return buddy;
+}
+
 unsigned upper_power_of_two(unsigned size)
 {
     size--;

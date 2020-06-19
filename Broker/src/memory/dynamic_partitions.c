@@ -150,16 +150,36 @@ void compact_free_list(int previous_base, int previous_size, int free_list_size)
 
 void sort_all_partitions_by_base()
 {
-	int all_partitions_size = list_size(ALL_PARTITIONS);
-	for (int i = 0; i < all_partitions_size-1; i++)
-		for (int j = 0; j < all_partitions_size-i-1; j++) {
-			t_partition* partition = list_get(ALL_PARTITIONS, j);
-			t_partition* other_partition = list_get(ALL_PARTITIONS, j+1);
-			if (partition->base > other_partition->base) {
-				list_replace(ALL_PARTITIONS, j, (void*) other_partition);
-				list_replace(ALL_PARTITIONS, j+1, (void*) partition);
-			}
-		}
+	bool sort_by_base(void* partition1, void* partition2) {
+		t_partition* partition = (t_partition*) partition1;
+		t_partition* other_partition = (t_partition*) partition2;
+		return partition->base > other_partition->base;
+	}
+
+	list_sort(ALL_PARTITIONS, sort_by_base);
+}
+
+void sort_memory_by_base()
+{
+	int backup_size = 0;
+	void get_backup_size(void* element) {
+		t_partition* partition = (t_partition*) element;
+		backup_size += partition->size;
+	}
+	list_iterate(OCCUPIED_PARTITIONS, get_backup_size);
+
+	void* backup_memory = malloc(backup_size);
+	void get_backup_copy(void* element) {
+		t_partition* partition = (t_partition*) element;
+		void* data = memcpy(backup_memory + partition->base, partition->data, partition->size);
+		int index = get_index_of_partition_by_base(OCCUPIED_PARTITIONS, partition->base);
+		t_partition* occ_partition = list_get(OCCUPIED_PARTITIONS, index);
+		occ_partition->data = data;
+	}
+	list_iterate(OCCUPIED_PARTITIONS, get_backup_copy);
+
+	memcpy(MEMORY, backup_memory, backup_size);
+	free(backup_memory);
 }
 
 void compact_memory()
@@ -173,6 +193,7 @@ void compact_memory()
 			compact_occupied_list(&previous_base, &previous_size);
 			compact_free_list(previous_base, previous_size, free_list_size);
 			sort_all_partitions_by_base();
+			sort_memory_by_base();
 		}
 		log_compactation();
 		SEARCH_FAILURE_COUNTER = 0;
@@ -198,6 +219,29 @@ int get_index_of_partition_by_base(t_list* partitions, uint32_t base_partition)
 	}
 
 	return -1;
+}
+
+void* find_data_partition_by_id(uint32_t id)
+{
+	t_partition* partition = find_partition_by_id(id);
+	return partition != NULL ? partition->data : NULL;
+}
+
+t_partition* find_partition_by_id(uint32_t id)
+{
+	t_link_element* element = OCCUPIED_PARTITIONS->head;
+
+	if (element == NULL)
+		return NULL;
+
+	t_partition* partition = (t_partition*) (element->data);
+
+	while(element != NULL && partition->id_data != id) {
+		element = element->next;
+		partition = element == NULL ? NULL : element->data;
+	}
+
+	return partition;
 }
 
 t_partition* first_fit_find_free_partition(int size)

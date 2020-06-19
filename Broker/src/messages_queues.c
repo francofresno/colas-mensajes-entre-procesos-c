@@ -17,14 +17,13 @@ t_queue* create_message_queue()
 	return queue_create();
 }
 
-t_enqueued_message* push_message_queue(t_queue* queue, uint32_t ID, uint32_t ID_correlativo, void* message, pthread_mutex_t mutex)
+t_enqueued_message* push_message_queue(t_queue* queue, uint32_t ID, uint32_t ID_correlativo, pthread_mutex_t mutex)
 {
 	t_enqueued_message* data = malloc(sizeof(*data));
 	data->subscribers_ack = list_create();
 	data->subscribers_informed = list_create();
 	data->ID = ID;
 	data->ID_correlativo = ID_correlativo;
-	data->message = message;
 
 	pthread_mutex_lock(&mutex);
 	queue_push(queue, (void*) data);

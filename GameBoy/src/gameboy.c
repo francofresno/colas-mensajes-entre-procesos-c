@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 		case NEW_POKEMON: ;
 			t_newPokemon_msg estructuraNew;
 			estructuraNew.nombre_pokemon.nombre = argv[3];
-			estructuraNew.nombre_pokemon.nombre_lenght = strlen(estructuraNew.nombre_pokemon.nombre)+1;
+			estructuraNew.nombre_pokemon.nombre_lenght = strlen(estructuraNew.nombre_pokemon.nombre);
 			estructuraNew.coordenadas.posX = atoi(argv[4]);
 			estructuraNew.coordenadas.posY = atoi(argv[5]);
 			estructuraNew.cantidad_pokemons = atoi(argv[6]);
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 		case APPEARED_POKEMON: ;
 			t_appearedPokemon_msg estructuraAppeared;
 			estructuraAppeared.nombre_pokemon.nombre = argv[3];
-			estructuraAppeared.nombre_pokemon.nombre_lenght = strlen(estructuraAppeared.nombre_pokemon.nombre)+1;
+			estructuraAppeared.nombre_pokemon.nombre_lenght = strlen(estructuraAppeared.nombre_pokemon.nombre);
 			estructuraAppeared.coordenadas.posX = atoi(argv[4]);
 			estructuraAppeared.coordenadas.posY = atoi(argv[5]);
 			if (codigoProceso == BROKER) {
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 		case GET_POKEMON: ;
 			t_getPokemon_msg estructuraGet;
 			estructuraGet.nombre_pokemon.nombre = argv[3];
-			estructuraGet.nombre_pokemon.nombre_lenght = strlen(estructuraGet.nombre_pokemon.nombre)+1;
+			estructuraGet.nombre_pokemon.nombre_lenght = strlen(estructuraGet.nombre_pokemon.nombre);
 			if (codigoProceso == GAMECARD) {
 				idAEnviar = atoi(argv[4]);
 			}
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 		case LOCALIZED_POKEMON: ;
 			t_localizedPokemon_msg estructuraLocalized;
 			estructuraLocalized.nombre_pokemon.nombre = argv[3];
-			estructuraLocalized.nombre_pokemon.nombre_lenght = strlen(estructuraLocalized.nombre_pokemon.nombre)+1;
+			estructuraLocalized.nombre_pokemon.nombre_lenght = strlen(estructuraLocalized.nombre_pokemon.nombre);
 			estructuraLocalized.cantidad_coordenadas = atoi(argv[4]);
 			estructuraLocalized.coordenadas = malloc(sizeof(uint32_t) * estructuraLocalized.cantidad_coordenadas * 2);
 			int j = 5;
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 		case CATCH_POKEMON: ;
 			t_catchPokemon_msg estructuraCatch;
 			estructuraCatch.nombre_pokemon.nombre = argv[3];
-			estructuraCatch.nombre_pokemon.nombre_lenght = strlen(estructuraCatch.nombre_pokemon.nombre)+1;
+			estructuraCatch.nombre_pokemon.nombre_lenght = strlen(estructuraCatch.nombre_pokemon.nombre);
 			estructuraCatch.coordenadas.posX = atoi(argv[4]);
 			estructuraCatch.coordenadas.posY = atoi(argv[5]);
 			if (codigoProceso == GAMECARD) {
