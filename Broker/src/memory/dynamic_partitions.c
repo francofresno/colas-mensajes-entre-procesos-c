@@ -223,13 +223,13 @@ int get_index_of_partition_by_base(t_list* partitions, uint32_t base_partition)
 
 void* find_data_partition_by_id(uint32_t id)
 {
-	t_partition* partition = find_partition_by_id(id);
+	t_partition* partition = find_partition_by_id(OCCUPIED_PARTITIONS, id);
 	return partition != NULL ? partition->data : NULL;
 }
 
-t_partition* find_partition_by_id(uint32_t id)
+t_partition* find_partition_by_id(t_list* list, uint32_t id)
 {
-	t_link_element* element = OCCUPIED_PARTITIONS->head;
+	t_link_element* element = list->head;
 
 	if (element == NULL)
 		return NULL;

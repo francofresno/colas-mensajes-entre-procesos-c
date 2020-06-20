@@ -191,13 +191,13 @@ t_buddy* lru_find_victim_buddy()
 
 void* find_data_buddy_by_id(uint32_t id)
 {
-	t_buddy* buddy = find_buddy_by_id(id);
+	t_buddy* buddy = find_buddy_by_id(OCCUPIED_PARTITIONS, id);
 	return buddy != NULL ? buddy->data : NULL;
 }
 
-t_buddy* find_buddy_by_id(uint32_t id)
+t_buddy* find_buddy_by_id(t_list* list, uint32_t id)
 {
-	t_link_element* element = OCCUPIED_PARTITIONS->head;
+	t_link_element* element = list->head;
 
 	if (element == NULL)
 		return NULL;

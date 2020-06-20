@@ -46,12 +46,6 @@ void* memory_alloc(int size)
 	} else if (MEMORY_ALGORITHM == DYNAMIC_PARTITIONS) {
 		allocated = dp_alloc(size);
 	}
-
-	if (allocated != NULL && VICTIM_SELECTION_ALGORITHM == LRU) {
-		pthread_mutex_lock(&mutex_lru_list);
-		add_to_lru(allocated);
-		pthread_mutex_unlock(&mutex_lru_list);
-	}
 	pthread_mutex_unlock(&mutex_memory);
 
 	return allocated;
@@ -96,6 +90,39 @@ void* memory_get(uint32_t id)
 	return data;
 }
 
+int get_lru_partition_id(void* partition) {
+	if (MEMORY_ALGORITHM == BUDDY_SYSTEM) {
+		t_buddy* buddy = (t_buddy*) partition;
+		return buddy->id_data;
+	} else if (MEMORY_ALGORITHM == DYNAMIC_PARTITIONS) {
+		t_partition* partition = (t_partition*) partition;
+		return partition->id_data;
+	}
+	return -1;
+}
+
+int get_index_of_lru_partition(uint32_t id_data)
+{
+	if (lru_list->head == NULL)
+		return -1;
+
+	t_link_element *element = lru_list->head;
+	void* partition = element->data;
+
+	int index = 0;
+	while(element != NULL) {
+		int id_lru = get_lru_partition_id(partition);
+		if (id_lru == id_data)
+			return index;
+
+		element = element->next;
+		partition = element == NULL ? NULL : element->data;
+		index++;
+	}
+
+	return -1;
+}
+
 void write_dump_time_info(FILE* dump_file)
 {
   time_t now = time(NULL);
@@ -112,6 +139,8 @@ void write_partitions_info(FILE* dump_file)
 	char* queue;
 
 	int partitions_size = list_size(ALL_PARTITIONS);
+
+	pthread_mutex_lock(&mutex_lru_list);
 	for (int i=0; i < partitions_size; i++) {
 		if (MEMORY_ALGORITHM == BUDDY_SYSTEM) {
 			t_buddy* buddy = (t_buddy*) list_get(ALL_PARTITIONS, i);
@@ -121,7 +150,6 @@ void write_partitions_info(FILE* dump_file)
 			queue = op_code_a_string(buddy->queue);
 			id = buddy->id_data;
 			is_free = buddy->free;
-			lru = 0; //TODO both
 		} else if (MEMORY_ALGORITHM == DYNAMIC_PARTITIONS) {
 			t_partition* partition = (t_partition*) list_get(ALL_PARTITIONS, i);
 			base = partition->base;
@@ -130,8 +158,9 @@ void write_partitions_info(FILE* dump_file)
 			queue = op_code_a_string(partition->queue);
 			id = partition->id_data;
 			is_free = partition->free;
-			lru = 0;
 		}
+		lru = VICTIM_SELECTION_ALGORITHM == LRU ? get_index_of_lru_partition(id) : 0;
+
 		if (is_free)
 			fprintf(dump_file,"Partición %d: %d - %d.    [L]    Size: %db\n", partition_number, base, limit, size);
 		else
@@ -139,6 +168,7 @@ void write_partitions_info(FILE* dump_file)
 
 		partition_number++;
 	}
+	pthread_mutex_unlock(&mutex_lru_list);
 
 }
 
@@ -155,24 +185,6 @@ void memory_dump()
 
 	log_dump();
 	fclose(dump_file);
-}
-
-void* get_partition_by_id(t_list* partitions, uint32_t id_partition)
-{
-	int index = -1;
-
-	if (MEMORY_ALGORITHM == BUDDY_SYSTEM) {
-		index = get_index_of_buddy_by_base(partitions, id_partition);
-	} else if (MEMORY_ALGORITHM == DYNAMIC_PARTITIONS) {
-		index = get_index_of_partition_by_base(partitions, id_partition);
-	}
-
-	return index >= 0 ? list_get(partitions, index) : NULL;
-}
-
-void add_to_lru(void* partition)
-{
-	list_add(lru_list, partition);
 }
 
 void ids_message_destroyer(void* message)
@@ -196,18 +208,21 @@ void notify_message_used(uint32_t id_message)
 {
 	if (VICTIM_SELECTION_ALGORITHM == LRU) {
 		pthread_mutex_lock(&mutex_lru_list);
-		int index = -1;
 
-		if (MEMORY_ALGORITHM == BUDDY_SYSTEM) {
-			index = get_index_of_buddy_by_base(lru_list, id_message);
-		} else if (MEMORY_ALGORITHM == DYNAMIC_PARTITIONS) {
-			index = get_index_of_partition_by_base(lru_list, id_message);
-		}
-
+		void* partition = NULL;
+		int index = get_index_of_lru_partition(id_message);
 		if (index >= 0) {
-			void* partition = list_remove(lru_list, index);
-			add_to_lru(partition);
+			partition = list_remove(lru_list, index);
+		} else {
+			if (MEMORY_ALGORITHM == BUDDY_SYSTEM) {
+				partition = (void*) find_buddy_by_id(OCCUPIED_PARTITIONS, id_message);
+			} else if (MEMORY_ALGORITHM == DYNAMIC_PARTITIONS) {
+				partition = (void*) find_partition_by_id(OCCUPIED_PARTITIONS, id_message);
+			}
 		}
+
+		list_add(lru_list, partition);
+
 		pthread_mutex_unlock(&mutex_lru_list);
 	}
 }

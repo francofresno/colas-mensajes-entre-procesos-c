@@ -31,7 +31,7 @@ int get_index_of_buddy_by_base(t_list* buddies, uint32_t base_buddy);
 t_buddy* fifo_find_victim_buddy();
 t_buddy* lru_find_victim_buddy();
 void* find_data_buddy_by_id(uint32_t id);
-t_buddy* find_buddy_by_id(uint32_t id);
+t_buddy* find_buddy_by_id(t_list* list, uint32_t id);
 unsigned upper_power_of_two(unsigned size);
 int is_power_of_two(int number);
 

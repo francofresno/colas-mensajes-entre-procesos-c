@@ -138,6 +138,7 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 	t_list* suscriptores_informados = inform_subscribers(cod_op, allocated_message, id_message, id_correlative, subscribers, mutex);
 	mensaje_encolado->subscribers_informed = suscriptores_informados;
 	log_new_message(id_message, cod_op);
+	notify_message_used(id_message);
 
 	receive_multiples_ack(cod_op, id_message, suscriptores_informados);
 }
