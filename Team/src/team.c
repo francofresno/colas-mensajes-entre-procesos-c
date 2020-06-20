@@ -23,12 +23,6 @@ int main(void) {
 
 	enviarMensajeGetABroker();
 
-	int tamanioLista = list_size(id_mensajeGet);
-	for(int i=0; i<tamanioLista; i++){ //TODO test
-		uint32_t* valor_id = (uint32_t*) list_get(id_mensajeGet, i);
-		printf("El valor del id de los mensajes devueltos por broker es %d\n", *valor_id);
-	}
-
 	suscribirseAColas();
 
 	puts("Soy un team!\n");
@@ -83,7 +77,6 @@ void inicializarSemaforosYMutex(){
 	sem_init(&sem_planificar, 0, 1);
 }
 
-
 void suscribirseAppeared(){
 	suscribirseA(APPEARED_POKEMON);
 }
@@ -116,7 +109,6 @@ void suscribirseA(op_code tipo_cola){
 
 	pthread_mutex_lock(&mutex_send);
 	int socket_cliente = crear_conexion(ipBroker, puertoBroker);
-	printf("que tul socket %d\n", socket_cliente);
 	while(socket_cliente<=0){
 		sleep(TIEMPO_RECONEXION);
 		log_reintento_conexion_broker();
@@ -237,7 +229,6 @@ op_code stringACodigoOperacion(const char* string)
 	return ERROR_CODIGO;
 }
 
-
 void enviarMensajeGetABroker(){
 
 	t_list* objetivoTeamSinRepe = eliminarRepetidos();
@@ -326,8 +317,6 @@ void esperarIdCatch(int socket_cliente){
 	list_add(id_mensajeCatch,(void*) id_respuesta);
 
 }
-
-
 
 void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
 

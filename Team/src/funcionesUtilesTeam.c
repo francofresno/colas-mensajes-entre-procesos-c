@@ -27,11 +27,9 @@ void ponerEntrenadoresEnLista(t_config* config) {
 	char** coordenadasEntrenadores = config_get_array_value(config,
 			"POSICIONES_ENTRENADORES");
 
-	//t_nombrePokemon* pokemonesQuePosee = malloc(sizeof(t_nombrePokemon));
 	char** pokemonesDeEntrenadores = config_get_array_value(config,
 			"POKEMON_ENTRENADORES");
 
-	//t_nombrePokemon* pokemonesQueQuiere = malloc(sizeof(t_nombrePokemon));
 	char** pokemonesObjetivoDeEntrenadores = config_get_array_value(config,
 			"OBJETIVOS_ENTRENADORES");
 
@@ -158,19 +156,14 @@ uint32_t generar_id() {
 	return id_generado;
 }
 
-void hacerObjetivoTeam(t_list* listaPokemonesTieneEntrenadores, t_list* listaPokemonesDeseaEntrenadores){ //Siempre Despues de Usar estas Listas
+void hacerObjetivoTeam(t_list* listaMini, t_list* listaGrande){ //Siempre Despues de Usar estas Listas
 
-	 t_list* listaGrande = list_create();
-	 t_list* listaMini = list_create();
-	 objetivoTeam = list_create();
+	aplanarDobleLista(listaGrande);
+	aplanarDobleLista(listaMini);
 
-	 listaGrande = aplanarDobleLista(listaPokemonesDeseaEntrenadores);
-	 listaMini = aplanarDobleLista(listaPokemonesTieneEntrenadores);
+	objetivoTeam = list_create();
+	diferenciaYCargarLista(listaGrande, listaMini, objetivoTeam);
 
-	 diferenciaYCargarLista(listaGrande, listaMini, objetivoTeam);
-
-	 list_destroy(listaGrande);
-	 list_destroy(listaMini);
 }
 
 t_list* aplanarDobleLista(t_list* lista){
@@ -238,7 +231,7 @@ void moverAlEntrenadorHastaUnPokemon(uint32_t idEntrenador){
 	if(posicionXEntrenador!= posicionXPokemon){
 
 		if(distanciaEnX>0){
-			entrenador->coordenadas->posX = posicionXEntrenador++;
+			entrenador->coordenadas->posX = posicionXEntrenador++; //TODO FIJARNOS
 		}else if(distanciaEnX<0){
 			entrenador->coordenadas->posX = posicionXEntrenador--;
 		}
@@ -433,23 +426,20 @@ void dameTuPokemon(t_entrenador* entrenador1, t_entrenador* entrenador2){
 
 t_entrenador* elegirConQuienIntercambiar(t_entrenador* entrenador){ //TODO probar
 
-	t_list* listaQuiere1 = list_create();//TODO ELIMINAR listas
-	t_list* listaPosee1 = list_create();
-
-	listaQuiere1 = entrenador->pokemonesQueQuiere;
-	listaPosee1 = entrenador->pokemonesQuePosee;
+	t_list* listaQuiere1 = list_duplicate(entrenador->pokemonesQueQuiere);
+	t_list* listaPosee1 = list_duplicate(entrenador->pokemonesQuePosee);
 
 	t_list* leFaltanParaObj1 = list_create();
 
 	diferenciaYCargarLista(listaQuiere1, listaPosee1, leFaltanParaObj1);
 
-	t_list* listaQuiere2 = list_create();
-	t_list* listaPosee2 = list_create();
+	list_destroy(listaQuiere1);
+	list_destroy(listaPosee1);
 
 	t_list* tienePeroNoQuiere2 = list_create();
 	t_list* pokemonesDe2QueQuiere1 = list_create();
 
-	t_list* sublistasPosiblesProveedoresDePokemon = list_create(); // TODO destruirla
+	t_list* sublistasPosiblesProveedoresDePokemon = list_create();
 
 	int tamanioDeadlock = list_size(listaBloqueadosDeadlock);
 
@@ -457,64 +447,75 @@ t_entrenador* elegirConQuienIntercambiar(t_entrenador* entrenador){ //TODO proba
 
 		t_entrenador* entrenador2 = list_get(listaBloqueadosDeadlock, a);
 
-		listaQuiere2 = entrenador2->pokemonesQueQuiere;
-		listaPosee2 = entrenador2->pokemonesQuePosee;
+		t_list* listaQuiere2 = list_duplicate(entrenador2->pokemonesQueQuiere);
+		t_list* listaPosee2 = list_duplicate(entrenador2->pokemonesQuePosee);
 
 		diferenciaYCargarLista(listaPosee2, listaQuiere2, tienePeroNoQuiere2);
 
+		list_destroy(listaQuiere2);
+		list_destroy(listaPosee2);
+
 		diferenciaYCargarLista(leFaltanParaObj1, tienePeroNoQuiere2, pokemonesDe2QueQuiere1);
+
+		list_destroy(leFaltanParaObj1);
+		list_destroy(tienePeroNoQuiere2);
+
 
 		if(!list_is_empty(pokemonesDe2QueQuiere1)){
 			if(tengoAlgunPokemonQueQuiere2(entrenador, entrenador2)){
+				list_destroy(pokemonesDe2QueQuiere1);
 				return entrenador2;
 			}
-
 			list_add(sublistasPosiblesProveedoresDePokemon, entrenador2);
 		}
-		//TODO hacer clean a la lista
+
+		list_destroy(pokemonesDe2QueQuiere1);
 	}
 
-	return list_get(sublistasPosiblesProveedoresDePokemon, 0);
+	t_entrenador* entrenadorProveedor = list_get(sublistasPosiblesProveedoresDePokemon, 0);
+	list_destroy(sublistasPosiblesProveedoresDePokemon);
+	return entrenadorProveedor;
 }
 
 int tengoAlgunPokemonQueQuiere2(t_entrenador* entrenador1,t_entrenador* entrenador2){
 
-	t_list* listaQuiere1 = list_create();//TODO ELIMINAR listas
-	t_list* listaPosee1 = list_create();
-
-	listaQuiere1 = entrenador1;
-	listaPosee1 = entrenador1->pokemonesQuePosee;
+	t_list* listaQuiere1 = list_duplicate(entrenador1->pokemonesQueQuiere);
+	t_list* listaPosee1 = list_duplicate(entrenador1->pokemonesQuePosee);
 
 	t_list* tienePeroNoQuiere1 = list_create();
 
 	diferenciaYCargarLista(listaPosee1, listaQuiere1, tienePeroNoQuiere1);
 
-	t_list* listaQuiere2 = list_create();
-	t_list* listaPosee2 = list_create();
-
-
-
-	listaQuiere2 = entrenador2->pokemonesQueQuiere;
-	listaPosee2 = entrenador2->pokemonesQuePosee;
+	t_list* listaQuiere2 = list_duplicate(entrenador2->pokemonesQueQuiere);
+	t_list* listaPosee2 = list_duplicate(entrenador2->pokemonesQuePosee);
 
 	t_list* leFaltanParaObj2 = list_create();
 
 	diferenciaYCargarLista(listaQuiere2, listaPosee2, leFaltanParaObj2);
 
-
 	int tamanioFaltaParaObj2 = list_size(leFaltanParaObj2);
 	int tamanioTienePeroNoQuiere1 = list_size(tienePeroNoQuiere1);
+
+	list_destroy(listaQuiere1);
+	list_destroy(listaPosee1);
+	list_destroy(listaQuiere2);
+	list_destroy(listaPosee2);
 
 	for(int a=0; a< tamanioFaltaParaObj2; a++){
 
 		for(int b=0; b<tamanioTienePeroNoQuiere1; b++){
 
 			if(sonIguales(list_get(leFaltanParaObj2, a), list_get(tienePeroNoQuiere1, b))){
+				list_destroy(leFaltanParaObj2);
+				list_destroy(tienePeroNoQuiere1);
 				return true;
 			}
 		}
 
 	}
+
+	list_destroy(leFaltanParaObj2);
+	list_destroy(tienePeroNoQuiere1);
 
 	return false;
 }

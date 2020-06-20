@@ -125,14 +125,14 @@ int distanciaA(t_coordenadas* desde, t_coordenadas* hasta){
 
 int tieneTodoLoQueQuiere(t_entrenador* entrenador){
 
-	t_list* listaTodoLoQueQuiere = list_create();
-	t_list* listaTodoLoQuePosee = list_create();
+	t_list* listaTodoLoQueQuiere = list_duplicate(entrenador->pokemonesQueQuiere);
+	t_list* listaTodoLoQuePosee = list_duplicate(entrenador->pokemonesQuePosee);
 	t_list* diferencia = list_create();
 
-	listaTodoLoQueQuiere = entrenador->pokemonesQueQuiere;
-	listaTodoLoQuePosee =  entrenador->pokemonesQuePosee;
-
 	diferenciaYCargarLista(listaTodoLoQueQuiere, listaTodoLoQuePosee, diferencia);
+
+	list_destroy(listaTodoLoQueQuiere);
+	list_destroy(listaTodoLoQuePosee);
 
 	return list_is_empty(diferencia);
 
