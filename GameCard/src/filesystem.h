@@ -20,6 +20,8 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 // INCLUDES LOCALES
 #include "nuestras-commons/conexion.h"
 #include "nuestras-commons/mensajes.h"
@@ -31,6 +33,9 @@ char* obtenerRutaTotal(char*);
 void configuracionInicial(void);
 void verificarDirectorio(char*);
 void verificarBitmap(char* pathActual, t_config* config);
+void verificarBloques(char* pathDirectorio);
+char* verificarPokemon(t_nombrePokemon nombrePokemon);
+void testearConfig(t_config* config);
 
 
 #endif /* FILESYSTEM_H_ */
