@@ -34,8 +34,13 @@ void configuracionInicial(void);
 void verificarDirectorio(char*);
 void verificarBitmap(char* pathActual, t_config* config);
 void verificarBloques(char* pathDirectorio);
-char* verificarPokemon(t_nombrePokemon nombrePokemon);
-void testearConfig(t_config* config);
+char* verificarPokemon(t_nombrePokemon);
+char* asignarBloque(t_config*);
+void probarAsignacion();
+char* armarArrayDeBloques(char**, int);
+char* verificarBloque(char*);
+char* obtenerRutaBloque(int numeroBloque);
+bool sePuedeEscribirElUltimoBloque(int sizeArchivos);
 
 
 #endif /* FILESYSTEM_H_ */
