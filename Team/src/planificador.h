@@ -48,6 +48,7 @@ t_list* objetivoTeam;
 //semaforos
 t_list* sem_entrenadores_ejecutar;
 sem_t sem_planificar;
+extern pthread_mutex_t mutex_atrapados;
 
 typedef enum{
 	NEW = 1,

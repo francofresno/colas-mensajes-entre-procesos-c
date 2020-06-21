@@ -7,6 +7,7 @@
 
 #include "planificador.h"
 
+pthread_mutex_t mutex_atrapados = PTHREAD_MUTEX_INITIALIZER;
 
 void planificarSegun() {
 
@@ -56,15 +57,15 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 	int tamanio = list_size(listaReady);
 	int distancia;
 
-	for (int b = 0; b < tamanio; b++) {
+	for (int i = 0; i < tamanio; i++) {
 
-		t_entrenador* entrenador = (t_entrenador*) list_get(listaReady, b);
+		t_entrenador* entrenador = (t_entrenador*) list_get(listaReady, i);
 		entrenador->estado=EXEC;
 
-		sem_wait(&sem_planificar); //inicializa en?
+		sem_wait(&sem_planificar);
+		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 		do{
 			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 			sem_post(semaforoDelEntrenador);//TODO hacer impide que otro entrenador ejecute a la par
 		}while(distancia !=0);
 		sem_post(&sem_planificar);
@@ -73,7 +74,9 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 
 		list_add(entrenador->pokemonesQuePosee, (void*) entrenador->pokemonInstantaneo);
 		entrenador->cantidad_pokemons++;
-		list_add(atrapados,(void*) entrenador->pokemonInstantaneo); //TODO semaforo lista global
+		pthread_mutex_lock(&mutex_atrapados);
+		list_add(atrapados,(void*) entrenador->pokemonInstantaneo);
+		pthread_mutex_unlock(&mutex_atrapados);
 
 		if(entrenador->cantidad_pokemons == list_size(entrenador->pokemonesQueQuiere)){
 			if(tieneTodoLoQueQuiere(entrenador)){
@@ -103,16 +106,6 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 		}
 	}
 
-}
-
-algoritmo_code stringACodigoAlgoritmo(const char* string) {
-	for (int i = 0;
-			i < sizeof(conversionAlgoritmo) / sizeof(conversionAlgoritmo[0]);
-			i++) {
-		if (!strcmp(string, conversionAlgoritmo[i].str))
-			return conversionAlgoritmo[i].codigo_algoritmo;
-	}
-	return ERROR_CODIGO_ALGORITMO;
 }
 
 int distanciaA(t_coordenadas* desde, t_coordenadas* hasta){
@@ -162,6 +155,16 @@ void diferenciaYCargarLista(t_list* listaA, t_list* listaB, t_list* listaACargar
 
 int sonIguales(t_nombrePokemon* pokemon1, t_nombrePokemon* pokemon2){
 	return strcmp(pokemon1->nombre, pokemon2->nombre) == 0;
+}
+
+algoritmo_code stringACodigoAlgoritmo(const char* string) {
+	for (int i = 0;
+			i < sizeof(conversionAlgoritmo) / sizeof(conversionAlgoritmo[0]);
+			i++) {
+		if (!strcmp(string, conversionAlgoritmo[i].str))
+			return conversionAlgoritmo[i].codigo_algoritmo;
+	}
+	return ERROR_CODIGO_ALGORITMO;
 }
 
 void inicializarListasDeEstados(){

@@ -20,7 +20,6 @@ int main(void) {
 	ponerEntrenadoresEnLista(config);
 	crearHilosEntrenadores(); //TODO fijarnos si anda.
 
-
 	enviarMensajeGetABroker();
 
 	suscribirseAColas();
@@ -235,12 +234,12 @@ void enviarMensajeGetABroker(){
 
 	int tamanioObjTeamSinRepetidos = list_size(objetivoTeamSinRepe);
 
-
 	for(int a=0; a< tamanioObjTeamSinRepetidos ; a++){
 		t_nombrePokemon* pokemon = (t_nombrePokemon*) list_get(objetivoTeamSinRepe, a);
 		enviarMensajeGet(pokemon);
 	}
 
+	list_destroy(objetivoTeamSinRepe);
 }
 
 t_list* eliminarRepetidos(){
