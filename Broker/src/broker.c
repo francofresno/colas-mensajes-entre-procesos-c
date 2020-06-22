@@ -125,9 +125,7 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 	t_list* ids_messages_deleted = get_victim_messages_ids(&ids_count);
 
 	if (ids_count > 0) {
-		//pthread_mutex_lock(&mutex); TODO MUTEX A LAS COSAS QUE SE ELIMINAN MENSAJES
 		remove_messages_by_id(ids_messages_deleted, ids_count);
-		//pthread_mutex_unlock(&mutex);
 		notify_all_victim_messages_deleted();
 	}
 	pthread_mutex_unlock(&mutex_deleted_messages_ids);
@@ -296,7 +294,10 @@ void remove_messages_by_id(t_list* ids_messages_deleted, int ids_count)
 		uint32_t id = *(msg_d->id);
 		op_code code = *(msg_d->queue);
 		t_queue* queue = COLAS_MENSAJES[code];
+		pthread_mutex_t mutex = MUTEX_COLAS[code];
+		pthread_mutex_lock(&mutex);
 		remove_message_by_id(queue, id);
+		pthread_mutex_unlock(&mutex);
 	}
 }
 

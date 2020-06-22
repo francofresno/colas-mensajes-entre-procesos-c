@@ -108,7 +108,7 @@ int get_index_of_lru_partition(uint32_t id_data)
 	for (int i=0; i < lru_size; i++) {
 		uint32_t id_lru = get_lru_partition_id(i);
 		if (id_lru == id_data)
-			return index;
+			return i;
 	}
 
 	return -1;
