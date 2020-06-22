@@ -34,6 +34,12 @@ typedef enum {
 	NONE
 } t_selection_algorithm;
 
+typedef struct
+{
+	uint32_t* id;
+	op_code* queue;
+} t_message_deleted;
+
 // Constantes
 void* MEMORY;
 int MEMORY_SIZE;

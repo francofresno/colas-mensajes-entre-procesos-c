@@ -15,7 +15,7 @@ typedef struct
 {
 	uint32_t id_data;
 	void* data;
-	int free;
+	int is_free;
 	int base;
 	int size;
 	op_code queue;

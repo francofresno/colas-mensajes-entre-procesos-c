@@ -15,7 +15,7 @@ void dp_init()
 	t_partition* initial_partition = malloc(sizeof(*initial_partition));
 	initial_partition->id_data = 0;
 	initial_partition->data = NULL;
-	initial_partition->free = 1;
+	initial_partition->is_free = 1;
 	initial_partition->base = 0;
 	initial_partition->size = MEMORY_SIZE;
 
@@ -33,18 +33,25 @@ void* dp_alloc(int size)
 		compact_memory();
 		partition = choose_victim_partition();
 		if (partition != NULL) {
-			partition->free = 1;
+			partition->is_free = 1;
 			partition->data = NULL;
 
 			uint32_t* id_to_delete = malloc(sizeof(*id_to_delete));
+			op_code* queue_deleted_msg = malloc(sizeof(*queue_deleted_msg));
 			*id_to_delete = partition->id_data;
+			*queue_deleted_msg = partition->queue;
+			t_message_deleted* message_deleted = malloc(sizeof(*message_deleted));
+			message_deleted->id = id_to_delete;
+			message_deleted->queue = queue_deleted_msg;
 			pthread_mutex_lock(&mutex_deleted_messages_ids);
-			list_add(deleted_messages_ids, (void*) id_to_delete);
+			list_add(deleted_messages_ids, (void*) message_deleted);
 			pthread_mutex_unlock(&mutex_deleted_messages_ids);
 
 			log_deleted_partition(partition->base);
 
 			index_of_victim = list_add(FREE_PARTITIONS, (void*) partition);
+
+			consolidate_free_partitions(partition, &index_of_victim);
 		}
 	}
 
@@ -52,14 +59,54 @@ void* dp_alloc(int size)
 		adjust_partition_size(partition, size);
 	}
 
-	partition->free = 0;
+	partition->is_free = 0;
 	list_add(OCCUPIED_PARTITIONS, (void*) partition);
 	if (index_of_victim >= 0)
-		list_remove(FREE_PARTITIONS, get_index_of_partition_by_base(FREE_PARTITIONS, partition->base));
+		list_remove(FREE_PARTITIONS, get_index_of_partition_by_base(FREE_PARTITIONS, partition->base)); //TODO SACAR ESTO, ES VICTIM INDEX
 
 	SEARCH_FAILURE_COUNTER = 0;
 
 	return (void*) partition;
+}
+
+void consolidate_free_partitions(t_partition* new_free_partition, int* index_free)
+{
+	int index_all = get_index_of_partition_by_base(ALL_PARTITIONS, new_free_partition->base);
+
+	int previous_index = index_all - 1;
+	t_partition* previous_partition = list_get(ALL_PARTITIONS, previous_index);
+	while (previous_partition != NULL && previous_partition->is_free) {
+
+		new_free_partition->size += previous_partition->size;
+		new_free_partition->base = previous_partition->base;
+
+		list_remove(FREE_PARTITIONS, *index_free);
+		list_replace(FREE_PARTITIONS, get_index_of_partition_by_base(FREE_PARTITIONS, previous_partition->base), (void*) new_free_partition);
+		list_remove(ALL_PARTITIONS, index_all);
+		list_replace(ALL_PARTITIONS, previous_index, (void*) new_free_partition);
+
+		free(previous_partition);
+		index_all = previous_index;
+		previous_index--;
+		previous_partition = list_get(ALL_PARTITIONS, previous_index);
+	}
+
+	int next_index = index_all + 1;
+	t_partition* next_partition = list_get(ALL_PARTITIONS, next_index);
+	while (next_partition != NULL && next_partition->is_free) {
+
+		new_free_partition->size += next_partition->size;
+
+		list_remove(FREE_PARTITIONS, get_index_of_partition_by_base(FREE_PARTITIONS, next_partition->base));
+		list_remove(ALL_PARTITIONS, next_index);
+
+		free(next_partition);
+		index_all = next_index;
+		next_index++;
+		next_partition = list_get(ALL_PARTITIONS, next_index);
+	}
+
+	*index_free = get_index_of_partition_by_base(FREE_PARTITIONS, new_free_partition->base);
 }
 
 void adjust_partition_size(t_partition* partition, int size)
@@ -67,7 +114,7 @@ void adjust_partition_size(t_partition* partition, int size)
 	t_partition* new_partition = malloc(sizeof(*new_partition));
 	new_partition->data = NULL;
 	new_partition->id_data = 0;
-	new_partition->free = 1;
+	new_partition->is_free = 1;
 
 	if (size <= MIN_PARTITION_SIZE) {
 		new_partition->size = partition->size - MIN_PARTITION_SIZE;
@@ -134,7 +181,7 @@ void compact_free_list(int previous_base, int previous_size, int free_list_size)
 	t_partition* compacted_partition = malloc(sizeof(*compacted_partition));
 	compacted_partition->data = NULL;
 	compacted_partition->id_data = 0;
-	compacted_partition->free = 1;
+	compacted_partition->is_free = 1;
 	compacted_partition->base = previous_base + previous_size;
 
 	for (int i=0; i < free_list_size; i++) {

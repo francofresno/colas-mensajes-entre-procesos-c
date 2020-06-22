@@ -149,7 +149,7 @@ void write_partitions_info(FILE* dump_file)
 			limit = base + size;
 			queue = op_code_a_string(buddy->queue);
 			id = buddy->id_data;
-			is_free = buddy->free;
+			is_free = buddy->is_free;
 		} else if (MEMORY_ALGORITHM == DYNAMIC_PARTITIONS) {
 			t_partition* partition = (t_partition*) list_get(ALL_PARTITIONS, i);
 			base = partition->base;
@@ -157,7 +157,7 @@ void write_partitions_info(FILE* dump_file)
 			limit = base + size;
 			queue = op_code_a_string(partition->queue);
 			id = partition->id_data;
-			is_free = partition->free;
+			is_free = partition->is_free;
 		}
 		lru = VICTIM_SELECTION_ALGORITHM == LRU ? get_index_of_lru_partition(id) : 0;
 
@@ -189,8 +189,10 @@ void memory_dump()
 
 void ids_message_destroyer(void* message)
 {
-	uint32_t* message_enqueue = (uint32_t*) message;
-	free(message_enqueue);
+	t_message_deleted* message_deleted = (t_message_deleted*) message;
+	free(message_deleted->id);
+	free(message_deleted->queue);
+	free(message_deleted);
 }
 
 t_list* get_victim_messages_ids(int* element_count)

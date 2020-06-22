@@ -126,7 +126,7 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 
 	if (ids_count > 0) {
 		pthread_mutex_lock(&mutex);
-		remove_messages_by_id(queue, ids_messages_deleted, ids_count);
+		remove_messages_by_id(ids_messages_deleted, ids_count);
 		pthread_mutex_unlock(&mutex);
 		notify_all_victim_messages_deleted();
 	}
@@ -284,6 +284,19 @@ void receive_ack(t_list* mensajes_encolados, uint32_t cantidad_mensajes, t_subsc
 
 	if(status > 0 && response_status == 200) {
 		add_new_ack_suscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber);
+	}
+}
+
+void remove_messages_by_id(t_list* ids_messages_deleted, int ids_count)
+{
+	for (int i=0; i < ids_count; i++) {
+
+		t_message_deleted* msg_d = (t_message_deleted*) list_get(ids_messages_deleted, i);
+
+		uint32_t id = *(msg_d->id);
+		op_code code = *(msg_d->queue);
+		t_queue* queue = COLAS_MENSAJES[code];
+		remove_message_by_id(queue, id);
 	}
 }
 
