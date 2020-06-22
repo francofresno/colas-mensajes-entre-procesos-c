@@ -7,13 +7,6 @@ int BLOCK_SIZE;
 
 t_bitarray* bitarray;
 
-char* obtenerRutaTotal(char* path)
-{
-	char* pathTotal = string_new();
-	string_append_with_format(&pathTotal, "%s/%s", PUNTO_MONTAJE, path);
-	return pathTotal;
-}
-
 void configuracionInicial(void)
 {
 	verificarDirectorio(PUNTO_MONTAJE);
@@ -112,44 +105,142 @@ char* verificarPokemon(t_nombrePokemon nombrePokemon)
 {
 	char* pathActual = obtenerRutaTotal("/Files/");
 	string_append(&pathActual, nombrePokemon.nombre);
-	FILE* archivoActual = fopen(pathActual, "rb");
-	if(!archivoActual)
-		archivoActual = fopen(pathActual, "wb");
-	fclose(archivoActual);
+	verificarDirectorio(pathActual);
 	return pathActual;
 }
 
-/******************************************
- **Funciones de modificación de archivos***
- ******************************************/
-
-void modificarMetadataPokemon(char* pathDirectorio)
+void verificarMetadataPokemon(char* pathMetadata)
 {
-	char* pathMetadata = pathDirectorio;
-	string_append(&pathMetadata, "/Metadata.bin");
-
 	FILE* archivoActual = fopen(pathMetadata, "rb");
 	if(!archivoActual)
 	{
 		archivoActual = fopen(pathMetadata, "wb");
 		t_config* config = config_create(pathMetadata);
 		config_set_value(config, "DIRECTORY", "N");
-		asignarBloque();
-		//		config_set_value(config, "SIZE", size);
-		//		config_set_value(config, "BLOCKS", bloques);
+		config_set_value(config, "BLOCKS", "[]");
+		config_set_value(config, "SIZE", "0");
+		config_set_value(config, "OPEN", "N");
+		config_save(config);
+		config_destroy(config);
 	}
 }
-char** asignarBloque()
+
+char* verificarBloque(char* pathMetadata)
 {
-	for(int i = 0; i < BLOCKS; i++)
+	t_config* config = config_create(pathMetadata);
+
+//	config_set_value(config, "OPEN", "Y");
+//	config_save(config);
+
+	char** bloquesAsignados = config_get_array_value(config, "BLOCKS");
+
+	int sizeArchivos = config_get_int_value(config, "SIZE");
+
+//	config_set_value(config, "OPEN", "N");
+//	config_save(config);
+
+	int i = 0;
+	while(bloquesAsignados[i])
+	{
+		i++;
+	}
+
+	if(sePuedeEscribirElUltimoBloque(sizeArchivos))
+		return obtenerRutaBloque(i+1);
+	else
+		return asignarBloque(config);
+}
+/******************************************
+ **Funciones de modificación de archivos***
+ ******************************************/
+
+char* asignarBloque(t_config* config)
+{
+	char* path = NULL;
+	for(int i = 0; path == NULL && i < BLOCKS; i++)
 	{
 		if(!bitarray_test_bit(bitarray, i))
 		{
 			bitarray_set_bit(bitarray, i);
 
+//			config_set_value(config, "OPEN", "Y");
+//			config_save(config);
+
+			char** bloquesAsignados = config_get_array_value(config, "BLOCKS");
+
+//			config_set_value(config, "OPEN", "N");
+//			config_save(config);
+
+			char* bloquesAsignadosComoArray = armarArrayDeBloques(bloquesAsignados, i+1);
+
+			path = obtenerRutaBloque(i+1);
+
+			config_set_value(config, "BLOCKS", bloquesAsignadosComoArray);
+			config_save(config);
+
+			free(bloquesAsignadosComoArray);
 		}
 	}
+	return path;
 }
+
+void probarAsignacion()
+{
+	t_newPokemon_msg estructuraNew;
+	estructuraNew.nombre_pokemon.nombre = "Pikachu";
+	estructuraNew.nombre_pokemon.nombre_lenght = strlen(estructuraNew.nombre_pokemon.nombre);
+	estructuraNew.coordenadas.posX = 1;
+	estructuraNew.coordenadas.posY = 2;
+	estructuraNew.cantidad_pokemons = 2;
+
+	char* pathDirectorioPokemon = verificarPokemon(estructuraNew.nombre_pokemon);
+	string_append(&pathDirectorioPokemon, "/Metadata.bin");
+	verificarMetadataPokemon(pathDirectorioPokemon);
+	verificarBloque(pathDirectorioPokemon);
+}
+
+char* armarArrayDeBloques(char** arrayOriginal, int numeroBloque)
+{
+	int j = 0;
+	char* bloquesAsignadosComoArray = string_new();
+	string_append(&bloquesAsignadosComoArray, "[");
+	while(arrayOriginal[j])
+	{
+		string_append_with_format(&bloquesAsignadosComoArray, "%s,", arrayOriginal[j]);
+		j++;
+	}
+	string_append_with_format(&bloquesAsignadosComoArray, "%d]", numeroBloque);
+	return bloquesAsignadosComoArray;
+}
+/*******************************************
+ ******Funciones de obtención de rutas******
+ ******************************************/
+char* obtenerRutaTotal(char* path)
+{
+	char* pathTotal = string_new();
+	string_append_with_format(&pathTotal, "%s/%s", PUNTO_MONTAJE, path);
+	return pathTotal;
+}
+
+char* obtenerRutaBloque(int numeroBloque)
+{
+	char* path = obtenerRutaTotal("Blocks");
+	char* bloqueAsignado = malloc(7);
+	sprintf(bloqueAsignado, "/%d.bin", numeroBloque);
+	string_append(&path, bloqueAsignado);
+	free(bloqueAsignado);
+	return path;
+}
+
+/*******************************************
+ *************Funciones boolean*************
+ ******************************************/
+
+bool sePuedeEscribirElUltimoBloque(int sizeArchivos)
+{
+	return sizeArchivos%64 != 0;
+}
+
 
 
 
