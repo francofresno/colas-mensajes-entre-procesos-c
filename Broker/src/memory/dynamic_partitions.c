@@ -232,6 +232,12 @@ void sort_memory_by_base()
 void compact_memory()
 {
 	SEARCH_FAILURE_COUNTER++;
+
+	int occ_size = list_size(OCCUPIED_PARTITIONS);
+	if (COMPACTION_FREQUENCY == -1 && occ_size == 0)
+		SEARCH_FAILURE_COUNTER = COMPACTION_FREQUENCY;
+
+
 	if (SEARCH_FAILURE_COUNTER == COMPACTION_FREQUENCY) {
 		int free_list_size = list_size(FREE_PARTITIONS);
 		if (free_list_size > 1) {
