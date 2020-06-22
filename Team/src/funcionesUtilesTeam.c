@@ -220,17 +220,17 @@ void moverAlEntrenadorHastaUnPokemon(uint32_t idEntrenador){
 	if (posicionXEntrenador != posicionXPokemon) {
 
 		if (distanciaEnX > 0) {
-			entrenador->coordenadas->posX = posicionXEntrenador++;
+			entrenador->coordenadas->posX = posicionXEntrenador + 1;
 		} else if (distanciaEnX < 0) {
-			entrenador->coordenadas->posX = posicionXEntrenador--;
+			entrenador->coordenadas->posX = posicionXEntrenador - 1;
 		}
 
 	} else if (posicionYEntrenador != posicionYPokemon) {
 
 		if (distanciaEnY > 0) {
-			entrenador->coordenadas->posY = posicionYEntrenador++;
+			entrenador->coordenadas->posY = posicionYEntrenador + 1;
 		} else if (distanciaEnX < 0) {
-			entrenador->coordenadas->posY = posicionYEntrenador--;
+			entrenador->coordenadas->posY = posicionYEntrenador - 1;
 		}
 
 	}
