@@ -90,34 +90,25 @@ void* memory_get(uint32_t id)
 	return data;
 }
 
-int get_lru_partition_id(void* partition) {
+uint32_t get_lru_partition_id(int index) {
 	if (MEMORY_ALGORITHM == BUDDY_SYSTEM) {
-		t_buddy* buddy = (t_buddy*) partition;
-		return buddy->id_data;
+		t_buddy* buddy = list_get(lru_list, index);
+		return buddy != NULL ? buddy->id_data : -1;
 	} else if (MEMORY_ALGORITHM == DYNAMIC_PARTITIONS) {
-		t_partition* partition = (t_partition*) partition;
-		return partition->id_data;
+		t_partition* partition = list_get(lru_list, index);
+		return partition != NULL ? partition->id_data : -1;
 	}
 	return -1;
 }
 
 int get_index_of_lru_partition(uint32_t id_data)
 {
-	if (lru_list->head == NULL)
-		return -1;
+	int lru_size = list_size(lru_list);
 
-	t_link_element *element = lru_list->head;
-	void* partition = element->data;
-
-	int index = 0;
-	while(element != NULL) {
-		int id_lru = get_lru_partition_id(partition);
+	for (int i=0; i < lru_size; i++) {
+		uint32_t id_lru = get_lru_partition_id(i);
 		if (id_lru == id_data)
 			return index;
-
-		element = element->next;
-		partition = element == NULL ? NULL : element->data;
-		index++;
 	}
 
 	return -1;

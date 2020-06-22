@@ -62,7 +62,7 @@ void* dp_alloc(int size)
 	partition->is_free = 0;
 	list_add(OCCUPIED_PARTITIONS, (void*) partition);
 	if (index_of_victim >= 0)
-		list_remove(FREE_PARTITIONS, get_index_of_partition_by_base(FREE_PARTITIONS, partition->base)); //TODO SACAR ESTO, ES VICTIM INDEX
+		list_remove(FREE_PARTITIONS, index_of_victim);
 
 	SEARCH_FAILURE_COUNTER = 0;
 

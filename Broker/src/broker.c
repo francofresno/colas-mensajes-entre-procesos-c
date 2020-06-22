@@ -125,9 +125,9 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 	t_list* ids_messages_deleted = get_victim_messages_ids(&ids_count);
 
 	if (ids_count > 0) {
-		pthread_mutex_lock(&mutex);
+		//pthread_mutex_lock(&mutex); TODO MUTEX A LAS COSAS QUE SE ELIMINAN MENSAJES
 		remove_messages_by_id(ids_messages_deleted, ids_count);
-		pthread_mutex_unlock(&mutex);
+		//pthread_mutex_unlock(&mutex);
 		notify_all_victim_messages_deleted();
 	}
 	pthread_mutex_unlock(&mutex_deleted_messages_ids);
