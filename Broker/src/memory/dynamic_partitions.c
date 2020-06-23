@@ -217,13 +217,6 @@ void sort_all_partitions_by_base()
 
 void sort_memory_by_base()
 {
-	int backup_size = 0;
-	void get_backup_size(void* element) {
-		t_partition* partition = (t_partition*) element;
-		backup_size += partition->size;
-	}
-	list_iterate(OCCUPIED_PARTITIONS, get_backup_size);
-
 	void* copy_target;
 	void memcpy_to_target(void* element) {
 		t_partition* partition = (t_partition*) element;
@@ -231,7 +224,7 @@ void sort_memory_by_base()
 		partition->data = data;
 	}
 
-	void* backup_memory = malloc(backup_size);
+	void* backup_memory = malloc(MEMORY_SIZE);
 	copy_target = backup_memory;
 	list_iterate(OCCUPIED_PARTITIONS, memcpy_to_target);
 

@@ -109,7 +109,6 @@ void associate_buddies(t_buddy* buddy)
 {
 	t_buddy* my_buddy = find_my_buddy(buddy);
 	while (my_buddy != NULL && my_buddy->is_free && my_buddy->size == buddy->size && my_buddy->base != buddy->base) {
-
 		int index = get_index_of_buddy_by_base(FREE_PARTITIONS, buddy->base);
 		int my_buddy_index = get_index_of_buddy_by_base(FREE_PARTITIONS, my_buddy->base);
 		if (index > my_buddy_index) {
@@ -121,6 +120,8 @@ void associate_buddies(t_buddy* buddy)
 			list_replace(ALL_PARTITIONS, get_index_of_buddy_by_base(ALL_PARTITIONS, my_buddy->base), (void*) buddy);
 
 			buddy->base = my_buddy->base;
+			void* data = memcpy(MEMORY + buddy->base, buddy->data, buddy->size);
+			buddy->data = data;
 		} else {
 			log_buddy_association(buddy->base, my_buddy->base);
 			list_remove(FREE_PARTITIONS, my_buddy_index);
