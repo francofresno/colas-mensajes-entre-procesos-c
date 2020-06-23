@@ -13,7 +13,7 @@ void buddy_init()
 	t_buddy* initial_buddy = malloc(sizeof(*initial_buddy));
 	initial_buddy->id_data = 0;
 	initial_buddy->data = NULL;
-	initial_buddy->free = 1;
+	initial_buddy->is_free = 1;
 	initial_buddy->base = 0;
 	initial_buddy->size = MEMORY_SIZE;
 
@@ -31,13 +31,18 @@ void* buddy_alloc(int size)
 	while (buddy == NULL || buddy->size < size) {
 		buddy = choose_victim_buddy();
 		if (buddy != NULL) {
-			buddy->free = 1;
+			buddy->is_free = 1;
 			buddy->data = NULL;
 
 			uint32_t* id_to_delete = malloc(sizeof(*id_to_delete));
+			op_code* queue_deleted_msg = malloc(sizeof(*queue_deleted_msg));
 			*id_to_delete = buddy->id_data;
+			*queue_deleted_msg = buddy->queue;
+			t_message_deleted* message_deleted = malloc(sizeof(*message_deleted));
+			message_deleted->id = id_to_delete;
+			message_deleted->queue = queue_deleted_msg;
 			pthread_mutex_lock(&mutex_deleted_messages_ids);
-			list_add(deleted_messages_ids, (void*) id_to_delete);
+			list_add(deleted_messages_ids, (void*) message_deleted);
 			pthread_mutex_unlock(&mutex_deleted_messages_ids);
 
 			associate_buddies(buddy);
@@ -48,7 +53,7 @@ void* buddy_alloc(int size)
 		create_buddies(buddy, size);
 	}
 
-	buddy->free = 0;
+	buddy->is_free = 0;
 	list_remove(FREE_PARTITIONS, get_index_of_buddy_by_base(FREE_PARTITIONS, buddy->base));
 	list_add(OCCUPIED_PARTITIONS, (void*) buddy);
 
@@ -67,7 +72,7 @@ void create_buddies(t_buddy* buddy, int size)
 		t_buddy* new_buddy = malloc(sizeof(*new_buddy));
 		new_buddy->id_data = 0;
 		new_buddy->data = NULL;
-		new_buddy->free = 1;
+		new_buddy->is_free = 1;
 		new_buddy->size = buddy_size;
 		new_buddy->base = buddy_base + buddy_size;
 
@@ -103,7 +108,7 @@ t_buddy* find_my_buddy(t_buddy* buddy)
 void associate_buddies(t_buddy* buddy)
 {
 	t_buddy* my_buddy = find_my_buddy(buddy);
-	while (my_buddy != NULL && my_buddy->free == 1 && my_buddy->size == buddy->size && my_buddy->base != buddy->base) {
+	while (my_buddy != NULL && my_buddy->is_free && my_buddy->size == buddy->size && my_buddy->base != buddy->base) {
 
 		int index = get_index_of_buddy_by_base(FREE_PARTITIONS, buddy->base);
 		int my_buddy_index = get_index_of_buddy_by_base(FREE_PARTITIONS, my_buddy->base);
@@ -191,13 +196,13 @@ t_buddy* lru_find_victim_buddy()
 
 void* find_data_buddy_by_id(uint32_t id)
 {
-	t_buddy* buddy = find_buddy_by_id(id);
+	t_buddy* buddy = find_buddy_by_id(OCCUPIED_PARTITIONS, id);
 	return buddy != NULL ? buddy->data : NULL;
 }
 
-t_buddy* find_buddy_by_id(uint32_t id)
+t_buddy* find_buddy_by_id(t_list* list, uint32_t id)
 {
-	t_link_element* element = OCCUPIED_PARTITIONS->head;
+	t_link_element* element = list->head;
 
 	if (element == NULL)
 		return NULL;
