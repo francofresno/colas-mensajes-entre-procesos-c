@@ -11,30 +11,28 @@
 char* ip;
 char* puerto;
 int tiempoReconexion;
-t_config* config;
 t_log* logger;
 
 int main(void) {
 
-	config = setear_config();
+	configGeneral = setear_config();
 	logger = log_create(GAMECARD_LOG, "gamecard.log", false, LOG_LEVEL_INFO);
-	PUNTO_MONTAJE = config_get_string_value(config, "PUNTO_MONTAJE_TALLGRASS");
+	PUNTO_MONTAJE = config_get_string_value(configGeneral, "PUNTO_MONTAJE_TALLGRASS");
 
-	configuracionInicial();
-	probarAsignacion();
+	probarAsignaciones();
 
 	t_suscripcion_msg datosHiloNP;
-	datosHiloNP.id_proceso = config_get_int_value(config, "ID_HILO_NP");
+	datosHiloNP.id_proceso = config_get_int_value(configGeneral, "ID_HILO_NP");
 	datosHiloNP.tipo_cola = NEW_POKEMON;
 	datosHiloNP.temporal = 0;
 
 	t_suscripcion_msg datosHiloGP;
-	datosHiloGP.id_proceso = config_get_int_value(config, "ID_HILO_GP");
+	datosHiloGP.id_proceso = config_get_int_value(configGeneral, "ID_HILO_GP");
 	datosHiloGP.tipo_cola = GET_POKEMON;
 	datosHiloGP.temporal = 0;
 
 	t_suscripcion_msg datosHiloCP;
-	datosHiloCP.id_proceso = config_get_int_value(config, "ID_HILO_CP");
+	datosHiloCP.id_proceso = config_get_int_value(configGeneral, "ID_HILO_CP");
 	datosHiloCP.tipo_cola = CATCH_POKEMON;
 	datosHiloCP.temporal = 0;
 
@@ -47,7 +45,7 @@ int main(void) {
 	pthread_join(threadGetPokemon, NULL);
 	pthread_join(threadCatchPokemon, NULL);
 
-	config_destroy(config);
+	config_destroy(configGeneral);
 	return EXIT_SUCCESS;
 }
 
@@ -183,8 +181,8 @@ void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
 
 void esperarMensajes(void)
 {
-	char* ipLocal = config_get_string_value(config, "IP_GAMECARD");
-	char* puertoLocal = config_get_string_value(config, "PUERTO_GAMECARD");
+	char* ipLocal = config_get_string_value(configGeneral, "IP_GAMECARD");
+	char* puertoLocal = config_get_string_value(configGeneral, "PUERTO_GAMECARD");
 	int socket_servidor = iniciar_servidor(ipLocal, puertoLocal);
 	while(1) {
 		printf("Esperando cliente...\n");

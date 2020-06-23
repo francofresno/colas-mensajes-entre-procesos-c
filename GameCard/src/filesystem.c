@@ -3,8 +3,6 @@
 char* directoriosACrear[] = {"Metadata", "Files", "Blocks"};
 int BLOCKS;
 int BLOCK_SIZE;
-
-
 t_bitarray* bitarray;
 
 void configuracionInicial(void)
@@ -14,99 +12,105 @@ void configuracionInicial(void)
 	for(int i = 0; i < sizeof(directoriosACrear)/sizeof(char*); i++)
 	{
 		verificarDirectorio(obtenerRutaTotal(directoriosACrear[i]));
-		verificarMetadata(directoriosACrear[i]);
+		verificarMetadata(obtenerRutaTotal(directoriosACrear[i]));
 	}
 }
 
-/******************************************
- **Funciones de verificación de archivos***
- ******************************************/
+/****************************************************
+ **Funciones de verificación de archivos iniciales***
+ ****************************************************/
 
-void verificarDirectorio(char* path)
+void verificarMetadata(char* pathDirectorio)
 {
-	DIR* directorioActual = opendir(path);
+	char* pathMetadata = string_from_format("%s/Metadata.bin", pathDirectorio);
+	FILE* archivoMetadata = fopen(pathMetadata, "rb");
 
-	if(!directorioActual)
-			mkdir(path, 0777);
-
-	free(directorioActual);
-}
-
-void verificarMetadata(char* path)
-{
-	char* pathActual = obtenerRutaTotal(path);
-	char* pathDirectorio = obtenerRutaTotal(path);
-	string_append(&pathActual, "/Metadata.bin");
-	FILE* archivoActual = fopen(pathActual, "rb");
-
-	if(!archivoActual)
+	if(!archivoMetadata)
 	{
-		archivoActual = fopen(pathActual, "wb");
-		if(strcmp(path, "Metadata") == 0)
-			fprintf(archivoActual, "BLOCK_SIZE=64\nBLOCKS=5192\nMAGIC_NUMBER=TALL_GRASS");
+		archivoMetadata = fopen(pathMetadata, "wb");
+		if(string_ends_with(pathDirectorio, "Metadata"))
+			fprintf(archivoMetadata, "BLOCK_SIZE=64\nBLOCKS=5192\nMAGIC_NUMBER=TALL_GRASS");
 		else
-			fprintf(archivoActual, "DIRECTORY=Y");
+			fprintf(archivoMetadata, "DIRECTORY=Y");
 	}
-	fclose(archivoActual);
+	fclose(archivoMetadata);
 
-	if(strcmp(path, "Metadata") == 0)
+	if(string_ends_with(pathDirectorio, "Metadata"))
 	{
-		t_config* config = config_create(pathActual);
-		BLOCKS = config_get_int_value(config, "BLOCKS");
-		BLOCK_SIZE = config_get_int_value(config, "BLOCK_SIZE");
-		verificarBitmap(pathDirectorio, config);
-		config_destroy(config);
+		t_config* configMetadata = config_create(pathMetadata);
+		BLOCKS = config_get_int_value(configMetadata, "BLOCKS");
+		BLOCK_SIZE = config_get_int_value(configMetadata, "BLOCK_SIZE");
+		config_destroy(configMetadata);
+		verificarBitmap(pathDirectorio);
 	}
-	else if(strcmp(path, "Blocks") == 0){
-		verificarBloques(pathDirectorio);
+	else if(string_ends_with(pathDirectorio, "Blocks")){
+		verificarBloquesIniciales(pathDirectorio);
 	}
+
+	free(pathMetadata);
 }
 
-void verificarBitmap(char* pathActual, t_config* config)
+void verificarBitmap(char* pathDirectorio)
 {
-	string_append(&pathActual, "/Bitmap.bin");
-	char* bitarrayFlujo;
+	char* pathBitmap = string_from_format("%s/Bitmap.bin", pathDirectorio);
 
-	FILE* archivoActual = fopen(pathActual, "rb");
+	FILE* archivoActual = fopen(pathBitmap, "rb");
 	if(!archivoActual)
-		archivoActual = fopen(pathActual, "wb");
+		archivoActual = fopen(pathBitmap, "wb");
 	fclose(archivoActual);
 
-	truncate(pathActual, BLOCKS/8);
-	int fileDescriptor = open(pathActual, O_RDWR);
-	bitarrayFlujo = mmap(NULL, BLOCKS/8, PROT_WRITE | PROT_READ, MAP_SHARED, fileDescriptor, 0);
+	truncate(pathBitmap, BLOCKS/8);
+	int fileDescriptor = open(pathBitmap, O_RDWR);
+	char* bitarrayFlujo = mmap(NULL, BLOCKS/8, PROT_WRITE | PROT_READ, MAP_SHARED, fileDescriptor, 0);
 	bitarray = bitarray_create_with_mode(bitarrayFlujo, BLOCKS/8, LSB_FIRST);
-//	msync((void*) bitarrayFlujo, BLOCKS/8, MS_SYNC);
 	close(fileDescriptor);
+
+	free(pathBitmap);
 }
 
-void verificarBloques(char* pathDirectorio)
+void verificarBloquesIniciales(char* pathDirectorio)
 {
 	FILE* archivoActual;
 	for(int i = 1; i <= BLOCKS; i++)
 	{
-		char* numeroBloque = malloc(7);
-		char* pathActual = strdup(pathDirectorio);
-		sprintf(numeroBloque, "/%d.bin", i);
-		string_append(&pathActual, numeroBloque);
-		archivoActual = fopen(pathActual, "rb");
+		char* pathBloqueActual = string_from_format("%s/%d.bin", pathDirectorio, i);
+
+		archivoActual = fopen(pathBloqueActual, "rb");
 		if(!archivoActual)
 		{
-			archivoActual = fopen(pathActual, "wb");
-			truncate(pathActual, BLOCK_SIZE);
+			archivoActual = fopen(pathBloqueActual, "wb");
+			truncate(pathBloqueActual, BLOCK_SIZE);
 		}
 		fclose(archivoActual);
-		free(numeroBloque);
-		free(pathActual);
+
+		free(pathBloqueActual);
 	}
+}
+
+/****************************************************
+ **Funciones de verificación de archivos generales***
+ ****************************************************/
+
+void verificarDirectorio(char* pathDirectorio)
+{
+	DIR* directorioActual = opendir(pathDirectorio);
+
+	if(!directorioActual)
+			mkdir(pathDirectorio, 0777);
+
+	closedir(directorioActual);
 }
 
 char* verificarPokemon(t_nombrePokemon nombrePokemon)
 {
-	char* pathActual = obtenerRutaTotal("/Files/");
-	string_append(&pathActual, nombrePokemon.nombre);
-	verificarDirectorio(pathActual);
-	return pathActual;
+	char* pathDirectorioPokemon = string_from_format("%s/%s", obtenerRutaTotal("Files"), nombrePokemon.nombre);
+	verificarDirectorio(pathDirectorioPokemon);
+
+	char* pathMetadataPokemon = string_from_format("%s/Metadata.bin", pathDirectorioPokemon);
+	verificarMetadataPokemon(pathMetadataPokemon);
+
+	free(pathDirectorioPokemon);
+	return pathMetadataPokemon;
 }
 
 void verificarMetadataPokemon(char* pathMetadata)
@@ -115,29 +119,15 @@ void verificarMetadataPokemon(char* pathMetadata)
 	if(!archivoActual)
 	{
 		archivoActual = fopen(pathMetadata, "wb");
-		t_config* config = config_create(pathMetadata);
-		config_set_value(config, "DIRECTORY", "N");
-		config_set_value(config, "BLOCKS", "[]");
-		config_set_value(config, "SIZE", "0");
-		config_set_value(config, "OPEN", "N");
-		config_save(config);
-		config_destroy(config);
+		fprintf(archivoActual, "DIRECTORY=N\nBLOCKS=[]\nSIZE=0\nOPEN=N");
 	}
+	fclose(archivoActual);
 }
 
-char* verificarBloque(char* pathMetadata)
+char* verificarBloque(t_config* configMetadata)
 {
-	t_config* config = config_create(pathMetadata);
-
-//	config_set_value(config, "OPEN", "Y");
-//	config_save(config);
-
-	char** bloquesAsignados = config_get_array_value(config, "BLOCKS");
-
-	int sizeArchivos = config_get_int_value(config, "SIZE");
-
-//	config_set_value(config, "OPEN", "N");
-//	config_save(config);
+	char** bloquesAsignados = config_get_array_value(configMetadata, "BLOCKS");
+	int sizeBloquesPokemon = config_get_int_value(configMetadata, "SIZE");
 
 	int i = 0;
 	while(bloquesAsignados[i])
@@ -145,59 +135,23 @@ char* verificarBloque(char* pathMetadata)
 		i++;
 	}
 
-	if(sePuedeEscribirElUltimoBloque(sizeArchivos))
-		return obtenerRutaBloque(i+1);
+	if(sePuedeEscribirElUltimoBloque(sizeBloquesPokemon))
+		return obtenerRutaBloque(atoi(bloquesAsignados[i-1]));
 	else
-		return asignarBloque(config);
+		return asignarBloque(configMetadata);
 }
-/******************************************
- **Funciones de modificación de archivos***
+
+/*******************************************
+ *************Funciones boolean*************
  ******************************************/
 
-char* asignarBloque(t_config* config)
+bool sePuedeEscribirElUltimoBloque(int sizeBloquesPokemon)
 {
-	char* path = NULL;
-	for(int i = 0; path == NULL && i < BLOCKS; i++)
-	{
-		if(!bitarray_test_bit(bitarray, i))
-		{
-			bitarray_set_bit(bitarray, i);
-
-//			config_set_value(config, "OPEN", "Y");
-//			config_save(config);
-
-			char** bloquesAsignados = config_get_array_value(config, "BLOCKS");
-
-//			config_set_value(config, "OPEN", "N");
-//			config_save(config);
-
-			char* bloquesAsignadosComoArray = armarArrayDeBloques(bloquesAsignados, i+1);
-
-			path = obtenerRutaBloque(i+1);
-
-			config_set_value(config, "BLOCKS", bloquesAsignadosComoArray);
-			config_save(config);
-
-			free(bloquesAsignadosComoArray);
-		}
-	}
-	return path;
+	return sizeBloquesPokemon%BLOCKS != 0;
 }
-
-void probarAsignacion()
-{
-	t_newPokemon_msg estructuraNew;
-	estructuraNew.nombre_pokemon.nombre = "Pikachu";
-	estructuraNew.nombre_pokemon.nombre_lenght = strlen(estructuraNew.nombre_pokemon.nombre);
-	estructuraNew.coordenadas.posX = 1;
-	estructuraNew.coordenadas.posY = 2;
-	estructuraNew.cantidad_pokemons = 2;
-
-	char* pathDirectorioPokemon = verificarPokemon(estructuraNew.nombre_pokemon);
-	string_append(&pathDirectorioPokemon, "/Metadata.bin");
-	verificarMetadataPokemon(pathDirectorioPokemon);
-	verificarBloque(pathDirectorioPokemon);
-}
+/*******************************************
+ *******Funciones de índole general*********
+ ******************************************/
 
 char* armarArrayDeBloques(char** arrayOriginal, int numeroBloque)
 {
@@ -212,34 +166,111 @@ char* armarArrayDeBloques(char** arrayOriginal, int numeroBloque)
 	string_append_with_format(&bloquesAsignadosComoArray, "%d]", numeroBloque);
 	return bloquesAsignadosComoArray;
 }
+
+int obtenerLugarEnBitmap()
+{
+	for(int i = 0; i < BLOCKS; i++)
+	{
+		if(!bitarray_test_bit(bitarray, i))
+		{
+			bitarray_set_bit(bitarray, i);
+			msync((void*) bitarray->bitarray, BLOCKS/8, MS_SYNC);
+			return i+1;
+		}
+	}
+	return 0;
+}
+
 /*******************************************
  ******Funciones de obtención de rutas******
  ******************************************/
+
 char* obtenerRutaTotal(char* path)
 {
-	char* pathTotal = string_new();
-	string_append_with_format(&pathTotal, "%s/%s", PUNTO_MONTAJE, path);
+	char* pathTotal = string_from_format("%s/%s", PUNTO_MONTAJE, path);
 	return pathTotal;
 }
 
 char* obtenerRutaBloque(int numeroBloque)
 {
-	char* path = obtenerRutaTotal("Blocks");
-	char* bloqueAsignado = malloc(7);
-	sprintf(bloqueAsignado, "/%d.bin", numeroBloque);
-	string_append(&path, bloqueAsignado);
-	free(bloqueAsignado);
-	return path;
+	char* pathBloque = string_from_format("%s/%d.bin", obtenerRutaTotal("Blocks"), numeroBloque);
+	return pathBloque;
+}
+
+/******************************************
+ **Funciones de modificación de archivos***
+ ******************************************/
+
+t_config* abrirArchivo(char* pathArchivo)
+{
+	t_config* configArchivo = config_create(pathArchivo);
+	char* estadoArchivo = config_get_string_value(configArchivo, "OPEN");
+	while(strcmp(estadoArchivo, "Y") == 0)
+	{
+		sleep(config_get_int_value(configGeneral, "TIEMPO_DE_REINTENTO_OPERACION"));
+	}
+	config_set_value(configArchivo, "OPEN", "Y");
+	config_save(configArchivo);
+	return configArchivo;
+}
+
+void cerrarArchivo(t_config* configArchivo)
+{
+	config_set_value(configArchivo, "OPEN", "N");
+	config_save(configArchivo);
+	config_destroy(configArchivo);
+}
+
+char* asignarBloque(t_config* configPokemon)
+{
+	int bloqueAAsignar = obtenerLugarEnBitmap();
+	if(bloqueAAsignar > 0)
+	{
+		char** bloquesAsignados = config_get_array_value(configPokemon, "BLOCKS");
+		char* bloquesAsignadosComoArray = armarArrayDeBloques(bloquesAsignados, bloqueAAsignar);
+
+		config_set_value(configPokemon, "BLOCKS", bloquesAsignadosComoArray);
+		config_save(configPokemon);
+
+		free(bloquesAsignadosComoArray);
+
+		return obtenerRutaBloque(bloqueAAsignar);
+	}
+	else
+		return NULL;
 }
 
 /*******************************************
- *************Funciones boolean*************
+ ******Funciones de test******
  ******************************************/
 
-bool sePuedeEscribirElUltimoBloque(int sizeArchivos)
+void probarAsignaciones(void)
 {
-	return sizeArchivos%64 != 0;
+	t_newPokemon_msg estructuraNew;
+	estructuraNew.nombre_pokemon.nombre = "Pikachu";
+	estructuraNew.nombre_pokemon.nombre_lenght = strlen(estructuraNew.nombre_pokemon.nombre);
+	estructuraNew.coordenadas.posX = 1;
+	estructuraNew.coordenadas.posY = 2;
+	estructuraNew.cantidad_pokemons = 2;
+
+	configuracionInicial();
+
+	char* pathMetadataPokemon = verificarPokemon(estructuraNew.nombre_pokemon);
+
+	t_config* configMetadataPokemon = abrirArchivo(pathMetadataPokemon);
+
+	char* pathBloqueAEscribir = verificarBloque(configMetadataPokemon);
+
+	char* stringAEscribir = string_from_format("%d-%d=%d\n", estructuraNew.coordenadas.posX, estructuraNew.coordenadas.posY, estructuraNew.cantidad_pokemons);
+
+	cerrarArchivo(configMetadataPokemon);
 }
+
+
+
+
+
+
 
 
 
