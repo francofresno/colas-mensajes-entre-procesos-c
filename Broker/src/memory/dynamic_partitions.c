@@ -30,7 +30,6 @@ void* dp_alloc(int size)
 	int index_of_victim = -1;
 	while (partition == NULL || partition->size < size) {
 		index_of_victim = -1;
-		compact_memory();
 		partition = choose_victim_partition();
 		if (partition != NULL) {
 			partition->is_free = 1;
@@ -52,6 +51,11 @@ void* dp_alloc(int size)
 			index_of_victim = list_add(FREE_PARTITIONS, (void*) partition);
 
 			consolidate_free_partitions(partition, &index_of_victim);
+		}
+
+		if (compact_memory() == 1) {
+			partition = list_get(FREE_PARTITIONS, 0);
+			index_of_victim = 0;
 		}
 	}
 
@@ -175,24 +179,29 @@ void compact_occupied_list(int* previous_occupied_base, int* previous_occupied_s
 	}
 }
 
-void compact_free_list(int previous_base, int previous_size, int free_list_size)
+t_partition* compact_free_list()
 {
 	int size_compacted_partition = 0;
 	t_partition* compacted_partition = malloc(sizeof(*compacted_partition));
 	compacted_partition->data = NULL;
 	compacted_partition->id_data = 0;
 	compacted_partition->is_free = 1;
-	compacted_partition->base = previous_base + previous_size;
 
+	int free_list_size = list_size(FREE_PARTITIONS);
 	for (int i=0; i < free_list_size; i++) {
 		t_partition* free_partition = list_get(FREE_PARTITIONS, i);
 		size_compacted_partition += free_partition->size;
-		list_remove(FREE_PARTITIONS, i);
+		compacted_partition->queue = free_partition->queue;
+		int index_all = get_index_of_partition_by_base(ALL_PARTITIONS, free_partition->base);
+		list_remove(ALL_PARTITIONS, index_all);
 		free(free_partition);
 	}
 
+	list_clean(FREE_PARTITIONS);
+
 	compacted_partition->size = size_compacted_partition;
 	list_add(FREE_PARTITIONS, (void*) compacted_partition);
+	return compacted_partition;
 }
 
 void sort_all_partitions_by_base()
@@ -200,7 +209,7 @@ void sort_all_partitions_by_base()
 	bool sort_by_base(void* partition1, void* partition2) {
 		t_partition* partition = (t_partition*) partition1;
 		t_partition* other_partition = (t_partition*) partition2;
-		return partition->base > other_partition->base;
+		return partition->base < other_partition->base;
 	}
 
 	list_sort(ALL_PARTITIONS, sort_by_base);
@@ -229,7 +238,7 @@ void sort_memory_by_base()
 	free(backup_memory);
 }
 
-void compact_memory()
+int compact_memory()
 {
 	SEARCH_FAILURE_COUNTER++;
 
@@ -237,20 +246,22 @@ void compact_memory()
 	if (COMPACTION_FREQUENCY == -1 && occ_size == 0)
 		SEARCH_FAILURE_COUNTER = COMPACTION_FREQUENCY;
 
-
 	if (SEARCH_FAILURE_COUNTER == COMPACTION_FREQUENCY) {
-		int free_list_size = list_size(FREE_PARTITIONS);
-		if (free_list_size > 1) {
-			int previous_base = 0;
-			int previous_size = 0;
-			compact_occupied_list(&previous_base, &previous_size);
-			compact_free_list(previous_base, previous_size, free_list_size);
-			sort_all_partitions_by_base();
-			sort_memory_by_base();
-		}
+		t_partition* compacted_free_partition = compact_free_list();
+		int previous_base = 0;
+		int previous_size = 0;
+		compact_occupied_list(&previous_base, &previous_size);
+		compacted_free_partition->base = previous_base + previous_size;
+		list_add(ALL_PARTITIONS, compacted_free_partition);
+
+		sort_all_partitions_by_base();
+		sort_memory_by_base();
+
 		log_compactation();
 		SEARCH_FAILURE_COUNTER = 0;
+		return 1;
 	}
+	return 0;
 }
 
 int get_index_of_partition_by_base(t_list* partitions, uint32_t base_partition)
