@@ -48,6 +48,16 @@ t_list* objetivoTeam;
 //semaforos
 t_list* sem_entrenadores_ejecutar;
 sem_t sem_planificar;
+extern pthread_mutex_t mutex_atrapados;
+extern pthread_mutex_t mutex_pendientes;
+extern pthread_mutex_t mutex_objetivoTeam;
+
+extern pthread_mutex_t mutex_listaNuevos;
+extern pthread_mutex_t mutex_listaReady;
+extern pthread_mutex_t mutex_listaBloqueadosDeadlock;
+extern pthread_mutex_t mutex_listaBloqueadosEsperandoMensaje;
+extern pthread_mutex_t mutex_listaBloqueadosEsperandoPokemones;
+extern pthread_mutex_t mutex_listaFinalizados;
 
 typedef enum{
 	NEW = 1,
@@ -92,6 +102,7 @@ typedef struct
 	uint32_t cantidad_pokemons;
 	t_newPokemon* pokemonInstantaneo;
 	status_code estado;
+	uint32_t idMensajeCaught;
 
 } t_entrenador;
 
@@ -110,5 +121,7 @@ void diferenciaYCargarLista(t_list*, t_list*, t_list*);
 int sonIguales(t_nombrePokemon*, t_nombrePokemon*);
 
 void inicializarListasDeEstados();
+
+void verificarTieneTodoLoQueQuiere(t_entrenador*);
 
 #endif /* PLANIFICADOR_H_ */

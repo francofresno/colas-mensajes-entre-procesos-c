@@ -20,7 +20,6 @@ int main(void) {
 	ponerEntrenadoresEnLista(config);
 	crearHilosEntrenadores(); //TODO fijarnos si anda.
 
-
 	enviarMensajeGetABroker();
 
 	suscribirseAColas();
@@ -33,6 +32,7 @@ int main(void) {
 
 	return EXIT_SUCCESS;
 }
+
 void quedarseALaEscucha(int* socket_servidor) {
 	while(1) {
 		int socket_potencial = esperar_cliente(*socket_servidor);
@@ -110,9 +110,10 @@ void suscribirseA(op_code tipo_cola){
 	pthread_mutex_lock(&mutex_send);
 	int socket_cliente = crear_conexion(ipBroker, puertoBroker);
 	while(socket_cliente<=0){
+		log_inicio_reintento_conexion_broker();
 		sleep(TIEMPO_RECONEXION);
-		log_reintento_conexion_broker();
 		socket_cliente = crear_conexion(ipBroker, puertoBroker);
+		log_resultado_proceso_reintento_conexion_broker(socket_cliente);
 	}
 	printf("Conexion con broker en socket %d\n", socket_cliente);
 
@@ -150,9 +151,10 @@ void suscribirseA(op_code tipo_cola){
 		t_paquete* paquete_recibido = recibir_paquete(socket_cliente,&nombre_recibido, &tamanioRecibido);
 
 		if(paquete_recibido == NULL){
+			log_inicio_reintento_conexion_broker();
 			sleep(TIEMPO_RECONEXION);
-			log_reintento_conexion_broker();
 			suscribirseA(tipo_cola);
+			log_resultado_proceso_reintento_conexion_broker(socket_cliente); //TODO preg.
 		}
 
 		printf("------------------------\n");
@@ -278,21 +280,30 @@ void enviarMensajeGet(t_nombrePokemon* pokemon){
 	liberar_conexion(socket_cliente);
 }
 
-void enviarMensajeCatch(t_newPokemon* pokemon){
-
+uint32_t enviarMensajeCatch(t_newPokemon* pokemon){
 
 	t_catchPokemon_msg* estructuraPokemon = malloc(sizeof(t_catchPokemon_msg));
 
 	estructuraPokemon->coordenadas = *(pokemon->coordenadas);
 	estructuraPokemon->nombre_pokemon = *(pokemon->pokemon);
 	int socket_cliente = crear_conexion(ipBroker, puertoBroker);
+
+	uint32_t id = 0;
+
+	if(socket_cliente<=0){
+		return id;
+	}
+
 	int status = enviar_mensaje(CATCH_POKEMON, 0, 0, estructuraPokemon, socket_cliente);
 
+
 	if(status>=0){
-		esperarIdCatch(socket_cliente);
+		id = esperarIdCatch(socket_cliente);
 	}
 
 	liberar_conexion(socket_cliente);
+
+	return id;
 }
 
 void inicializarListas(){
@@ -310,12 +321,13 @@ void esperarIdGet(int socket_cliente){
 
 }
 
-void esperarIdCatch(int socket_cliente){
+uint32_t esperarIdCatch(int socket_cliente){
 	uint32_t* id_respuesta = malloc(sizeof(uint32_t));
 	*id_respuesta = recibir_id(socket_cliente);
 	printf("recibi el id %d\n", *id_respuesta);
 	list_add(id_mensajeCatch,(void*) id_respuesta);
 
+	return *id_respuesta;
 }
 
 void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){

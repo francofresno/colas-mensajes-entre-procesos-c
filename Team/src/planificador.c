@@ -7,6 +7,16 @@
 
 #include "planificador.h"
 
+pthread_mutex_t mutex_atrapados = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_pendientes = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_objetivoTeam = PTHREAD_MUTEX_INITIALIZER;
+
+pthread_mutex_t mutex_listaNuevos = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_listaReady = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_listaBloqueadosDeadlock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_listaBloqueadosEsperandoMensaje = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_listaBloqueadosEsperandoPokemones = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_listaFinalizados = PTHREAD_MUTEX_INITIALIZER;
 
 void planificarSegun() {
 
@@ -58,38 +68,41 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 
 	for (int b = 0; b < tamanio; b++) {
 
-		t_entrenador* entrenador = (t_entrenador*) list_get(listaReady, b);
+		sem_wait(&sem_planificar);
+		pthread_mutex_lock(&mutex_listaReady);
+		t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, b);
+		pthread_mutex_unlock(&mutex_listaReady);
 		entrenador->estado=EXEC;
 
-		sem_wait(&sem_planificar); //inicializa en?
-		do{
-			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-			sem_post(semaforoDelEntrenador);//TODO hacer impide que otro entrenador ejecute a la par
-		}while(distancia !=0);
-		sem_post(&sem_planificar);
+		if(!(entrenador->idMensajeCaught)){
 
-		//lo atrapó
+			do{
+				distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+				sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+				sem_post(semaforoDelEntrenador);//TODO hacer impide que otro entrenador ejecute a la par
+			}while(distancia !=0);
 
-		list_add(entrenador->pokemonesQuePosee, (void*) entrenador->pokemonInstantaneo);
-		entrenador->cantidad_pokemons++;
-		list_add(atrapados,(void*) entrenador->pokemonInstantaneo); //TODO semaforo lista global
-
-		if(entrenador->cantidad_pokemons == list_size(entrenador->pokemonesQueQuiere)){
-			if(tieneTodoLoQueQuiere(entrenador)){
-				entrenador->estado = FINISHED;
-				list_add(listaFinalizados, entrenador);
-			} else{
+			if(entrenador->idMensajeCaught){
 				entrenador->estado = BLOCKED;
-				list_add(listaBloqueadosDeadlock, entrenador);
+				pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
+				list_add(listaBloqueadosEsperandoMensaje, entrenador);
+				pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje); //TODO todos los mutex a estas listas
+			} else{
+				verificarTieneTodoLoQueQuiere(entrenador);
 			}
-		}else{
-			entrenador->estado = BLOCKED;
-			list_add(listaBloqueadosEsperandoPokemones, entrenador);
+		} else{
+			//TODO llego un mensaje caught
 		}
-		//TODO poner nuevamente en null al pokeInstant o sera un semaforo más
 
+
+		//TODO deadlock
+
+
+		//TODO poner nuevamente en null al pokeInstant o sera un semaforo más
+		sem_post(&sem_planificar);
 	}
+
+
 
 	int tamanioDeadlock = list_size(listaBloqueadosDeadlock); //TODO ver donde ponerlo
 	for (int b = 0; b < tamanioDeadlock; b++) {
@@ -147,7 +160,7 @@ void diferenciaYCargarLista(t_list* listaA, t_list* listaB, t_list* listaACargar
 		int b = list_size(listaB);
 		int j=0;
 
-		while((j < b) && (sonIguales(list_get(listaB,j), list_get(listaA, i))!=0)){
+		while((j < b) && (!sonIguales(list_get(listaB,j), list_get(listaA, i)))){
 			j++;
 		}
 
@@ -174,4 +187,20 @@ void inicializarListasDeEstados(){
 	listaFinalizados = list_create();
 
 }
+
+void verificarTieneTodoLoQueQuiere(t_entrenador* entrenador){ //TODO MUTEX listas
+	if(entrenador->cantidad_pokemons == list_size(entrenador->pokemonesQueQuiere)){
+		if(tieneTodoLoQueQuiere(entrenador)){
+			entrenador->estado = FINISHED;
+			list_add(listaFinalizados, entrenador);
+		} else{
+			entrenador->estado = BLOCKED;
+			list_add(listaBloqueadosDeadlock, entrenador);
+		}
+	}else{
+		entrenador->estado = BLOCKED;
+		list_add(listaBloqueadosEsperandoPokemones, entrenador);
+	}
+}
+
 

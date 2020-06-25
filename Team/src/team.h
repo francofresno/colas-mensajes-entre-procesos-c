@@ -71,13 +71,13 @@ t_list* eliminarRepetidos();
 
 void enviarMensajeGet(t_nombrePokemon*);
 
-void enviarMensajeCatch(t_newPokemon*);
+uint32_t enviarMensajeCatch(t_newPokemon*);
 
 void inicializarListas();
 
 void esperarIdGet(int);
 
-void esperarIdCatch(int);
+uint32_t esperarIdCatch(int);
 
 void requiere(t_nombrePokemon*, t_coordenadas*);
 

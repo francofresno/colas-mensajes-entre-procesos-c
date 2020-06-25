@@ -53,7 +53,7 @@ void atraparPokemon(t_entrenador*);
 
 void hacerObjetivoTeam(t_list*,t_list*);
 
-t_list* aplanarDobleLista(t_list*);
+void aplanarDobleLista(t_list*);
 
 t_entrenador* entrenadorMasCercano(t_newPokemon*);
 

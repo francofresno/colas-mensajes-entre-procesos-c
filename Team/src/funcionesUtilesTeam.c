@@ -102,6 +102,7 @@ t_entrenador* crear_entrenador(uint32_t id_entrenador, t_coordenadas* coordenada
 	entrenador->pokemonesQueQuiere = pokemonesQueQuiere;
 	entrenador->cantidad_pokemons = cantidad_pokemons;
 	entrenador->estado = estado;
+	entrenador->idMensajeCaught = 0;
 
 	return entrenador;
 }
@@ -161,43 +162,56 @@ void hacerObjetivoTeam(t_list* listaMini, t_list* listaGrande){ //Siempre Despue
 	aplanarDobleLista(listaGrande);
 	aplanarDobleLista(listaMini);
 
-	objetivoTeam = list_create();
 	diferenciaYCargarLista(listaGrande, listaMini, objetivoTeam);
 
 }
 
-t_list* aplanarDobleLista(t_list* lista){
+void aplanarDobleLista(t_list* lista){
 
-	t_list* listaAplanada = list_create();
+	t_list* listaDuplicada = list_duplicate(lista);
 
-	int tamanioListaSuprema = list_size(lista);
+	list_clean(lista);
+
+	int tamanioListaSuprema = list_size(listaDuplicada);
 
 		for(int b=0; b<tamanioListaSuprema ;b++){
 
-			 int tamanioSubLista = list_size(list_get(lista, b));
+			 int tamanioSubLista = list_size(list_get(listaDuplicada, b));
 
 			 for(int a=0; a<tamanioSubLista; a++){
 
-				 list_add(listaAplanada, list_get(list_get(lista, b), a));
+				 list_add(lista, list_get(list_get(listaDuplicada, b), a));
 			 }
 		}
 
-	return listaAplanada;
+	list_destroy(listaDuplicada);
 }
 
 void ejecutarEntrenador(t_entrenador* entrenador){
+
+	//TODO diferenciar entre mensj caught o cualq otro
 
 	sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 	sem_wait(semaforoDelEntrenador);
 
 	sleep(retardoCPU);
 
-	moverAlEntrenadorHastaUnPokemon(entrenador->id_entrenador); //Lo mueve 1 posicion
+	moverAlEntrenadorHastaUnPokemon(entrenador->id_entrenador);
 
 	if(llegoAlObjetivo(entrenador)){
-		evaluarEstadoPrevioAAtrapar(entrenador);
-		//TODO terminar (catch)
+		uint32_t id = enviarMensajeCatch(entrenador->pokemonInstantaneo);
+
+		if(id==0){
+			list_add(entrenador->pokemonesQuePosee, (void*) entrenador->pokemonInstantaneo);
+			entrenador->cantidad_pokemons++;
+			pthread_mutex_lock(&mutex_atrapados);
+			list_add(atrapados,(void*) entrenador->pokemonInstantaneo); 	//TODO nicky futuro arregla esto
+			pthread_mutex_unlock(&mutex_atrapados);
+		}
+
+		entrenador->idMensajeCaught = id;
 	}
+
 }
 
 int llegoAlObjetivo(t_entrenador* entrenador){
@@ -207,11 +221,7 @@ int llegoAlObjetivo(t_entrenador* entrenador){
 	uint32_t posicionXPokemon = entrenador->pokemonInstantaneo->coordenadas->posX;
 	uint32_t posicionYPokemon = entrenador->pokemonInstantaneo->coordenadas->posY;
 
-	if(posicionXEntrenador == posicionXPokemon && posicionYEntrenador == posicionYPokemon){
-		return true;
-	} else{
-		return false;
-	}
+	return (posicionXEntrenador == posicionXPokemon) && (posicionYEntrenador == posicionYPokemon);
 
 }
 
@@ -244,10 +254,11 @@ void moverAlEntrenadorHastaUnPokemon(uint32_t idEntrenador){
 		}
 	}
 
+	log_movimiento_entrenador(idEntrenador, entrenador->coordenadas->posX, entrenador->coordenadas->posY);
 }
 
 void evaluarEstadoPrevioAAtrapar(t_entrenador* entrenador){
-	//enviarMensajeCatch(entrenador->pokemonInstantaneo);
+
 
 // 1. Tiene que pasar a blocked para que planifique a otros.
 // 2. Si no se establece la conexion -> direc va a atraparlo.
@@ -372,15 +383,18 @@ void moverAlEntrenadorHastaOtroEntrenador(uint32_t idEntrenador1, uint32_t idEnt
 			entrenador1->coordenadas->posY = posicionYEntrenador1--;
 		}
 	}
-
+	log_movimiento_entrenador(idEntrenador1, entrenador1->coordenadas->posX, entrenador1->coordenadas->posY);
 }
 
 void intercambiarPokemones(uint32_t idEntrenador1, uint32_t idEntrenador2){
 	t_entrenador* entrenador1 = list_get(entrenadores, idEntrenador1);
 	t_entrenador* entrenador2 = list_get(entrenadores, idEntrenador2);
 
+	sleep(5*retardoCPU);
 	dameTuPokemon(entrenador1,entrenador2);
 	dameTuPokemon(entrenador2, entrenador1);
+
+	log_intercambio_pokemones(idEntrenador1, idEntrenador2);
 
 }
 
