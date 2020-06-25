@@ -18,6 +18,7 @@ pthread_mutex_t mutex_listaBloqueadosEsperandoMensaje = PTHREAD_MUTEX_INITIALIZE
 pthread_mutex_t mutex_listaBloqueadosEsperandoPokemones = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_listaFinalizados = PTHREAD_MUTEX_INITIALIZER;
 
+
 void planificarSegun() {
 
 
@@ -66,11 +67,11 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 	int tamanio = list_size(listaReady);
 	int distancia;
 
-	for (int b = 0; b < tamanio; b++) {
+	for (int i = 0; i < tamanio; i++) {
 
 		sem_wait(&sem_planificar);
 		pthread_mutex_lock(&mutex_listaReady);
-		t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, b);
+		t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, i);
 		pthread_mutex_unlock(&mutex_listaReady);
 		entrenador->estado=EXEC;
 
@@ -116,16 +117,6 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 		}
 	}
 
-}
-
-algoritmo_code stringACodigoAlgoritmo(const char* string) {
-	for (int i = 0;
-			i < sizeof(conversionAlgoritmo) / sizeof(conversionAlgoritmo[0]);
-			i++) {
-		if (!strcmp(string, conversionAlgoritmo[i].str))
-			return conversionAlgoritmo[i].codigo_algoritmo;
-	}
-	return ERROR_CODIGO_ALGORITMO;
 }
 
 int distanciaA(t_coordenadas* desde, t_coordenadas* hasta){
@@ -175,6 +166,16 @@ void diferenciaYCargarLista(t_list* listaA, t_list* listaB, t_list* listaACargar
 
 int sonIguales(t_nombrePokemon* pokemon1, t_nombrePokemon* pokemon2){
 	return strcmp(pokemon1->nombre, pokemon2->nombre) == 0;
+}
+
+algoritmo_code stringACodigoAlgoritmo(const char* string) {
+	for (int i = 0;
+			i < sizeof(conversionAlgoritmo) / sizeof(conversionAlgoritmo[0]);
+			i++) {
+		if (!strcmp(string, conversionAlgoritmo[i].str))
+			return conversionAlgoritmo[i].codigo_algoritmo;
+	}
+	return ERROR_CODIGO_ALGORITMO;
 }
 
 void inicializarListasDeEstados(){

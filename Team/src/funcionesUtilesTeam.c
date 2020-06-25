@@ -11,12 +11,6 @@ pthread_mutex_t mutex_id_entrenadores = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_entrenador = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_hay_pokemones = PTHREAD_MUTEX_INITIALIZER;
 
-/*
-  ============================================================================
- 	 	 	 	 	 	 	 	 HITO 2
-  ============================================================================
-*/
-
 void ponerEntrenadoresEnLista(t_config* config) {
 
 	inicializarListasDeEstados();
@@ -222,8 +216,8 @@ int llegoAlObjetivo(t_entrenador* entrenador){
 	uint32_t posicionYPokemon = entrenador->pokemonInstantaneo->coordenadas->posY;
 
 	return (posicionXEntrenador == posicionXPokemon) && (posicionYEntrenador == posicionYPokemon);
-
 }
+
 
 void moverAlEntrenadorHastaUnPokemon(uint32_t idEntrenador){
 
@@ -235,23 +229,25 @@ void moverAlEntrenadorHastaUnPokemon(uint32_t idEntrenador){
 	uint32_t posicionXPokemon = entrenador->pokemonInstantaneo->coordenadas->posX;
 	uint32_t posicionYPokemon = entrenador->pokemonInstantaneo->coordenadas->posY;
 
-	uint32_t distanciaEnX = posicionXPokemon- posicionXEntrenador;
-	uint32_t distanciaEnY = posicionYPokemon- posicionYEntrenador;
+	uint32_t distanciaEnX = posicionXPokemon - posicionXEntrenador;
+	uint32_t distanciaEnY = posicionYPokemon - posicionYEntrenador;
 
-	if(posicionXEntrenador!= posicionXPokemon){
+	if (posicionXEntrenador != posicionXPokemon) {
 
-		if(distanciaEnX>0){
-			entrenador->coordenadas->posX = posicionXEntrenador++; //TODO FIJARNOS
-		}else if(distanciaEnX<0){
-			entrenador->coordenadas->posX = posicionXEntrenador--;
+		if (distanciaEnX > 0) {
+			entrenador->coordenadas->posX = posicionXEntrenador + 1;
+		} else if (distanciaEnX < 0) {
+			entrenador->coordenadas->posX = posicionXEntrenador - 1;
 		}
 
-	}else if(posicionYEntrenador!= posicionYPokemon){
-		if(distanciaEnY>0){
-			entrenador->coordenadas->posY = posicionYEntrenador++;
-		}else if(distanciaEnX<0){
-			entrenador->coordenadas->posY = posicionYEntrenador--;
+	} else if (posicionYEntrenador != posicionYPokemon) {
+
+		if (distanciaEnY > 0) {
+			entrenador->coordenadas->posY = posicionYEntrenador + 1;
+		} else if (distanciaEnX < 0) {
+			entrenador->coordenadas->posY = posicionYEntrenador - 1;
 		}
+
 	}
 
 	log_movimiento_entrenador(idEntrenador, entrenador->coordenadas->posX, entrenador->coordenadas->posY);

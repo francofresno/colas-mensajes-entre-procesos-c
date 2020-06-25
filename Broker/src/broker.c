@@ -125,9 +125,7 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 	t_list* ids_messages_deleted = get_victim_messages_ids(&ids_count);
 
 	if (ids_count > 0) {
-		pthread_mutex_lock(&mutex);
-		remove_messages_by_id(queue, ids_messages_deleted, ids_count);
-		pthread_mutex_unlock(&mutex);
+		remove_messages_by_id(ids_messages_deleted, ids_count);
 		notify_all_victim_messages_deleted();
 	}
 	pthread_mutex_unlock(&mutex_deleted_messages_ids);
@@ -138,6 +136,7 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 	t_list* suscriptores_informados = inform_subscribers(cod_op, allocated_message, id_message, id_correlative, subscribers, mutex);
 	mensaje_encolado->subscribers_informed = suscriptores_informados;
 	log_new_message(id_message, cod_op);
+	notify_message_used(id_message);
 
 	receive_multiples_ack(cod_op, id_message, suscriptores_informados);
 }
@@ -283,6 +282,22 @@ void receive_ack(t_list* mensajes_encolados, uint32_t cantidad_mensajes, t_subsc
 
 	if(status > 0 && response_status == 200) {
 		add_new_ack_suscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber);
+	}
+}
+
+void remove_messages_by_id(t_list* ids_messages_deleted, int ids_count)
+{
+	for (int i=0; i < ids_count; i++) {
+
+		t_message_deleted* msg_d = (t_message_deleted*) list_get(ids_messages_deleted, i);
+
+		uint32_t id = *(msg_d->id);
+		op_code code = *(msg_d->queue);
+		t_queue* queue = COLAS_MENSAJES[code];
+		pthread_mutex_t mutex = MUTEX_COLAS[code];
+		pthread_mutex_lock(&mutex);
+		remove_message_by_id(queue, id);
+		pthread_mutex_unlock(&mutex);
 	}
 }
 

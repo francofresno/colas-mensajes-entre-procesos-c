@@ -1,7 +1,7 @@
 /*
  * filesystem.h
  *
- *  Created on: 17 jun. 2020
+ *  Created on: 23 jun. 2020
  *      Author: utnso
  */
 
@@ -27,15 +27,31 @@
 #include "nuestras-commons/mensajes.h"
 
 char* PUNTO_MONTAJE;
+t_config* configGeneral;
+
+void configuracionInicial(void);
+
+void verificarDirectorio(char*);
+char* verificarPokemon(t_nombrePokemon);
+void verificarMetadataPokemon(char*);
+char* verificarBloque(t_config*);
 
 void verificarMetadata(char*);
-char* obtenerRutaTotal(char*);
-void configuracionInicial(void);
-void verificarDirectorio(char*);
-void verificarBitmap(char* pathActual, t_config* config);
-void verificarBloques(char* pathDirectorio);
-char* verificarPokemon(t_nombrePokemon nombrePokemon);
-void testearConfig(t_config* config);
+void verificarBitmap(char*);
+void verificarBloquesIniciales(char*);
 
+char* obtenerRutaTotal(char*);
+char* obtenerRutaBloque(int);
+
+int obtenerLugarEnBitmap();
+char* armarArrayDeBloques(char**, int);
+
+bool sePuedeEscribirElUltimoBloque(int);
+
+t_config* abrirArchivo(char*);
+void cerrarArchivo(t_config*);
+char* asignarBloque(t_config*);
+
+void probarAsignaciones(void);
 
 #endif /* FILESYSTEM_H_ */

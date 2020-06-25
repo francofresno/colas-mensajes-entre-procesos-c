@@ -15,7 +15,7 @@ typedef struct
 {
 	uint32_t id_data;
 	void* data;
-	int free;
+	int is_free;
 	int base;
 	int size;
 	op_code queue;
@@ -28,10 +28,11 @@ void* dp_alloc(int size);
 void adjust_partition_size(t_partition* partition, int size);
 t_partition* find_free_partition(int size);
 t_partition* choose_victim_partition();
-void compact_memory();
+void consolidate_free_partitions(t_partition* new_free_partition, int* partition_index_free);
+int compact_memory();
 int get_index_of_partition_by_base(t_list* partitions, uint32_t base_partition);
 void* find_data_partition_by_id(uint32_t id);
-t_partition* find_partition_by_id(uint32_t id);
+t_partition* find_partition_by_id(t_list* list, uint32_t id);
 
 t_partition* first_fit_find_free_partition(int size);
 t_partition* best_fit_find_free_partition(int size);

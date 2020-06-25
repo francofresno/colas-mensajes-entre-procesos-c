@@ -95,14 +95,6 @@ t_enqueued_message* find_message_by_id_correlativo(t_queue* queue, uint32_t id)
 	return message;
 }
 
-void remove_messages_by_id(t_queue* queue, t_list* ids_messages_deleted, int ids_count)
-{
-	for (int i=0; i < ids_count; i++) {
-		uint32_t* id = (uint32_t*) list_get(ids_messages_deleted, i);
-		remove_message_by_id(queue, *id);
-	}
-}
-
 void remove_message_by_id(t_queue* queue, uint32_t id)
 {
 	t_link_element *element = queue->elements->head;
@@ -115,10 +107,9 @@ void remove_message_by_id(t_queue* queue, uint32_t id)
 		position++;
 	}
 
-	if (message != NULL) {
-		message = (t_enqueued_message*) list_remove(queue->elements, position);
-		element_destroyer_mq((void*) message);
-	}
+	message = (t_enqueued_message*) list_remove(queue->elements, position);
+	element_destroyer_mq((void*) message);
+
 }
 
 void remove_message_by_id_correlativo(t_queue* queue, uint32_t id)
