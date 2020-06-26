@@ -51,7 +51,9 @@ bool sePuedeEscribirElUltimoBloque(int);
 t_config* abrirArchivo(char*);
 void cerrarArchivo(t_config*);
 char* asignarBloque(t_config*);
+void escribirArchivoPokemon(char*, char*);
+int escribirBloque(char*, char*);
 
-void probarAsignaciones(void);
+int procesarNewPokemon(t_newPokemon_msg*);
 
 #endif /* FILESYSTEM_H_ */

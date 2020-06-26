@@ -19,7 +19,7 @@ int main(void) {
 	logger = log_create(GAMECARD_LOG, "gamecard.log", false, LOG_LEVEL_INFO);
 	PUNTO_MONTAJE = config_get_string_value(configGeneral, "PUNTO_MONTAJE_TALLGRASS");
 
-	probarAsignaciones();
+	configuracionInicial();
 
 	t_suscripcion_msg datosHiloNP;
 	datosHiloNP.id_proceso = config_get_int_value(configGeneral, "ID_HILO_NP");
@@ -134,6 +134,9 @@ void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
 			t_newPokemon_msg* estructuraNew = malloc(sizeof(t_newPokemon_msg));
 			estructuraNew = (t_newPokemon_msg*) paquete_recibido->mensaje;
 
+			if(procesarNewPokemon(estructuraNew) != 0)
+				exit(-1);
+
 			t_appearedPokemon_msg estructuraAppeared;
 			estructuraAppeared.coordenadas = estructuraNew->coordenadas;
 			estructuraAppeared.nombre_pokemon = estructuraNew->nombre_pokemon;
@@ -185,7 +188,7 @@ void esperarMensajes(void)
 	char* puertoLocal = config_get_string_value(configGeneral, "PUERTO_GAMECARD");
 	int socket_servidor = iniciar_servidor(ipLocal, puertoLocal);
 	while(1) {
-		printf("Esperando cliente...\n");
+//		printf("Esperando cliente...\n");
 		int clientePotencial = esperar_cliente(socket_servidor);
 		if(clientePotencial > 0) {
 			int* socket_cliente = (int*) malloc(sizeof(int));
