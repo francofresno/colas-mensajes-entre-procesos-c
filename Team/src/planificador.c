@@ -63,48 +63,69 @@ void planificarSegun() {
 
 void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 
-	int tamanio = list_size(listaReady);
+	pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
+	if(!(list_is_empty(listaBloqueadosEsperandoMensaje))){
+		int j = list_size(listaBloqueadosEsperandoMensaje);
+		for(int i=0; i<j ; i++){
+			t_entrenador* entrenador = list_get(listaBloqueadosEsperandoMensaje, i);
+			if(entrenador->puedeAtrapar){
+				entrenador->estado = READY;
+				pthread_mutex_lock(&mutex_listaReady);
+				list_add(listaReady, entrenador);
+				pthread_mutex_unlock(&mutex_listaReady);
+				list_remove(listaBloqueadosEsperandoMensaje, i);
+			}
+		}
+	}
+
+	pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
+
 	int distancia;
+
+	pthread_mutex_lock(&mutex_listaReady);
+
+	int tamanio = list_size(listaReady);
 
 	for (int i = 0; i < tamanio; i++) {
 
 		sem_wait(&sem_planificar);
 
-		pthread_mutex_lock(&mutex_listaReady);
 		t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, i);
-		pthread_mutex_unlock(&mutex_listaReady);
 
 		entrenador->estado=EXEC;
 
-		if(!(entrenador->idMensajeCaught)){
+		if(!(entrenador->puedeAtrapar)){ 		//TODO fijarnos
 
 			do{
 				distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
 				sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 				sem_post(semaforoDelEntrenador);//TODO hacer impide que otro entrenador ejecute a la par
+				//TODO esta llamando realmente al hilo del entrenador?
 			}while(distancia !=0);
 
 			if(entrenador->idMensajeCaught){
 				entrenador->estado = BLOCKED;
 
 				pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
-				list_add(listaBloqueadosEsperandoMensaje, entrenador);
+				list_add(listaBloqueadosEsperandoMensaje, entrenador); //TODO no estamos sacandolo de la lista de READY
 				pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
 
 			} else{
 				verificarTieneTodoLoQueQuiere(entrenador);
 			}
 		} else{
-			//TODO llego un mensaje caught
+			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+			sem_post(semaforoDelEntrenador);
+			//Se llama al hilo o lo que sea (se desbloquea el hilo del entrandor en cuestion)
 		}
 
 
 		//TODO deadlock
 
-
-		//TODO poner nuevamente en null al pokeInstant o sera un semaforo más
 		sem_post(&sem_planificar);
 	}
+
+	pthread_mutex_unlock(&mutex_listaReady);
 
 
 	pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
@@ -213,5 +234,6 @@ void verificarTieneTodoLoQueQuiere(t_entrenador* entrenador){
 		pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
 	}
 }
+
 
 

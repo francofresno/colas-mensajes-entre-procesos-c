@@ -217,8 +217,23 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 		case CAUGHT_POKEMON: ;
 
-		t_caughtPokemon_msg* mensajeCaught = (t_caughtPokemon_msg*) mensaje_recibido;
-		printf("Llego un caught al Team con Atrapado: %d\n", mensajeCaught->atrapado);
+		pthread_mutex_lock(&mutex_entrenadores);
+		int a = list_size(entrenadores);
+		for(int i=0; i<a; i++){
+			t_entrenador* entrenador = list_get(entrenadores, i);
+			if(entrenador->idMensajeCaught == id_correlativo){
+				t_caughtPokemon_msg* mensajeCaught = (t_caughtPokemon_msg*) mensaje_recibido;
+				if(mensajeCaught){
+					entrenador->puedeAtrapar = mensajeCaught->atrapado;// =1
+					planificarSegun();
+				}else{
+					entrenador->idMensajeCaught=0;
+					entrenador->pokemonInstantaneo = NULL;
+				}
+			}
+		}
+
+		pthread_mutex_unlock(&mutex_entrenadores);
 
 			break;
 	}

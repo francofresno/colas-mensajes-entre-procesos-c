@@ -105,6 +105,7 @@ t_entrenador* crear_entrenador(uint32_t id_entrenador, t_coordenadas* coordenada
 	entrenador->cantidad_pokemons = cantidad_pokemons;
 	entrenador->estado = estado;
 	entrenador->idMensajeCaught = 0;
+	entrenador->puedeAtrapar = 0;
 
 	return entrenador;
 }
@@ -191,29 +192,42 @@ void aplanarDobleLista(t_list* lista){
 
 void ejecutarEntrenador(t_entrenador* entrenador){
 
-	//TODO diferenciar entre mensj caught o cualq otro
+	//TODO diferenciar entre mensj caught o cualq otro creo que ya se esta haciendo
+	if(!(entrenador->puedeAtrapar)){
+		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+			sem_wait(semaforoDelEntrenador);
 
-	sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-	sem_wait(semaforoDelEntrenador);
+			sleep(retardoCPU);
 
-	sleep(retardoCPU);
+			moverAlEntrenadorHastaUnPokemon(entrenador->id_entrenador);
 
-	moverAlEntrenadorHastaUnPokemon(entrenador->id_entrenador);
+			if(llegoAlObjetivo(entrenador)){
+				uint32_t id = enviarMensajeCatch(entrenador->pokemonInstantaneo);
 
-	if(llegoAlObjetivo(entrenador)){
-		uint32_t id = enviarMensajeCatch(entrenador->pokemonInstantaneo);
+				if(id==0){
+					list_add(entrenador->pokemonesQuePosee, (void*) entrenador->pokemonInstantaneo);
+					entrenador->cantidad_pokemons++;
 
-		if(id==0){
-			list_add(entrenador->pokemonesQuePosee, (void*) entrenador->pokemonInstantaneo);
-			entrenador->cantidad_pokemons++;
+					pthread_mutex_lock(&mutex_atrapados);
+					list_add(atrapados,(void*) entrenador->pokemonInstantaneo);
+					pthread_mutex_unlock(&mutex_atrapados);
 
-			pthread_mutex_lock(&mutex_atrapados);
-			list_add(atrapados,(void*) entrenador->pokemonInstantaneo); 	//TODO nicky futuro arregla esto
-			pthread_mutex_unlock(&mutex_atrapados);
-		}
+					entrenador->pokemonInstantaneo=NULL;
+				}
 
-		entrenador->idMensajeCaught = id;
+				entrenador->idMensajeCaught = id;
+			}
+	} else {
+		list_add(entrenador->pokemonesQuePosee, (void*) entrenador->pokemonInstantaneo);
+		entrenador->cantidad_pokemons++;
+
+		pthread_mutex_lock(&mutex_atrapados);
+		list_add(atrapados,(void*) entrenador->pokemonInstantaneo);
+		pthread_mutex_unlock(&mutex_atrapados);
+
+		entrenador->pokemonInstantaneo=NULL;
 	}
+
 
 }
 

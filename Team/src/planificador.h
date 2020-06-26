@@ -103,6 +103,7 @@ typedef struct
 	t_newPokemon* pokemonInstantaneo;
 	status_code estado;
 	uint32_t idMensajeCaught;
+	uint32_t puedeAtrapar;
 
 } t_entrenador;
 
