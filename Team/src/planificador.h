@@ -59,7 +59,6 @@ extern pthread_mutex_t mutex_listaBloqueadosEsperandoMensaje;
 extern pthread_mutex_t mutex_listaBloqueadosEsperandoPokemones;
 extern pthread_mutex_t mutex_listaFinalizados;
 
-
 typedef enum{
 	NEW = 1,
 	READY = 2,

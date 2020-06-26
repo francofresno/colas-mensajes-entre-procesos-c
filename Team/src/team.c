@@ -10,6 +10,9 @@
 
 pthread_mutex_t mutex_send = PTHREAD_MUTEX_INITIALIZER;
 
+pthread_mutex_t mutex_id_mensaje_get = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_id_mensaje_catch = PTHREAD_MUTEX_INITIALIZER;
+
 int main(void) {
 
 	inicializarListas();
@@ -247,9 +250,12 @@ void enviarMensajeGetABroker(){
 
 t_list* eliminarRepetidos(){
 
-	int a = list_size(objetivoTeam);
 	t_list* objetivoTeamSinRepetidos = list_create();
 	int c=0;
+
+	pthread_mutex_lock(&mutex_objetivoTeam);
+
+	int a = list_size(objetivoTeam);
 
 	for(int i=0; i < a; i++){
 
@@ -263,6 +269,8 @@ t_list* eliminarRepetidos(){
 			c++;
 		}
 	}
+
+	pthread_mutex_unlock(&mutex_objetivoTeam);
 
 	return objetivoTeamSinRepetidos;
 }
@@ -317,23 +325,28 @@ void esperarIdGet(int socket_cliente){
 	uint32_t* id_respuesta = malloc(sizeof(uint32_t));
 	*id_respuesta = recibir_id(socket_cliente);
 	printf("recibi el id %d\n", *id_respuesta);
+	pthread_mutex_lock(&mutex_id_mensaje_get);
 	list_add(id_mensajeGet,(void*) id_respuesta);
-
+	pthread_mutex_unlock(&mutex_id_mensaje_get);
 }
 
 uint32_t esperarIdCatch(int socket_cliente){
 	uint32_t* id_respuesta = malloc(sizeof(uint32_t));
 	*id_respuesta = recibir_id(socket_cliente);
 	printf("recibi el id %d\n", *id_respuesta);
+
+	pthread_mutex_lock(&mutex_id_mensaje_catch);
 	list_add(id_mensajeCatch,(void*) id_respuesta);
+	pthread_mutex_unlock(&mutex_id_mensaje_catch);
 
 	return *id_respuesta;
 }
 
 void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
 
-	int a = list_size(pendientes);
 	int j=0;
+	pthread_mutex_lock(&mutex_pendientes);
+	int a = list_size(pendientes);
 
 	for(int i=0; i < a; i++){
 
@@ -341,6 +354,7 @@ void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
 			j++;
 		}
 	}
+	pthread_mutex_unlock(&mutex_pendientes);
 
 	if(j!=a){
 		t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));

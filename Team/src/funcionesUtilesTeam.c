@@ -11,6 +11,8 @@ pthread_mutex_t mutex_id_entrenadores = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_entrenador = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_hay_pokemones = PTHREAD_MUTEX_INITIALIZER;
 
+pthread_mutex_t mutex_entrenadores = PTHREAD_MUTEX_INITIALIZER;
+
 void ponerEntrenadoresEnLista(t_config* config) {
 
 	inicializarListasDeEstados();
@@ -44,9 +46,13 @@ void ponerEntrenadoresEnLista(t_config* config) {
 
 		t_entrenador* entrenador = crear_entrenador(id_entrenador, coords, pokemonesQueTiene, pokemonesQueDesea, list_size(pokemonesQueTiene), NEW);
 
+		pthread_mutex_lock(&mutex_entrenadores);
 		list_add(entrenadores, entrenador);
-		list_add(listaNuevos, entrenador);
+		pthread_mutex_unlock(&mutex_entrenadores);
 
+		pthread_mutex_lock(&mutex_listaNuevos);
+		list_add(listaNuevos, entrenador);
+		pthread_mutex_unlock(&mutex_listaNuevos);
 		j++;
 		i++;
 
@@ -63,8 +69,9 @@ void crearHilosEntrenadores() {
 	hilosEntrenadores = list_create();
 	sem_entrenadores_ejecutar = list_create();
 
-	int cantidadEntrenadores = list_size(entrenadores);
+	pthread_mutex_lock(&mutex_entrenadores);
 
+	int cantidadEntrenadores = list_size(entrenadores);
 	pthread_t pthread_id[cantidadEntrenadores];
 
 	for (int i = 0; i < cantidadEntrenadores; i++) {
@@ -84,6 +91,7 @@ void crearHilosEntrenadores() {
 
 		list_add(hilosEntrenadores, &pthread_id[i]);
 	}
+	pthread_mutex_unlock(&mutex_entrenadores);
 
 }
 
@@ -111,7 +119,7 @@ t_list* organizarPokemones(char** listaPokemones) { //tanto para pokemonesObjeti
 		char pipe = '|';
 		char**pokemonesDeUnEntrenador = string_split(listaPokemones[j], &pipe); //separo cada pokemon de un mismo entrenador separado por |
 
-		t_list* listaDePokemones = list_create();
+		t_list* listaDePokemones = list_create(); //TODO preguntar a fran si se destruye
 
 		while (pokemonesDeUnEntrenador[w] != NULL) { //recorro todos y voy creando cada pokemon
 
@@ -198,6 +206,7 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 		if(id==0){
 			list_add(entrenador->pokemonesQuePosee, (void*) entrenador->pokemonInstantaneo);
 			entrenador->cantidad_pokemons++;
+
 			pthread_mutex_lock(&mutex_atrapados);
 			list_add(atrapados,(void*) entrenador->pokemonInstantaneo); 	//TODO nicky futuro arregla esto
 			pthread_mutex_unlock(&mutex_atrapados);
@@ -218,10 +227,11 @@ int llegoAlObjetivo(t_entrenador* entrenador){
 	return (posicionXEntrenador == posicionXPokemon) && (posicionYEntrenador == posicionYPokemon);
 }
 
-
 void moverAlEntrenadorHastaUnPokemon(uint32_t idEntrenador){
 
+	pthread_mutex_lock(&mutex_entrenadores);
 	t_entrenador* entrenador = list_get(entrenadores, idEntrenador);
+	pthread_mutex_unlock(&mutex_entrenadores);
 
 	uint32_t posicionXEntrenador = entrenador->coordenadas->posX;
 	uint32_t posicionYEntrenador = entrenador->coordenadas->posY;
@@ -275,7 +285,10 @@ t_entrenador* entrenadorMasCercano(t_newPokemon* pokemon){
 	int distanciaTemporal;
 	int menorDistanciaBlocked;
 
-	t_list* entrenadores_bloqueados = listaBloqueadosEsperandoPokemones;
+	pthread_mutex_lock(&mutex_listaBloqueadosEsperandoPokemones);
+	t_list* entrenadores_bloqueados = list_duplicate(listaBloqueadosEsperandoPokemones);
+	pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoPokemones);
+
 
 	if(!list_is_empty(entrenadores_bloqueados)){
 		entrenadorMasCercanoBlocked = list_get(entrenadores_bloqueados, 0);
@@ -297,10 +310,14 @@ t_entrenador* entrenadorMasCercano(t_newPokemon* pokemon){
 		}
 	}
 
-	t_list* entrenadores_new = listaNuevos;
+	list_destroy(entrenadores_bloqueados);
+
+	pthread_mutex_lock(&mutex_listaNuevos);
+	t_list* entrenadores_new = list_duplicate(listaNuevos);
+	pthread_mutex_unlock(&mutex_listaNuevos);
+
 	t_entrenador* entrenadorMasCercanoNew;
 	int menorDistanciaNew;
-
 
 	if(!list_is_empty(entrenadores_new)){
 		entrenadorMasCercanoNew = list_get(entrenadores_new, 0);
@@ -324,15 +341,22 @@ t_entrenador* entrenadorMasCercano(t_newPokemon* pokemon){
 		}
 	}
 
+	list_destroy(entrenadores_new);
+
 	if(menorDistanciaNew <= menorDistanciaBlocked ){
 		entrenadorMasCercanoNew->estado = READY;
+		pthread_mutex_lock(&mutex_listaReady);
 		list_add(listaReady, entrenadorMasCercanoNew);
+		pthread_mutex_unlock(&mutex_listaReady);
+
 		entrenadorMasCercanoNew->pokemonInstantaneo = pokemon;
 		return entrenadorMasCercanoNew;
 
 	} else{
 		entrenadorMasCercanoNew->estado = READY;
+		pthread_mutex_lock(&mutex_listaReady);
 		list_add(listaReady, entrenadorMasCercanoNew);
+		pthread_mutex_unlock(&mutex_listaReady);
 		entrenadorMasCercanoBlocked->pokemonInstantaneo = pokemon;
 		return entrenadorMasCercanoBlocked;
 	}
@@ -352,8 +376,11 @@ void buscarPokemon(t_newPokemon* pokemon){  //Busca al entrenador más cercano y
 
 void moverAlEntrenadorHastaOtroEntrenador(uint32_t idEntrenador1, uint32_t idEntrenador2){
 
+	pthread_mutex_lock(&mutex_entrenadores);
 	t_entrenador* entrenador1 = list_get(entrenadores, idEntrenador1);
 	t_entrenador* entrenador2 = list_get(entrenadores, idEntrenador2);
+	pthread_mutex_unlock(&mutex_entrenadores);
+
 
 	uint32_t posicionXEntrenador1 = entrenador1->coordenadas->posX;
 	uint32_t posicionYEntrenador1 = entrenador1->coordenadas->posY;
@@ -383,8 +410,12 @@ void moverAlEntrenadorHastaOtroEntrenador(uint32_t idEntrenador1, uint32_t idEnt
 }
 
 void intercambiarPokemones(uint32_t idEntrenador1, uint32_t idEntrenador2){
+
+	pthread_mutex_lock(&mutex_entrenadores);
 	t_entrenador* entrenador1 = list_get(entrenadores, idEntrenador1);
 	t_entrenador* entrenador2 = list_get(entrenadores, idEntrenador2);
+	pthread_mutex_unlock(&mutex_entrenadores);
+
 
 	sleep(5*retardoCPU);
 	dameTuPokemon(entrenador1,entrenador2);
@@ -451,6 +482,7 @@ t_entrenador* elegirConQuienIntercambiar(t_entrenador* entrenador){ //TODO proba
 
 	t_list* sublistasPosiblesProveedoresDePokemon = list_create();
 
+	pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
 	int tamanioDeadlock = list_size(listaBloqueadosDeadlock);
 
 	for(int a=0; a< tamanioDeadlock; a++){
@@ -481,6 +513,8 @@ t_entrenador* elegirConQuienIntercambiar(t_entrenador* entrenador){ //TODO proba
 
 		list_destroy(pokemonesDe2QueQuiere1);
 	}
+
+	pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
 
 	t_entrenador* entrenadorProveedor = list_get(sublistasPosiblesProveedoresDePokemon, 0);
 	list_destroy(sublistasPosiblesProveedoresDePokemon);

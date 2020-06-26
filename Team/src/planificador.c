@@ -18,7 +18,6 @@ pthread_mutex_t mutex_listaBloqueadosEsperandoMensaje = PTHREAD_MUTEX_INITIALIZE
 pthread_mutex_t mutex_listaBloqueadosEsperandoPokemones = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_listaFinalizados = PTHREAD_MUTEX_INITIALIZER;
 
-
 void planificarSegun() {
 
 
@@ -70,9 +69,11 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 	for (int i = 0; i < tamanio; i++) {
 
 		sem_wait(&sem_planificar);
+
 		pthread_mutex_lock(&mutex_listaReady);
 		t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, i);
 		pthread_mutex_unlock(&mutex_listaReady);
+
 		entrenador->estado=EXEC;
 
 		if(!(entrenador->idMensajeCaught)){
@@ -85,9 +86,11 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 
 			if(entrenador->idMensajeCaught){
 				entrenador->estado = BLOCKED;
+
 				pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
 				list_add(listaBloqueadosEsperandoMensaje, entrenador);
-				pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje); //TODO todos los mutex a estas listas
+				pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
+
 			} else{
 				verificarTieneTodoLoQueQuiere(entrenador);
 			}
@@ -104,7 +107,7 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 	}
 
 
-
+	pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
 	int tamanioDeadlock = list_size(listaBloqueadosDeadlock); //TODO ver donde ponerlo
 	for (int b = 0; b < tamanioDeadlock; b++) {
 
@@ -116,6 +119,7 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 			//algo
 		}
 	}
+	pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
 
 }
 
@@ -189,18 +193,24 @@ void inicializarListasDeEstados(){
 
 }
 
-void verificarTieneTodoLoQueQuiere(t_entrenador* entrenador){ //TODO MUTEX listas
+void verificarTieneTodoLoQueQuiere(t_entrenador* entrenador){
 	if(entrenador->cantidad_pokemons == list_size(entrenador->pokemonesQueQuiere)){
 		if(tieneTodoLoQueQuiere(entrenador)){
 			entrenador->estado = FINISHED;
+			pthread_mutex_lock(&mutex_listaFinalizados);
 			list_add(listaFinalizados, entrenador);
+			pthread_mutex_unlock(&mutex_listaFinalizados);
 		} else{
 			entrenador->estado = BLOCKED;
+			pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
 			list_add(listaBloqueadosDeadlock, entrenador);
+			pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
 		}
 	}else{
 		entrenador->estado = BLOCKED;
+		pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
 		list_add(listaBloqueadosEsperandoPokemones, entrenador);
+		pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
 	}
 }
 

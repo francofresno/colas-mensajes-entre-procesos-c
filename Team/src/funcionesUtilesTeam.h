@@ -27,6 +27,8 @@ extern pthread_mutex_t mutex_id_entrenadores;
 extern pthread_mutex_t mutex_entrenador;
 extern pthread_mutex_t mutex_hay_pokemones;
 
+extern pthread_mutex_t mutex_entrenadores;
+
 t_list* organizarPokemones(char**);
 
 void ponerEntrenadoresEnLista(t_config*);
