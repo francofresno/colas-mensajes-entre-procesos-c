@@ -11,8 +11,10 @@ void configuracionInicial(void)
 
 	for(int i = 0; i < sizeof(directoriosACrear)/sizeof(char*); i++)
 	{
-		verificarDirectorio(obtenerRutaTotal(directoriosACrear[i]));
-		verificarMetadata(obtenerRutaTotal(directoriosACrear[i]));
+		char* pathDirectorioACrear = obtenerRutaTotal(directoriosACrear[i]);
+		verificarDirectorio(pathDirectorioACrear);
+		verificarMetadata(pathDirectorioACrear);
+		free(pathDirectorioACrear);
 	}
 }
 
@@ -40,14 +42,13 @@ void verificarMetadata(char* pathDirectorio)
 		t_config* configMetadata = config_create(pathMetadata);
 		BLOCKS = config_get_int_value(configMetadata, "BLOCKS");
 		BLOCK_SIZE = config_get_int_value(configMetadata, "BLOCK_SIZE");
-//		config_destroy(configMetadata);
+		config_destroy(configMetadata);
 		verificarBitmap(pathDirectorio);
 	}
 	else if(string_ends_with(pathDirectorio, "Blocks")){
 		verificarBloquesIniciales(pathDirectorio);
 	}
-
-//	free(pathMetadata);
+	free(pathMetadata);
 }
 
 void verificarBitmap(char* pathDirectorio)
@@ -65,7 +66,7 @@ void verificarBitmap(char* pathDirectorio)
 	bitarray = bitarray_create_with_mode(bitarrayFlujo, BLOCKS/8, LSB_FIRST);
 	close(fileDescriptor);
 
-//	free(pathBitmap);
+	free(pathBitmap);
 }
 
 void verificarBloquesIniciales(char* pathDirectorio)
@@ -83,7 +84,7 @@ void verificarBloquesIniciales(char* pathDirectorio)
 		}
 		fclose(archivoActual);
 
-//		free(pathBloqueActual);
+		free(pathBloqueActual);
 	}
 }
 
@@ -103,13 +104,15 @@ void verificarDirectorio(char* pathDirectorio)
 
 char* verificarPokemon(t_nombrePokemon nombrePokemon)
 {
-	char* pathDirectorioPokemon = string_from_format("%s/%s", obtenerRutaTotal("Files"), nombrePokemon.nombre);
+	char* pathDirectorioFiles = obtenerRutaTotal("Files");
+	char* pathDirectorioPokemon = string_from_format("%s/%s", pathDirectorioFiles, nombrePokemon.nombre);
 	verificarDirectorio(pathDirectorioPokemon);
 
 	char* pathMetadataPokemon = string_from_format("%s/Metadata.bin", pathDirectorioPokemon);
 	verificarMetadataPokemon(pathMetadataPokemon);
 
-//	free(pathDirectorioPokemon);
+	free(pathDirectorioPokemon);
+	free(pathDirectorioFiles);
 	return pathMetadataPokemon;
 }
 
@@ -136,9 +139,16 @@ char* verificarBloque(t_config* configMetadata)
 	}
 
 	if(sePuedeEscribirElUltimoBloque(sizeBloquesPokemon))
-		return obtenerRutaBloque(atoi(bloquesAsignados[i-1]));
+	{
+		char* rutaBloque = obtenerRutaBloque(atoi(bloquesAsignados[i-1]));
+		free(bloquesAsignados);
+		return rutaBloque;
+	}
 	else
+	{
+		free(bloquesAsignados);
 		return asignarBloque(configMetadata);
+	}
 }
 
 /*******************************************
@@ -187,14 +197,15 @@ int obtenerLugarEnBitmap()
 
 char* obtenerRutaTotal(char* path)
 {
-//	PUNTO_MONTAJE = config_get_string_value(configGeneral, "PUNTO_MONTAJE_TALLGRASS");
-	char* pathTotal = string_from_format("%s/%s", config_get_string_value(configGeneral, "PUNTO_MONTAJE_TALLGRASS"), path);
+	char* pathTotal = string_from_format("%s/%s", PUNTO_MONTAJE, path);
 	return pathTotal;
 }
 
 char* obtenerRutaBloque(int numeroBloque)
 {
-	char* pathBloque = string_from_format("%s/%d.bin", obtenerRutaTotal("Blocks"), numeroBloque);
+	char* pathDirectorioBlocks = obtenerRutaTotal("Blocks");
+	char* pathBloque = string_from_format("%s/%d.bin", pathDirectorioBlocks, numeroBloque);
+	free(pathDirectorioBlocks);
 	return pathBloque;
 }
 
@@ -234,6 +245,7 @@ char* asignarBloque(t_config* configPokemon)
 		config_save(configPokemon);
 
 		free(bloquesAsignadosComoArray);
+		free(bloquesAsignados);
 		return obtenerRutaBloque(bloqueAAsignar);
 	}
 	else
@@ -248,18 +260,26 @@ void escribirArchivoPokemon(char* stringAEscribir, char* pathMetadataPokemon)
 
 	int bytesEscritos = escribirBloque(pathBloqueAEscribir, stringAEscribir);
 
+	free(pathBloqueAEscribir);
+
 	int sizeActual = config_get_int_value(configMetadataPokemon, "SIZE");
-	config_set_value(configMetadataPokemon, "SIZE", string_itoa(sizeActual+bytesEscritos));
+	char* bytesTotales = string_itoa(sizeActual+bytesEscritos);
+	config_set_value(configMetadataPokemon, "SIZE", bytesTotales);
 	config_save(configMetadataPokemon);
+	free(bytesTotales);
 
 	if(bytesEscritos < strlen(stringAEscribir))
 	{
 		char* pathNuevoBloqueAEscribir = verificarBloque(configMetadataPokemon);
 		char* stringResto = string_substring_from(stringAEscribir, bytesEscritos);
 		bytesEscritos += escribirBloque(pathNuevoBloqueAEscribir, stringResto);
+		free(stringResto);
+		free(pathNuevoBloqueAEscribir);
 	}
-	config_set_value(configMetadataPokemon, "SIZE", string_itoa(sizeActual+bytesEscritos));
+	bytesTotales = string_itoa(sizeActual+bytesEscritos);
+	config_set_value(configMetadataPokemon, "SIZE", bytesTotales);
 
+	free(bytesTotales);
 	cerrarArchivo(configMetadataPokemon);
 }
 
@@ -292,10 +312,17 @@ int escribirBloque(char* pathBloqueAEscribir, char* stringAEscribir)
 
 int procesarNewPokemon(t_newPokemon_msg* estructuraNew)
 {
-	char* pathMetadataPokemon = verificarPokemon(estructuraNew->nombre_pokemon);
+	t_nombrePokemon nombrePokemon;
+	nombrePokemon.nombre_lenght = estructuraNew->nombre_pokemon.nombre_lenght;
+	nombrePokemon.nombre = string_duplicate(estructuraNew->nombre_pokemon.nombre);
+
+	char* pathMetadataPokemon = verificarPokemon(nombrePokemon);
 	char* stringAEscribir = string_from_format("%d-%d=%d\n", estructuraNew->coordenadas.posX, estructuraNew->coordenadas.posY, estructuraNew->cantidad_pokemons);
 	escribirArchivoPokemon(stringAEscribir, pathMetadataPokemon);
 
+	free(stringAEscribir);
+	free(pathMetadataPokemon);
+	free(nombrePokemon.nombre);
 	return 0;
 }
 

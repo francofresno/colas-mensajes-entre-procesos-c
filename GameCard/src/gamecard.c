@@ -37,13 +37,13 @@ int main(void) {
 	datosHiloCP.temporal = 0;
 
 	pthread_create(&threadNewPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloNP);
-	pthread_create(&threadGetPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloGP);
-	pthread_create(&threadCatchPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloCP);
-	pthread_create(&threadMessages, NULL, (void*)esperarMensajes, NULL);
+//	pthread_create(&threadGetPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloGP);
+//	pthread_create(&threadCatchPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloCP);
+//	pthread_create(&threadMessages, NULL, (void*)esperarMensajes, NULL);
 
 	pthread_join(threadNewPokemon, NULL);
-	pthread_join(threadGetPokemon, NULL);
-	pthread_join(threadCatchPokemon, NULL);
+//	pthread_join(threadGetPokemon, NULL);
+//	pthread_join(threadCatchPokemon, NULL);
 
 	config_destroy(configGeneral);
 	return EXIT_SUCCESS;
@@ -93,18 +93,15 @@ void recepcionMensajesDeCola(t_suscripcion_msg* datosHilo, int socket_cliente)
 		printf("ID_CORRELATIVO: %d\n", paquete_recibido->id_correlativo);
 
 		devolverMensajeCorrespondiente(paquete_recibido);
-
-		free(paquete_recibido);
 	}
 
-	free(paquetes);
+	list_destroy(paquetes);
 
 	while(1)
 	{
 		char* nombre_recibido = NULL;
 		uint32_t tamanio_recibido;
 		t_paquete* paquete_recibido = recibir_paquete(socket_cliente, &nombre_recibido, &tamanio_recibido);
-
 		while(paquete_recibido == NULL)
 		{
 			printf("Intentando reconectar...\n");
@@ -131,8 +128,8 @@ void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
 	switch(codigoOperacion)
 	{
 		case NEW_POKEMON: ;
-			t_newPokemon_msg* estructuraNew = malloc(sizeof(t_newPokemon_msg));
-			estructuraNew = (t_newPokemon_msg*) paquete_recibido->mensaje;
+			t_newPokemon_msg* estructuraNew = (t_newPokemon_msg*) paquete_recibido->mensaje;
+			printf("nombre recibido: %s\n", estructuraNew->nombre_pokemon.nombre);
 
 			if(procesarNewPokemon(estructuraNew) != 0)
 				exit(-1);
@@ -145,6 +142,7 @@ void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
 				enviar_mensaje(APPEARED_POKEMON, 0, paquete_recibido->id, &estructuraAppeared, socketTemporal);
 
 			free(estructuraNew);
+//			free(estructuraNew->nombre_pokemon.nombre);
 			break;
 		case GET_POKEMON: ;
 			t_getPokemon_msg* estructuraGet = malloc(sizeof(t_getPokemon_msg));
