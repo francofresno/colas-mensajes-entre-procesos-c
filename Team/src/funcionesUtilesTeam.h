@@ -45,7 +45,9 @@ uint32_t generar_id();
 
 void ejecutarEntrenador(t_entrenador*);
 
-int llegoAlObjetivo(t_entrenador*);
+int llegoAlObjetivoPokemon(t_entrenador*);
+
+int llegoAlObjetivoEntrenador(t_entrenador*, t_entrenador*);
 
 void moverAlEntrenadorHastaUnPokemon(uint32_t);
 

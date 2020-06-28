@@ -75,8 +75,16 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 				pthread_mutex_unlock(&mutex_listaReady);
 				list_remove(listaBloqueadosEsperandoMensaje, i);
 			}
+
+			if((entrenador->pokemonInstantaneo)==NULL){
+				pthread_mutex_lock(&mutex_listaBloqueadosEsperandoPokemones);
+				list_add(listaBloqueadosEsperandoPokemones, entrenador);
+				pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoPokemones);
+				list_remove(listaBloqueadosEsperandoMensaje, i);
+			}
 		}
 	}
+
 	pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
 
 	int distancia;
@@ -99,7 +107,7 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 				distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
 				sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 				sem_post(semaforoDelEntrenador);//TODO hacer impide que otro entrenador ejecute a la par
-				//TODO esta llamando realmente al hilo del entrenador?
+
 			}while(distancia !=0);
 
 			if(entrenador->idMensajeCaught){
@@ -115,31 +123,61 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 		} else{
 			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 			sem_post(semaforoDelEntrenador);
-			//Se llama al hilo o lo que sea (se desbloquea el hilo del entrandor en cuestion)
+			verificarTieneTodoLoQueQuiere(entrenador);
 		}
-
-
-		//TODO deadlock
-
 		sem_post(&sem_planificar);
 	}
 
 	pthread_mutex_unlock(&mutex_listaReady);
 
+	pthread_mutex_lock(&mutex_objetivoTeam);
+	int tamanioObjetivoTeam = list_size(objetivoTeam);
+	pthread_mutex_unlock(&mutex_objetivoTeam);
 
-	pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
-	int tamanioDeadlock = list_size(listaBloqueadosDeadlock); //TODO ver donde ponerlo
-	for (int b = 0; b < tamanioDeadlock; b++) {
+	pthread_mutex_lock(&mutex_atrapados);
+	int tamanioAtrapados = list_size(atrapados);
+	pthread_mutex_unlock(&mutex_atrapados);
 
-		t_entrenador* entrenador = (t_entrenador*) list_remove(listaBloqueadosDeadlock, 0);
-		entrenador->estado = EXEC;
+	if(tamanioObjetivoTeam == tamanioAtrapados){ //o cumplio el objetivo o hay deadlock
 
-		int tamanioModificado = list_size(listaBloqueadosDeadlock);
-		for(int a=0; a<tamanioModificado ; a++){
-			//algo
+		pthread_mutex_lock(&mutex_entrenadores);
+		int tamanioEntrenadores = list_size(entrenadores);
+		pthread_mutex_unlock(&mutex_entrenadores);
+
+		pthread_mutex_lock(&mutex_listaFinalizados);
+		int tamanioFinalizados = list_size(listaFinalizados);
+		pthread_mutex_unlock(&mutex_listaFinalizados);
+
+		if(tamanioEntrenadores == tamanioFinalizados){
+			printf("El Team cumplio el obj\n"); // TODO ??
+		} else{
+
+			pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
+			int tamanioDeadlock = list_size(listaBloqueadosDeadlock); //TODO ver donde ponerlo
+			for (int b = 0; b < tamanioDeadlock; b++) {
+
+				t_entrenador* entrenador = (t_entrenador*) list_remove(listaBloqueadosDeadlock, 0);
+				entrenador->estado = EXEC;
+
+				t_entrenador* entrenadorConQuienIntercambiar = elegirConQuienIntercambiar(entrenador);
+				t_entrenador* entrenador = (t_entrenador*) list_remove(listaBloqueadosDeadlock, 0);
+
+				do{
+					distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
+					sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+					sem_post(semaforoDelEntrenador);//TODO hacer impide que otro entrenador ejecute a la par
+
+				}while(distancia !=0);
+
+				verificarTieneTodoLoQueQuiere(entrenador);
+				verificarTieneTodoLoQueQuiere(entrenadorConQuienIntercambiar);
+
+			}
+
+			pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
 		}
 	}
-	pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
+
 
 }
 

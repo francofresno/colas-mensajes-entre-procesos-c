@@ -190,17 +190,17 @@ void aplanarDobleLista(t_list* lista){
 
 void ejecutarEntrenador(t_entrenador* entrenador){
 	while(1) {
-		//TODO diferenciar entre mensj caught o cualq otro creo que ya se esta haciendo
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 		sem_wait(semaforoDelEntrenador);
 
 		if(!(entrenador->puedeAtrapar)){
 
+			if((entrenador->pokemonInstantaneo)!=NULL){
 				sleep(retardoCPU);
 
 				moverAlEntrenadorHastaUnPokemon(entrenador->id_entrenador);
 
-				if(llegoAlObjetivo(entrenador)){
+				if(llegoAlObjetivoPokemon(entrenador)){
 					uint32_t id = enviarMensajeCatch(entrenador->pokemonInstantaneo);
 
 					if(id==0){
@@ -216,6 +216,21 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 
 					entrenador->idMensajeCaught = id;
 				}
+
+			} else {
+				sleep(retardoCPU);
+
+				t_entrenador* entrenadorConQuienIntercambiar = elegirConQuienIntercambiar(entrenador);
+
+				moverAlEntrenadorHastaOtroEntrenador(entrenador->id_entrenador, entrenadorConQuienIntercambiar->id_entrenador);
+
+				if(llegoAlObjetivoEntrenador(entrenador, entrenadorConQuienIntercambiar)){
+
+					intercambiarPokemones(entrenador->id_entrenador, entrenadorConQuienIntercambiar->id_entrenador);
+
+				}
+			}
+
 		} else {
 			list_add(entrenador->pokemonesQuePosee, (void*) entrenador->pokemonInstantaneo);
 			entrenador->cantidad_pokemons++;
@@ -229,7 +244,8 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 	}
 }
 
-int llegoAlObjetivo(t_entrenador* entrenador){
+int llegoAlObjetivoPokemon(t_entrenador* entrenador){
+
 	uint32_t posicionXEntrenador = entrenador->coordenadas->posX;
 	uint32_t posicionYEntrenador = entrenador->coordenadas->posY;
 
@@ -237,6 +253,17 @@ int llegoAlObjetivo(t_entrenador* entrenador){
 	uint32_t posicionYPokemon = entrenador->pokemonInstantaneo->coordenadas->posY;
 
 	return (posicionXEntrenador == posicionXPokemon) && (posicionYEntrenador == posicionYPokemon);
+}
+
+int llegoAlObjetivoEntrenador(t_entrenador* entrenador1, t_entrenador* entrenador2){
+
+	uint32_t posicionXEntrenador1 = entrenador1->coordenadas->posX;
+	uint32_t posicionYEntrenador1 = entrenador1->coordenadas->posY;
+
+	uint32_t posicionXEntrenador2 = entrenador2->coordenadas->posX;
+	uint32_t posicionYEntrenador2 = entrenador2->coordenadas->posY;
+
+	return (posicionXEntrenador1 == posicionXEntrenador2) && (posicionYEntrenador1 == posicionYEntrenador2);
 }
 
 void moverAlEntrenadorHastaUnPokemon(uint32_t idEntrenador){
@@ -415,7 +442,7 @@ void moverAlEntrenadorHastaOtroEntrenador(uint32_t idEntrenador1, uint32_t idEnt
 		if(distanciaEnY>0){
 			entrenador1->coordenadas->posY = posicionYEntrenador1++;
 		}else if(distanciaEnX<0){
-			entrenador1->coordenadas->posY = posicionYEntrenador1--;
+			entrenador1->coordenadas->posY = posicionYEntrenador1--; //TODO ciclo CPU??
 		}
 	}
 	log_movimiento_entrenador(idEntrenador1, entrenador1->coordenadas->posX, entrenador1->coordenadas->posY);
