@@ -125,4 +125,6 @@ void inicializarListasDeEstados();
 
 void verificarTieneTodoLoQueQuiere(t_entrenador*);
 
+void sacarEntrenadorDeLista(t_entrenador, t_list*);
+
 #endif /* PLANIFICADOR_H_ */

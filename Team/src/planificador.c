@@ -61,7 +61,7 @@ void planificarSegun() {
 
 }
 
-void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
+void planificarSegunFifo() {
 
 	pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
 	if(!(list_is_empty(listaBloqueadosEsperandoMensaje))){
@@ -101,7 +101,7 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 
 		entrenador->estado=EXEC;
 
-		if(!(entrenador->puedeAtrapar)){ 		//TODO fijarnos
+		if(!(entrenador->puedeAtrapar)){
 
 			do{
 				distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
@@ -153,14 +153,17 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 		} else{
 
 			pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
-			int tamanioDeadlock = list_size(listaBloqueadosDeadlock); //TODO ver donde ponerlo
+			int tamanioDeadlock = list_size(listaBloqueadosDeadlock);
 			for (int b = 0; b < tamanioDeadlock; b++) {
 
 				t_entrenador* entrenador = (t_entrenador*) list_remove(listaBloqueadosDeadlock, 0);
 				entrenador->estado = EXEC;
 
 				t_entrenador* entrenadorConQuienIntercambiar = elegirConQuienIntercambiar(entrenador);
-				t_entrenador* entrenador = (t_entrenador*) list_remove(listaBloqueadosDeadlock, 0);
+
+				pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
+				sacarEntrenadorDeLista(entrenadorConQuienIntercambiar, listaBloqueadosDeadlock);
+				pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
 
 				do{
 					distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
@@ -272,5 +275,14 @@ void verificarTieneTodoLoQueQuiere(t_entrenador* entrenador){
 	}
 }
 
+void sacarEntrenadorDeLista(t_entrenador entrenador, t_list* lista){
+	int a = list_size(lista);
+	for(int i=0; i<a ; i++){
+		t_entrenador* entrenadorDeLista = list_get(lista, i);
+		if(entrenador->id_entrenador == entrenadorDeLista->id_entrenador){
+			list_remove(lista, i);
+		}
+	}
+}
 
 
