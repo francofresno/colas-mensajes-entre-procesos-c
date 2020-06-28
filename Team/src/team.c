@@ -16,7 +16,7 @@ pthread_mutex_t mutex_id_mensaje_catch = PTHREAD_MUTEX_INITIALIZER;
 int main(void) {
 
 	inicializarListas();
-	inicializarSemaforosYMutex();
+	inicializarSemaforoPlanificador();
 	t_config* config = leer_config();
 	inicializarConfig(config);
 
@@ -76,7 +76,7 @@ void inicializarConfig(t_config* config){
 	LOGGER = log_create(team_log, PUERTO_TEAM, false, LOG_LEVEL_INFO);
 }
 
-void inicializarSemaforosYMutex(){
+void inicializarSemaforoPlanificador(){
 	sem_init(&sem_planificar, 0, 1);
 }
 
@@ -223,16 +223,15 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 			t_entrenador* entrenador = list_get(entrenadores, i);
 			if(entrenador->idMensajeCaught == id_correlativo){
 				t_caughtPokemon_msg* mensajeCaught = (t_caughtPokemon_msg*) mensaje_recibido;
-				if(mensajeCaught){
-					entrenador->puedeAtrapar = mensajeCaught->atrapado;// =1
+				if(mensajeCaught->atrapado){
+					entrenador->puedeAtrapar = 1;
 					planificarSegun();
 				}else{
-					entrenador->idMensajeCaught=0;
-					entrenador->pokemonInstantaneo = NULL;
+					entrenador->idMensajeCaught = 0;
+					entrenador->pokemonInstantaneo = NULL; //TODO cambiar bloqueo porque estaba esperando mensaje pero no pudo atrapar al pkm
 				}
 			}
 		}
-
 		pthread_mutex_unlock(&mutex_entrenadores);
 
 			break;

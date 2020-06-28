@@ -50,7 +50,7 @@ t_config* leer_config(void);
 
 void inicializarConfig(t_config*);
 
-void inicializarSemaforosYMutex();
+void inicializarSemaforoPlanificador();
 
 void suscribirseAppeared();
 

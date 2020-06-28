@@ -77,7 +77,6 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 			}
 		}
 	}
-
 	pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
 
 	int distancia;
@@ -107,7 +106,7 @@ void planificarSegunFifo() {  //TODO semaforos con mensaje appeard
 				entrenador->estado = BLOCKED;
 
 				pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
-				list_add(listaBloqueadosEsperandoMensaje, entrenador); //TODO no estamos sacandolo de la lista de READY
+				list_add(listaBloqueadosEsperandoMensaje, entrenador);
 				pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
 
 			} else{
@@ -229,9 +228,9 @@ void verificarTieneTodoLoQueQuiere(t_entrenador* entrenador){
 		}
 	}else{
 		entrenador->estado = BLOCKED;
-		pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
+		pthread_mutex_lock(&mutex_listaBloqueadosEsperandoPokemones);
 		list_add(listaBloqueadosEsperandoPokemones, entrenador);
-		pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
+		pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoPokemones);
 	}
 }
 

@@ -70,7 +70,6 @@ void crearHilosEntrenadores() {
 	sem_entrenadores_ejecutar = list_create();
 
 	pthread_mutex_lock(&mutex_entrenadores);
-
 	int cantidadEntrenadores = list_size(entrenadores);
 	pthread_t pthread_id[cantidadEntrenadores];
 
@@ -87,7 +86,6 @@ void crearHilosEntrenadores() {
 		pthread_create(&pthread_id[i], NULL, (void*) ejecutarEntrenador, entrenador);
 
 		pthread_detach(pthread_id[i]);
-
 
 		list_add(hilosEntrenadores, &pthread_id[i]);
 	}
@@ -191,44 +189,44 @@ void aplanarDobleLista(t_list* lista){
 }
 
 void ejecutarEntrenador(t_entrenador* entrenador){
-
-	//TODO diferenciar entre mensj caught o cualq otro creo que ya se esta haciendo
-	if(!(entrenador->puedeAtrapar)){
+	while(1) {
+		//TODO diferenciar entre mensj caught o cualq otro creo que ya se esta haciendo
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-			sem_wait(semaforoDelEntrenador);
+		sem_wait(semaforoDelEntrenador);
 
-			sleep(retardoCPU);
+		if(!(entrenador->puedeAtrapar)){
 
-			moverAlEntrenadorHastaUnPokemon(entrenador->id_entrenador);
+				sleep(retardoCPU);
 
-			if(llegoAlObjetivo(entrenador)){
-				uint32_t id = enviarMensajeCatch(entrenador->pokemonInstantaneo);
+				moverAlEntrenadorHastaUnPokemon(entrenador->id_entrenador);
 
-				if(id==0){
-					list_add(entrenador->pokemonesQuePosee, (void*) entrenador->pokemonInstantaneo);
-					entrenador->cantidad_pokemons++;
+				if(llegoAlObjetivo(entrenador)){
+					uint32_t id = enviarMensajeCatch(entrenador->pokemonInstantaneo);
 
-					pthread_mutex_lock(&mutex_atrapados);
-					list_add(atrapados,(void*) entrenador->pokemonInstantaneo);
-					pthread_mutex_unlock(&mutex_atrapados);
+					if(id==0){
+						list_add(entrenador->pokemonesQuePosee, (void*) entrenador->pokemonInstantaneo);
+						entrenador->cantidad_pokemons++;
 
-					entrenador->pokemonInstantaneo=NULL;
+						pthread_mutex_lock(&mutex_atrapados);
+						list_add(atrapados,(void*) entrenador->pokemonInstantaneo);
+						pthread_mutex_unlock(&mutex_atrapados);
+
+						entrenador->pokemonInstantaneo=NULL;
+					}
+
+					entrenador->idMensajeCaught = id;
 				}
+		} else {
+			list_add(entrenador->pokemonesQuePosee, (void*) entrenador->pokemonInstantaneo);
+			entrenador->cantidad_pokemons++;
 
-				entrenador->idMensajeCaught = id;
-			}
-	} else {
-		list_add(entrenador->pokemonesQuePosee, (void*) entrenador->pokemonInstantaneo);
-		entrenador->cantidad_pokemons++;
+			pthread_mutex_lock(&mutex_atrapados);
+			list_add(atrapados,(void*) entrenador->pokemonInstantaneo);
+			pthread_mutex_unlock(&mutex_atrapados);
 
-		pthread_mutex_lock(&mutex_atrapados);
-		list_add(atrapados,(void*) entrenador->pokemonInstantaneo);
-		pthread_mutex_unlock(&mutex_atrapados);
-
-		entrenador->pokemonInstantaneo=NULL;
+			entrenador->pokemonInstantaneo=NULL;
+		}
 	}
-
-
 }
 
 int llegoAlObjetivo(t_entrenador* entrenador){
