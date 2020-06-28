@@ -204,14 +204,13 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 			t_localizedPokemon_msg* mensajeLocalized = (t_localizedPokemon_msg*) mensaje_recibido;
 
-	//		t_nombrePokemon nombre_pokemon;
-	//			uint32_t cantidad_coordenadas;
-	//			t_coordenadas* coordenadas;
-	//		} t_localizedPokemon_msg;
+			uint32_t cantidadCoordenadas = mensajeLocalized->cantidad_coordenadas;
 
-			printf("Llego un localized con nombre: %s\n", mensajeLocalized->nombre_pokemon.nombre);
-			 //TODO no es para appeard (planificar)
-
+			if(necesitaTeamAlPokemon(mensajeLocalized->nombre_pokemon)){
+				for(int i=0; i<cantidadCoordenadas; i++){
+					// hacer algo
+				}
+			}
 
 			break;
 
@@ -376,5 +375,23 @@ void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
 		pokemonNuevo->coordenadas = coordenadas;
 		//buscarPokemon(pokemonNuevo);hace lo que tenga que hacer --> poner a planificar al entrenador dormido o listo (con coordenadas y pokemon)
 	}
+}
+
+int necesitaTeamAlPokemon(t_nombrePokemon* pokemon){
+
+	pthread_mutex_lock(&mutex_pendientes);
+
+	int a = list_size(pendientes);
+
+		for(int i=0; i < a; i++){
+
+			if(sonIguales(pokemon, list_get(pendientes, i))){
+				return 1;
+			}
+		}
+
+	pthread_mutex_unlock(&mutex_pendientes);
+
+	return 0;
 }
 

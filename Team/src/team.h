@@ -84,6 +84,8 @@ uint32_t esperarIdCatch(int);
 
 void requiere(t_nombrePokemon*, t_coordenadas*);
 
+int necesitaTeamAlPokemon(t_nombrePokemon*);
+
 //void terminar_programa(int socket, t_log* logger, t_config* config);
 
 #endif /* TEAM_H_ */

@@ -211,6 +211,10 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 						list_add(atrapados,(void*) entrenador->pokemonInstantaneo);
 						pthread_mutex_unlock(&mutex_atrapados);
 
+						pthread_mutex_lock(&mutex_pendientes);
+						sacarPokemonDe(entrenador->pokemonInstantaneo, pendientes);
+						pthread_mutex_unlock(&mutex_pendientes);
+
 						entrenador->pokemonInstantaneo=NULL;
 					}
 
@@ -238,6 +242,10 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 			pthread_mutex_lock(&mutex_atrapados);
 			list_add(atrapados,(void*) entrenador->pokemonInstantaneo);
 			pthread_mutex_unlock(&mutex_atrapados);
+
+			pthread_mutex_lock(&mutex_pendientes);
+			sacarPokemonDe(entrenador->pokemonInstantaneo, pendientes);
+			pthread_mutex_unlock(&mutex_pendientes);
 
 			entrenador->pokemonInstantaneo=NULL;
 		}
@@ -601,4 +609,15 @@ int tengoAlgunPokemonQueQuiere2(t_entrenador* entrenador1,t_entrenador* entrenad
 	list_destroy(tienePeroNoQuiere1);
 
 	return false;
+}
+
+void sacarPokemonDe(t_newPokemon* pokemon, t_list* lista){
+	int a = list_size(lista);
+		for(int i=0; i<a ; i++){
+			t_nombrePokemon* pokemonLista = list_get(lista, i);
+			if(sonIguales(pokemon->pokemon, pokemonLista)){
+				list_remove(lista, i);
+				break; //TODO preguntar franco si realmente sale del for con el break
+			}
+		}
 }
