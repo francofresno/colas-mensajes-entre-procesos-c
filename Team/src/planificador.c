@@ -104,12 +104,18 @@ void planificarSegunFifo() {
 
 		if(!(entrenador->puedeAtrapar)){
 
-			do{
-				distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-				sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-				sem_post(semaforoDelEntrenador);//TODO hacer impide que otro entrenador ejecute a la par
+			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+			sem_post(semaforoDelEntrenador);
+			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+			int distanciaAnterior = distancia;
 
-			}while(distancia !=0);
+			while (distancia != 0) {
+				if (distancia != distanciaAnterior) {
+					sem_post(semaforoDelEntrenador);
+				}
+				distanciaAnterior = distancia;
+				distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+			}
 
 			if(entrenador->idMensajeCaught){
 				entrenador->estado = BLOCKED;
@@ -169,7 +175,7 @@ void planificarSegunFifo() {
 				do{
 					distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
 					sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-					sem_post(semaforoDelEntrenador);//TODO hacer impide que otro entrenador ejecute a la par
+					sem_post(semaforoDelEntrenador);
 
 				}while(distancia !=0);
 

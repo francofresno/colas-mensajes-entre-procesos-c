@@ -65,7 +65,7 @@ void inicializarListas();
 
 void esperarIdGet(int);
 
-void requiere(t_nombrePokemon*, t_coordenadas*);
+void requiere(t_appearedPokemon_msg*);
 
 int necesitaTeamAlPokemon(t_nombrePokemon*);
 

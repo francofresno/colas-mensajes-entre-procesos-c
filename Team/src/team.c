@@ -92,8 +92,8 @@ void suscribirseAColas(){
 	pthread_create(&thread, NULL, (void*)suscribirseAppeared, NULL);
 	pthread_detach(thread);
 	pthread_create(&thread, NULL, (void*)suscribirseCaught, NULL);
-	pthread_detach(thread);
-	pthread_create(&thread, NULL, (void*)suscribirseLocalized, NULL);
+//	pthread_detach(thread);
+//	pthread_create(&thread, NULL, (void*)suscribirseLocalized, NULL);
 	pthread_join(thread, NULL);
 
 }
@@ -159,7 +159,7 @@ void suscribirseA(op_code tipo_cola){
 		printf("COD OP: %d\n", paquete_recibido->codigo_operacion);
 		printf("ID: %d\n", paquete_recibido->id);
 		printf("ID_CORRELATIVO: %d\n", paquete_recibido->id_correlativo);
-		process_request(paquete_recibido->codigo_operacion, paquete_recibido->id, paquete_recibido->mensaje, socket_cliente);
+		process_request(paquete_recibido->codigo_operacion, paquete_recibido->id_correlativo, paquete_recibido->mensaje, socket_cliente);
 
 		int status_ack = informar_ack(socket_cliente);
 		printf("informe ACK con status %d\n", status_ack);
@@ -187,11 +187,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 			t_appearedPokemon_msg* mensajeAppeared = (t_appearedPokemon_msg*) mensaje_recibido;
 
-			t_nombrePokemon pokemon = mensajeAppeared->nombre_pokemon;
-
-			t_coordenadas coordenadas = mensajeAppeared->coordenadas;
-
-			requiere(&pokemon, &coordenadas);
+			requiere(mensajeAppeared);
 
 		break;
 
@@ -312,25 +308,23 @@ void esperarIdGet(int socket_cliente){
 	pthread_mutex_unlock(&mutex_id_mensaje_get);
 }
 
-void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
+void requiere(t_appearedPokemon_msg* mensajeAppeared){
 
 	int j=0;
 	pthread_mutex_lock(&mutex_pendientes);
 	int a = list_size(pendientes);
 
 	for(int i=0; i < a; i++){
-
-		if(!sonIguales(pokemon, list_get(pendientes, i))){
+		if(!sonIguales(&(mensajeAppeared->nombre_pokemon), list_get(pendientes, i))){
 			j++;
 		}
 	}
 	pthread_mutex_unlock(&mutex_pendientes);
 
-
 	if(j!=a){
 		t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
-		pokemonNuevo->pokemon = pokemon;
-		pokemonNuevo->coordenadas = coordenadas;
+		pokemonNuevo->pokemon = &(mensajeAppeared->nombre_pokemon);
+		pokemonNuevo->coordenadas = &(mensajeAppeared->coordenadas);
 		buscarPokemon(pokemonNuevo);
 	}
 }
