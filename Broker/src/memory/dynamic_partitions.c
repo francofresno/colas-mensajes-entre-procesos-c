@@ -372,5 +372,7 @@ t_partition* fifo_find_victim_partition()
 
 t_partition* lru_find_victim_partition()
 {
+	t_partition* partition = (t_partition*) get_first(lru_list);
+	list_remove(OCCUPIED_PARTITIONS, get_index_of_partition_by_base(OCCUPIED_PARTITIONS, partition->base));
 	return (t_partition*) get_first(lru_list);
 }

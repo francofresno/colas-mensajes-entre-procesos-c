@@ -112,7 +112,7 @@ void associate_buddies(t_buddy* buddy)
 
 		int index = get_index_of_buddy_by_base(FREE_PARTITIONS, buddy->base);
 		int my_buddy_index = get_index_of_buddy_by_base(FREE_PARTITIONS, my_buddy->base);
-		if (index > my_buddy_index) {
+		if (buddy->base > my_buddy->base) {
 			log_buddy_association(my_buddy->base, buddy->base);
 
 			list_remove(FREE_PARTITIONS, index);
@@ -155,12 +155,18 @@ t_buddy* find_free_smaller_buddy_to_hold(int size)
 
 t_buddy* choose_victim_buddy()
 {
+	t_buddy* victim = NULL;
 	if (VICTIM_SELECTION_ALGORITHM == FIFO) {
-		return fifo_find_victim_buddy();
+		victim = fifo_find_victim_buddy();
 	} else if (VICTIM_SELECTION_ALGORITHM == LRU) {
-		return lru_find_victim_buddy();
+		victim = lru_find_victim_buddy();
+		list_remove(OCCUPIED_PARTITIONS, get_index_of_buddy_by_base(OCCUPIED_PARTITIONS, victim->base));
 	}
-	return NULL;
+
+	if (victim != NULL)
+		list_add(FREE_PARTITIONS, (void*) victim);
+
+	return victim;
 }
 
 int get_index_of_buddy_by_base(t_list* buddies, uint32_t base_buddy)
@@ -219,13 +225,13 @@ t_buddy* find_buddy_by_id(t_list* list, uint32_t id)
 
 unsigned upper_power_of_two(unsigned size)
 {
-    size--;
+    size -= 1;
     size |= (size >> 1);
     size |= (size >> 2);
     size |= (size >> 4);
     size |= (size >> 8);
     size |= (size >> 16);
-    return size++;
+    return size + 1;
 }
 
 int is_power_of_two(int number)
