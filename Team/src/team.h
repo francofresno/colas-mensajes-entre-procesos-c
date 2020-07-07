@@ -27,20 +27,7 @@ const static struct {
 
 };
 
-// Variables globales
-char* IP_TEAM;
-char* PUERTO_TEAM;
-char* ipBroker;
-char* puertoBroker;
-int ID_TEAM;
-int TIEMPO_RECONEXION;
 pthread_t thread;
-
-// Mutexs
-extern pthread_mutex_t mutex_send;
-
-extern pthread_mutex_t mutex_id_mensaje_get;
-extern pthread_mutex_t mutex_id_mensaje_catch;
 
 void quedarseALaEscucha(int*);
 
@@ -74,13 +61,9 @@ t_list* eliminarRepetidos();
 
 void enviarMensajeGet(t_nombrePokemon*);
 
-uint32_t enviarMensajeCatch(t_newPokemon*);
-
 void inicializarListas();
 
 void esperarIdGet(int);
-
-uint32_t esperarIdCatch(int);
 
 void requiere(t_nombrePokemon*, t_coordenadas*);
 

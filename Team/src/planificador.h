@@ -44,13 +44,16 @@ t_list* listaFinalizados;
 t_list* atrapados;
 t_list* pendientes;
 t_list* objetivoTeam;
+t_list* entrenadores;
 
 //semaforos
 t_list* sem_entrenadores_ejecutar;
 sem_t sem_planificar;
+
 extern pthread_mutex_t mutex_atrapados;
 extern pthread_mutex_t mutex_pendientes;
 extern pthread_mutex_t mutex_objetivoTeam;
+extern pthread_mutex_t mutex_entrenadores;
 
 extern pthread_mutex_t mutex_listaNuevos;
 extern pthread_mutex_t mutex_listaReady;
@@ -125,6 +128,10 @@ void inicializarListasDeEstados();
 
 void verificarTieneTodoLoQueQuiere(t_entrenador*);
 
-void sacarEntrenadorDeLista(t_entrenador, t_list*);
+void sacarEntrenadorDeLista(t_entrenador*, t_list*);
+
+t_entrenador* elegirConQuienIntercambiar(t_entrenador*);
+
+int tengoAlgunPokemonQueQuiere2(t_entrenador*,t_entrenador*);
 
 #endif /* PLANIFICADOR_H_ */

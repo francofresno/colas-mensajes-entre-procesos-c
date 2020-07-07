@@ -14,7 +14,6 @@
 uint32_t ID_ENTRENADORES;
 
 // Listas
-t_list* entrenadores;
 t_list* hilosEntrenadores;
 t_list* objetivoTeam;
 t_list* atrapados;
@@ -22,12 +21,23 @@ t_list* pendientes;
 t_list* id_mensajeGet;
 t_list* id_mensajeCatch;
 
+// Variables globales
+char* IP_TEAM;
+char* PUERTO_TEAM;
+char* ipBroker;
+char* puertoBroker;
+int ID_TEAM;
+int TIEMPO_RECONEXION;
+
 // Mutexs
 extern pthread_mutex_t mutex_id_entrenadores;
 extern pthread_mutex_t mutex_entrenador;
 extern pthread_mutex_t mutex_hay_pokemones;
 
-extern pthread_mutex_t mutex_entrenadores;
+extern pthread_mutex_t mutex_send;
+
+extern pthread_mutex_t mutex_id_mensaje_get;
+extern pthread_mutex_t mutex_id_mensaje_catch;
 
 t_list* organizarPokemones(char**);
 
@@ -44,6 +54,10 @@ t_nombrePokemon* crear_pokemon(char*);
 uint32_t generar_id();
 
 void ejecutarEntrenador(t_entrenador*);
+
+uint32_t enviarMensajeCatch(t_newPokemon*);
+
+uint32_t esperarIdCatch(int);
 
 int llegoAlObjetivoPokemon(t_entrenador*);
 
@@ -68,10 +82,6 @@ void moverAlEntrenadorHastaOtroEntrenador(uint32_t, uint32_t);
 void intercambiarPokemones(uint32_t, uint32_t);
 
 void dameTuPokemon(t_entrenador*, t_entrenador*);
-
-t_entrenador* elegirConQuienIntercambiar(t_entrenador*);
-
-int tengoAlgunPokemonQueQuiere2(t_entrenador*,t_entrenador*);
 
 void sacarPokemonDe(t_newPokemon*, t_list*);
 

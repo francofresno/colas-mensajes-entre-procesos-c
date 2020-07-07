@@ -8,11 +8,6 @@
 
 #include "team.h"
 
-pthread_mutex_t mutex_send = PTHREAD_MUTEX_INITIALIZER;
-
-pthread_mutex_t mutex_id_mensaje_get = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex_id_mensaje_catch = PTHREAD_MUTEX_INITIALIZER;
-
 int main(void) {
 
 	inicializarListas();
@@ -21,7 +16,7 @@ int main(void) {
 	inicializarConfig(config);
 
 	ponerEntrenadoresEnLista(config);
-	crearHilosEntrenadores(); //TODO fijarnos si anda.
+	crearHilosEntrenadores();
 
 	enviarMensajeGetABroker();
 
@@ -206,7 +201,7 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 			uint32_t cantidadCoordenadas = mensajeLocalized->cantidad_coordenadas;
 
-			if(necesitaTeamAlPokemon(mensajeLocalized->nombre_pokemon)){
+			if(necesitaTeamAlPokemon(&(mensajeLocalized->nombre_pokemon))){
 				for(int i=0; i<cantidadCoordenadas; i++){
 					// hacer algo
 				}
@@ -301,32 +296,6 @@ void enviarMensajeGet(t_nombrePokemon* pokemon){
 	liberar_conexion(socket_cliente);
 }
 
-uint32_t enviarMensajeCatch(t_newPokemon* pokemon){
-
-	t_catchPokemon_msg* estructuraPokemon = malloc(sizeof(t_catchPokemon_msg));
-
-	estructuraPokemon->coordenadas = *(pokemon->coordenadas);
-	estructuraPokemon->nombre_pokemon = *(pokemon->pokemon);
-	int socket_cliente = crear_conexion(ipBroker, puertoBroker);
-
-	uint32_t id = 0;
-
-	if(socket_cliente<=0){
-		return id;
-	}
-
-	int status = enviar_mensaje(CATCH_POKEMON, 0, 0, estructuraPokemon, socket_cliente);
-
-
-	if(status>=0){
-		id = esperarIdCatch(socket_cliente);
-	}
-
-	liberar_conexion(socket_cliente);
-
-	return id;
-}
-
 void inicializarListas(){
 	id_mensajeGet = list_create();
 	id_mensajeCatch = list_create();
@@ -343,18 +312,6 @@ void esperarIdGet(int socket_cliente){
 	pthread_mutex_unlock(&mutex_id_mensaje_get);
 }
 
-uint32_t esperarIdCatch(int socket_cliente){
-	uint32_t* id_respuesta = malloc(sizeof(uint32_t));
-	*id_respuesta = recibir_id(socket_cliente);
-	printf("recibi el id %d\n", *id_respuesta);
-
-	pthread_mutex_lock(&mutex_id_mensaje_catch);
-	list_add(id_mensajeCatch,(void*) id_respuesta);
-	pthread_mutex_unlock(&mutex_id_mensaje_catch);
-
-	return *id_respuesta;
-}
-
 void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
 
 	int j=0;
@@ -369,11 +326,12 @@ void requiere(t_nombrePokemon* pokemon, t_coordenadas* coordenadas){
 	}
 	pthread_mutex_unlock(&mutex_pendientes);
 
+
 	if(j!=a){
 		t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
 		pokemonNuevo->pokemon = pokemon;
 		pokemonNuevo->coordenadas = coordenadas;
-		//buscarPokemon(pokemonNuevo);hace lo que tenga que hacer --> poner a planificar al entrenador dormido o listo (con coordenadas y pokemon)
+		buscarPokemon(pokemonNuevo);
 	}
 }
 
