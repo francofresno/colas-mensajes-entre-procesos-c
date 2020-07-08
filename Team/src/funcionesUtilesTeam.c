@@ -218,6 +218,11 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 			list_add(entrenador->pokemonesQuePosee, (void*) pokemonAtrapado);
 			entrenador->cantidad_pokemons++;
 
+			log_atrapo_al_pokemon(entrenador->id_entrenador,
+					pokemonAtrapado->nombre,
+					entrenador->pokemonInstantaneo->coordenadas->posX,
+					entrenador->pokemonInstantaneo->coordenadas->posY);
+
 			pthread_mutex_lock(&mutex_atrapados);
 			list_add(atrapados,(void*) pokemonAtrapado);
 			pthread_mutex_unlock(&mutex_atrapados);
@@ -242,11 +247,18 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 					uint32_t id = enviarMensajeCatch(entrenador->pokemonInstantaneo);
 
 					if(id==0){
+						log_error_comunicacion_con_broker();
+
 						list_add(entrenador->pokemonesQuePosee, (void*) entrenador->pokemonInstantaneo);
 						entrenador->cantidad_pokemons++;
 
 						t_nombrePokemon* pokemonAtrapado = malloc(sizeof(t_nombrePokemon));
 						pokemonAtrapado = entrenador->pokemonInstantaneo->pokemon;
+
+						log_atrapo_al_pokemon(entrenador->id_entrenador,
+										pokemonAtrapado->nombre,
+										entrenador->pokemonInstantaneo->coordenadas->posX,
+										entrenador->pokemonInstantaneo->coordenadas->posY);
 
 						pthread_mutex_lock(&mutex_atrapados);
 						list_add(atrapados,(void*) pokemonAtrapado);
@@ -507,7 +519,7 @@ void moverAlEntrenadorHastaOtroEntrenador(uint32_t idEntrenador1, uint32_t idEnt
 		if(distanciaEnY>0){
 			entrenador1->coordenadas->posY = posicionYEntrenador1++;
 		}else if(distanciaEnX<0){
-			entrenador1->coordenadas->posY = posicionYEntrenador1--; //TODO ciclo CPU??
+			entrenador1->coordenadas->posY = posicionYEntrenador1--;
 		}
 	}
 	log_movimiento_entrenador(idEntrenador1, entrenador1->coordenadas->posX, entrenador1->coordenadas->posY);

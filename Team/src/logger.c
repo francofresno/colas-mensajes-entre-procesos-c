@@ -49,11 +49,10 @@ void log_fin_algoritmo_deadlock(char* resultado)
 	log_info(LOGGER,log_msg);
 }
 
-void log_llegada_appeared(uint32_t id, uint32_t id_corr, char* nombre, uint32_t x, uint32_t y)
+void log_llegada_appeared(uint32_t id_corr, char* nombre, uint32_t x, uint32_t y)
 {
 	char log_msg[100];
-	sprintf(log_msg, "Llegó un mensaje 'Appeared' a Team y sus datos son: \n ID: %d \n ID Correlativo: %d \n Nombre Pokemon: %s \n Coordenadas [%d,%d]",
-			id,
+	sprintf(log_msg, "Llegó un mensaje 'Appeared' a Team y sus datos son: \n ID Correlativo: %d \n Nombre Pokemon: %s \n Coordenadas [%d,%d]",
 			id_corr,
 			nombre,
 			x,
@@ -66,12 +65,11 @@ void log_llegada_localized()
 {
 }
 
-void log_llegada_caught(uint32_t id, uint32_t id_corr, uint32_t atrapado)
+void log_llegada_caught(uint32_t id_corr, uint32_t atrapado)
 {
 	char* estadoAtrapado = atrapado ? "" : "no ";
 	char log_msg[100];
-	sprintf(log_msg, "Llegó un mensaje 'Caught' a Team y sus datos son: \n ID: %d \n ID Correlativo: %d \n y el entrenador %spuede atraparlo",
-			id,
+	sprintf(log_msg, "Llegó un mensaje 'Caught' a Team y sus datos son: \n ID Correlativo: %d \n y el entrenador %spuede atraparlo",
 			id_corr,
 			estadoAtrapado
 	);

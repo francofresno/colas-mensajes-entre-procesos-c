@@ -187,6 +187,10 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 			t_appearedPokemon_msg* mensajeAppeared = (t_appearedPokemon_msg*) mensaje_recibido;
 
+			log_llegada_appeared(id_correlativo, mensajeAppeared->nombre_pokemon.nombre,
+					mensajeAppeared->coordenadas.posX,
+					mensajeAppeared->coordenadas.posY);
+
 			requiere(mensajeAppeared);
 
 		break;
@@ -194,6 +198,8 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 		case LOCALIZED_POKEMON: ;
 
 			t_localizedPokemon_msg* mensajeLocalized = (t_localizedPokemon_msg*) mensaje_recibido;
+
+			log_llegada_localized();
 
 			uint32_t cantidadCoordenadas = mensajeLocalized->cantidad_coordenadas;
 
@@ -207,6 +213,8 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 		case CAUGHT_POKEMON: ;
 
+
+		// log_llegada_caught(id_correlativo, mensajeCaught->atrapado);  TODO si hay que hacerlo para todos los msjs caught, incluso para los que no nos importa entonces eso que pusimos en el if tiene que ir afuera.
 		pthread_mutex_lock(&mutex_entrenadores);
 		int a = list_size(entrenadores);
 		for(int i=0; i<a; i++){
@@ -288,6 +296,8 @@ void enviarMensajeGet(t_nombrePokemon* pokemon){
 
 	if(status>=0){
 		esperarIdGet(socket_cliente);
+	} else{
+		log_error_comunicacion_con_broker();
 	}
 
 	liberar_conexion(socket_cliente);
@@ -323,7 +333,7 @@ void requiere(t_appearedPokemon_msg* mensajeAppeared){
 	pthread_mutex_unlock(&mutex_pendientes);
 
 	if(j!=a){
-		t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
+		t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon)); //TODO no se si agarra los mismos tipos de datos
 		pokemonNuevo->pokemon = &(mensajeAppeared->nombre_pokemon);
 		pokemonNuevo->coordenadas = &(mensajeAppeared->coordenadas);
 		buscarPokemon(pokemonNuevo);

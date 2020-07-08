@@ -178,11 +178,12 @@ void chequearDeadlock() {
 		pthread_mutex_unlock(&mutex_listaFinalizados);
 
 		if(tamanioEntrenadores == tamanioFinalizados){
-			printf("El Team cumplio el obj\n"); // TODO ??
+			log_resultado_team("el team cumplió el objetivo");
 		} else {
 
 			int distancia;
 			pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
+			log_inicio_algoritmo_deadlock();
 			int tamanioDeadlock = list_size(listaBloqueadosDeadlock);
 			for (int b = 0; b < tamanioDeadlock; b++) {
 
@@ -211,6 +212,21 @@ void chequearDeadlock() {
 
 				verificarTieneTodoLoQueQuiere(entrenador);
 				verificarTieneTodoLoQueQuiere(entrenadorConQuienIntercambiar);
+
+				if(entrenador->estado == BLOCKED){
+					if(entrenadorConQuienIntercambiar->estado == BLOCKED){
+						log_fin_algoritmo_deadlock("ambos entrenadores siguen en deadlock.\n");
+					} else{
+						log_fin_algoritmo_deadlock("el entrenador elegido sigue en deadlock, sin embargo el elegido para intercambiar finalizó.\n");
+					}
+
+				} else{
+					if(entrenadorConQuienIntercambiar->estado == BLOCKED){
+						log_fin_algoritmo_deadlock("el entrenador que ejecutó pasó a estado finalizado, sin embargo el entrenador con el que intercambió sigue en deadlock.\n");
+					} else{
+						log_fin_algoritmo_deadlock("ambos entrenadores finalizaron, consiguiendo los pokemones que desean.\n");
+					}
+				}
 
 			}
 
