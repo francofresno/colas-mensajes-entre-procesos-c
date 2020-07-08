@@ -45,7 +45,7 @@ void ponerEntrenadoresEnLista(t_config*);
 
 void crearHilosEntrenadores();
 
-t_entrenador* crear_entrenador(uint32_t, t_coordenadas*, t_list*, t_list*, uint32_t, status_code);
+t_entrenador* crear_entrenador(uint32_t, t_coordenadas*, t_list*, t_list*, status_code);
 
 t_list* organizarPokemones(char**);
 
@@ -83,6 +83,6 @@ void intercambiarPokemones(uint32_t, uint32_t);
 
 void dameTuPokemon(t_entrenador*, t_entrenador*);
 
-void sacarPokemonDe(t_newPokemon*, t_list*);
+void sacarPokemonDe(t_nombrePokemon*, t_list*);
 
 #endif /* FUNCIONESUTILESTEAM_H_ */

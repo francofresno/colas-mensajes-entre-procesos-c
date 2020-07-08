@@ -92,8 +92,8 @@ void suscribirseAColas(){
 	pthread_create(&thread, NULL, (void*)suscribirseAppeared, NULL);
 	pthread_detach(thread);
 	pthread_create(&thread, NULL, (void*)suscribirseCaught, NULL);
-//	pthread_detach(thread);
-//	pthread_create(&thread, NULL, (void*)suscribirseLocalized, NULL);
+	pthread_detach(thread);
+	pthread_create(&thread, NULL, (void*)suscribirseLocalized, NULL);
 	pthread_join(thread, NULL);
 
 }
@@ -215,11 +215,12 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 				t_caughtPokemon_msg* mensajeCaught = (t_caughtPokemon_msg*) mensaje_recibido;
 				if(mensajeCaught->atrapado){
 					entrenador->puedeAtrapar = 1;
-					planificarSegun();
-				}else{
+				} else {
+					entrenador->puedeAtrapar = 0;
 					entrenador->idMensajeCaught = 0;
-					entrenador->pokemonInstantaneo = NULL; //TODO cambiar bloqueo porque estaba esperando mensaje pero no pudo atrapar al pkm
+					entrenador->pokemonInstantaneo = NULL; //TODO tiene que salir de la lista en la que queda
 				}
+				planificarSegun();
 			}
 		}
 		pthread_mutex_unlock(&mutex_entrenadores);

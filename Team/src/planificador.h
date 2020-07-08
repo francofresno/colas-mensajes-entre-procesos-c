@@ -49,6 +49,7 @@ t_list* entrenadores;
 //semaforos
 t_list* sem_entrenadores_ejecutar;
 sem_t sem_planificar;
+sem_t sem_esperarCaught;
 
 extern pthread_mutex_t mutex_atrapados;
 extern pthread_mutex_t mutex_pendientes;
@@ -113,6 +114,8 @@ typedef struct
 void planificarSegun();
 
 void planificarSegunFifo();
+
+void chequearDeadlock();
 
 algoritmo_code stringACodigoAlgoritmo(const char*);
 
