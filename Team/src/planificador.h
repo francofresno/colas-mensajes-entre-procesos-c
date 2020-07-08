@@ -115,7 +115,9 @@ void planificarSegun();
 
 void planificarSegunFifo();
 
-void chequearDeadlock();
+void planificarSegunSJFSinDesalojo();
+
+void chequearDeadlock(int);
 
 algoritmo_code stringACodigoAlgoritmo(const char*);
 

@@ -152,7 +152,7 @@ void suscribirseA(op_code tipo_cola){
 			log_inicio_reintento_conexion_broker();
 			sleep(TIEMPO_RECONEXION);
 			suscribirseA(tipo_cola);
-			log_resultado_proceso_reintento_conexion_broker(socket_cliente); //TODO preg.
+			log_resultado_proceso_reintento_conexion_broker(socket_cliente);
 		}
 
 		printf("------------------------\n");
@@ -214,19 +214,20 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 		case CAUGHT_POKEMON: ;
 
 
-		// log_llegada_caught(id_correlativo, mensajeCaught->atrapado);  TODO si hay que hacerlo para todos los msjs caught, incluso para los que no nos importa entonces eso que pusimos en el if tiene que ir afuera.
+		t_caughtPokemon_msg* mensajeCaught = (t_caughtPokemon_msg*) mensaje_recibido;
+		log_llegada_caught(id_correlativo, mensajeCaught->atrapado);
+
 		pthread_mutex_lock(&mutex_entrenadores);
 		int a = list_size(entrenadores);
 		for(int i=0; i<a; i++){
 			t_entrenador* entrenador = list_get(entrenadores, i);
 			if(entrenador->idMensajeCaught == id_correlativo){
-				t_caughtPokemon_msg* mensajeCaught = (t_caughtPokemon_msg*) mensaje_recibido;
 				if(mensajeCaught->atrapado){
 					entrenador->puedeAtrapar = 1;
 				} else {
 					entrenador->puedeAtrapar = 0;
 					entrenador->idMensajeCaught = 0;
-					entrenador->pokemonInstantaneo = NULL; //TODO tiene que salir de la lista en la que queda
+					entrenador->pokemonInstantaneo = NULL;
 				}
 				planificarSegun();
 			}
@@ -333,7 +334,7 @@ void requiere(t_appearedPokemon_msg* mensajeAppeared){
 	pthread_mutex_unlock(&mutex_pendientes);
 
 	if(j!=a){
-		t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon)); //TODO no se si agarra los mismos tipos de datos
+		t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
 		pokemonNuevo->pokemon = &(mensajeAppeared->nombre_pokemon);
 		pokemonNuevo->coordenadas = &(mensajeAppeared->coordenadas);
 		buscarPokemon(pokemonNuevo);

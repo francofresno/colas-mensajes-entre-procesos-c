@@ -43,7 +43,7 @@ void planificarSegun() {
 		break;
 	case SJFSD:
 
-		puts("Planifico segun SFJ-SD \n");
+		planificarSegunSJFSinDesalojo();
 
 		break;
 
@@ -153,12 +153,114 @@ void planificarSegunFifo() {
 
 		pthread_mutex_unlock(&mutex_listaReady);
 
-		chequearDeadlock();
+		chequearDeadlock(FIFO);
 	}
 
 }
 
-void chequearDeadlock() {
+void planificarSegunSJFSinDesalojo(){
+
+	int fueUnCaught0 = 0;
+
+	pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
+	if(!(list_is_empty(listaBloqueadosEsperandoMensaje))){
+		int j = list_size(listaBloqueadosEsperandoMensaje);
+		for(int i=0; i<j ; i++){
+			t_entrenador* entrenador = list_get(listaBloqueadosEsperandoMensaje, i);
+
+			if(entrenador->puedeAtrapar){
+				entrenador->estado = READY;
+				log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "llegó un caught que le permite atrapar al pokemon", "READY");
+
+				pthread_mutex_lock(&mutex_listaReady);
+				list_add(listaReady, entrenador);
+				pthread_mutex_unlock(&mutex_listaReady);
+				list_remove(listaBloqueadosEsperandoMensaje, i);
+			}
+
+			if((entrenador->pokemonInstantaneo) == NULL){
+				pthread_mutex_lock(&mutex_listaBloqueadosEsperandoPokemones);
+				list_add(listaBloqueadosEsperandoPokemones, entrenador);
+				pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoPokemones);
+				list_remove(listaBloqueadosEsperandoMensaje, i);
+
+				fueUnCaught0 = 1;
+			}
+		}
+	}
+	pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
+
+	if (!fueUnCaught0) {
+		int distancia;
+
+		pthread_mutex_lock(&mutex_listaReady);
+
+		int tamanio = list_size(listaReady);
+
+//		bool ordenarMenorCicloDeCPU(){
+//			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+//		}
+//
+//		list_sort(listaReady, bool (*comparator)(void *, void *)); //TODO fran
+
+		for (int i = 0; i < tamanio; i++) {
+
+			sem_wait(&sem_planificar);
+
+			sem_init(&sem_esperarCaught, 0, 0);
+
+			t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, i);
+
+			entrenador->estado = EXEC;
+			log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "fue seleccionado para ejecutar", "EXEC");
+
+			if(entrenador->puedeAtrapar) {
+				// Esto es un caught 1
+				sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+				sem_post(semaforoDelEntrenador);
+
+				sem_wait(&sem_esperarCaught);
+				verificarTieneTodoLoQueQuiere(entrenador);
+
+			} else {
+				//Esto es un appeared o un localized
+				sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+				sem_post(semaforoDelEntrenador);
+				distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+				int distanciaAnterior = distancia;
+
+				while (distancia != 0) {
+					if (distancia != distanciaAnterior) {
+						sem_post(semaforoDelEntrenador);
+					}
+					distanciaAnterior = distancia;
+					distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+				}
+
+				sem_wait(&sem_esperarCaught);
+				if(entrenador->idMensajeCaught){
+					entrenador->estado = BLOCKED;
+					log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se queda esperando un caught", "BLOCKED");
+
+					pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
+					list_add(listaBloqueadosEsperandoMensaje, entrenador);
+					pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
+
+				} else{
+					verificarTieneTodoLoQueQuiere(entrenador);
+				}
+			}
+			sem_post(&sem_planificar);
+		}
+
+		pthread_mutex_unlock(&mutex_listaReady);
+
+		chequearDeadlock(SJFSD);
+	}
+
+}
+
+void chequearDeadlock(int algoritmo) {
 	pthread_mutex_lock(&mutex_objetivoTeam);
 	int tamanioObjetivoTeam = list_size(objetivoTeam);
 	pthread_mutex_unlock(&mutex_objetivoTeam);
@@ -181,56 +283,150 @@ void chequearDeadlock() {
 			log_resultado_team("el team cumplió el objetivo");
 		} else {
 
-			int distancia;
-			pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
-			log_inicio_algoritmo_deadlock();
-			int tamanioDeadlock = list_size(listaBloqueadosDeadlock);
-			for (int b = 0; b < tamanioDeadlock; b++) {
+			switch (algoritmo) {
 
-				t_entrenador* entrenador = (t_entrenador*) list_remove(listaBloqueadosDeadlock, 0);
-				entrenador->estado = EXEC;
-				log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "va a intercambiar pokemones con otro entrenador", "EXEC");
+				case FIFO:
 
-				t_entrenador* entrenadorConQuienIntercambiar = elegirConQuienIntercambiar(entrenador);
+					log_inicio_algoritmo_deadlock();
+					int distancia;
+					pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
 
-				pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
-				sacarEntrenadorDeLista(entrenadorConQuienIntercambiar, listaBloqueadosDeadlock);
-				pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
+					int tamanioDeadlock = list_size(listaBloqueadosDeadlock);
+					for (int b = 0; b < tamanioDeadlock; b++) {
 
-				sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-				sem_post(semaforoDelEntrenador);
-				distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
-				int distanciaAnterior = distancia;
+						t_entrenador* entrenador = (t_entrenador*) list_remove(listaBloqueadosDeadlock, 0);
+						entrenador->estado = EXEC;
+						log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "va a intercambiar pokemones con otro entrenador", "EXEC");
 
-				while (distancia != 0) {
-					if (distancia != distanciaAnterior) {
+						t_entrenador* entrenadorConQuienIntercambiar = elegirConQuienIntercambiar(entrenador);
+
+						pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
+						sacarEntrenadorDeLista(entrenadorConQuienIntercambiar, listaBloqueadosDeadlock);
+						pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
+
+						sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 						sem_post(semaforoDelEntrenador);
+						distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
+						int distanciaAnterior = distancia;
+
+						while (distancia != 0) {
+							if (distancia != distanciaAnterior) {
+								sem_post(semaforoDelEntrenador);
+							}
+							distanciaAnterior = distancia;
+							distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
+						}
+
+						verificarTieneTodoLoQueQuiere(entrenador);
+						verificarTieneTodoLoQueQuiere(entrenadorConQuienIntercambiar);
+
+						if(entrenador->estado == BLOCKED){
+							if(entrenadorConQuienIntercambiar->estado == BLOCKED){
+								log_fin_algoritmo_deadlock("ambos entrenadores siguen en deadlock.\n");
+							} else{
+								log_fin_algoritmo_deadlock("el entrenador elegido sigue en deadlock, sin embargo el elegido para intercambiar finalizó.\n");
+							}
+
+						} else{
+							if(entrenadorConQuienIntercambiar->estado == BLOCKED){
+								log_fin_algoritmo_deadlock("el entrenador que ejecutó pasó a estado finalizado, sin embargo el entrenador con el que intercambió sigue en deadlock.\n");
+							} else{
+								log_fin_algoritmo_deadlock("ambos entrenadores finalizaron, consiguiendo los pokemones que desean.\n");
+							}
+						}
+
 					}
-					distanciaAnterior = distancia;
-					distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
+
+					pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
+
+					break;
+
+				case RR:
+
+					printf("hago deadlock segun RR\n");
+
+					break;
+
+				case SJFCD:
+
+					printf("hago deadlock segun SJFCD\n");
+
+					break;
+				case SJFSD:
+
+					log_inicio_algoritmo_deadlock();
+					int distancia;
+					pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
+
+
+					//	bool ordenarMenorCicloDeCPU(){
+					//		distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
+					//	}
+					//
+					//	list_sort(listaBloqueadosDeadlock, bool (*comparator)(void *, void *)); //TODO fran
+
+					int tamanioDeadlock = list_size(listaBloqueadosDeadlock);
+					for (int b = 0; b < tamanioDeadlock; b++) {
+
+						t_entrenador* entrenador = (t_entrenador*) list_remove(listaBloqueadosDeadlock, 0);
+						entrenador->estado = EXEC;
+						log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "va a intercambiar pokemones con otro entrenador", "EXEC");
+
+						t_entrenador* entrenadorConQuienIntercambiar = elegirConQuienIntercambiar(entrenador);
+
+						pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
+						sacarEntrenadorDeLista(entrenadorConQuienIntercambiar, listaBloqueadosDeadlock);
+						pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
+
+						sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+						sem_post(semaforoDelEntrenador);
+						distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
+						int distanciaAnterior = distancia;
+
+						while (distancia != 0) {
+							if (distancia != distanciaAnterior) {
+								sem_post(semaforoDelEntrenador);
+							}
+							distanciaAnterior = distancia;
+							distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
+						}
+
+						verificarTieneTodoLoQueQuiere(entrenador);
+						verificarTieneTodoLoQueQuiere(entrenadorConQuienIntercambiar);
+
+						if(entrenador->estado == BLOCKED){
+							if(entrenadorConQuienIntercambiar->estado == BLOCKED){
+								log_fin_algoritmo_deadlock("ambos entrenadores siguen en deadlock.\n");
+							} else{
+							log_fin_algoritmo_deadlock("el entrenador elegido sigue en deadlock, sin embargo el elegido para intercambiar finalizó.\n");
+							}
+						} else{
+							if(entrenadorConQuienIntercambiar->estado == BLOCKED){
+								log_fin_algoritmo_deadlock("el entrenador que ejecutó pasó a estado finalizado, sin embargo el entrenador con el que intercambió sigue en deadlock.\n");
+							} else{
+								log_fin_algoritmo_deadlock("ambos entrenadores finalizaron, consiguiendo los pokemones que desean.\n");
+							}
+						}
+
+					}
+
+					pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
+
+					break;
+
+				case ERROR_CODIGO_ALGORITMO:
+
+					puts("Se recibio mal el codigo\n");
+					break;
+
+				default:
+
+					puts("Error desconocido\n");
+
+					break;
+
 				}
 
-				verificarTieneTodoLoQueQuiere(entrenador);
-				verificarTieneTodoLoQueQuiere(entrenadorConQuienIntercambiar);
-
-				if(entrenador->estado == BLOCKED){
-					if(entrenadorConQuienIntercambiar->estado == BLOCKED){
-						log_fin_algoritmo_deadlock("ambos entrenadores siguen en deadlock.\n");
-					} else{
-						log_fin_algoritmo_deadlock("el entrenador elegido sigue en deadlock, sin embargo el elegido para intercambiar finalizó.\n");
-					}
-
-				} else{
-					if(entrenadorConQuienIntercambiar->estado == BLOCKED){
-						log_fin_algoritmo_deadlock("el entrenador que ejecutó pasó a estado finalizado, sin embargo el entrenador con el que intercambió sigue en deadlock.\n");
-					} else{
-						log_fin_algoritmo_deadlock("ambos entrenadores finalizaron, consiguiendo los pokemones que desean.\n");
-					}
-				}
-
-			}
-
-			pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
 		}
 	}
 }
