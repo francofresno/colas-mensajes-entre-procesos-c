@@ -15,12 +15,12 @@ int main(void) {
 	t_config* config = leer_config();
 	inicializarConfig(config);
 
-//	ponerEntrenadoresEnLista(config);
-//	crearHilosEntrenadores();
-//
-//	enviarMensajeGetABroker();
-//
-//	//suscribirseAColas();
+	ponerEntrenadoresEnLista(config);
+	crearHilosEntrenadores();
+
+	enviarMensajeGetABroker();
+
+	suscribirseAColas();
 
 	quedarseALaEscucha();
 
@@ -93,7 +93,7 @@ void suscribirseAColas(){
 	pthread_create(&thread, NULL, (void*)suscribirseCaught, NULL);
 	pthread_detach(thread);
 	pthread_create(&thread, NULL, (void*)suscribirseLocalized, NULL);
-	pthread_detach(thread);
+	pthread_join(thread, NULL);
 
 }
 
@@ -200,13 +200,34 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 			log_llegada_localized();
 
-			uint32_t cantidadCoordenadas = mensajeLocalized->cantidad_coordenadas;
+			bool compararId(void* elemento){
+				uint32_t* id = (uint32_t*) elemento;
+				return id == id_correlativo;
+			}
 
-			if(necesitaTeamAlPokemon(&(mensajeLocalized->nombre_pokemon))){
-				for(int i=0; i<cantidadCoordenadas; i++){
-					// hacer algo
+			if(list_any_satisfy(id_mensajeGet, compararId)){
+
+				uint32_t cantidadCoordenadas = mensajeLocalized->cantidad_coordenadas;
+
+				if(necesitaTeamAlPokemon(&(mensajeLocalized->nombre_pokemon))){	//TODO al pedi
+					pthread_mutex_lock(&mutex_mensajesLocalized);
+					list_add(mensajesLocalized, mensajeLocalized);
+					pthread_mutex_unlock(&mutex_mensajesLocalized);
+					t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
+					pokemonNuevo->pokemon = &(mensajeLocalized->nombre_pokemon);
+
+					for(int i=0; i<cantidadCoordenadas; i++){
+
+						pokemonNuevo->coordenadas->posX = mensajeLocalized->coordenadas[i]->posX;
+						pokemonNuevo->coordenadas->posX = mensajeLocalized->coordenadas[i]->posY;
+						buscarPokemon(pokemonNuevo);
+
+						//Si lo atrapó => break => sino i++  --> resolverlo en el caught? --> qe determine si vino de un localized
+					}
 				}
 			}
+
+
 
 			break;
 
@@ -306,6 +327,7 @@ void enviarMensajeGet(t_nombrePokemon* pokemon){
 void inicializarListas(){
 	id_mensajeGet = list_create();
 	id_mensajeCatch = list_create();
+	mensajesLocalized = list_create();
 	atrapados = list_create();
 	objetivoTeam = list_create();
 }

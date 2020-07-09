@@ -11,7 +11,7 @@ pthread_mutex_t mutex_send = PTHREAD_MUTEX_INITIALIZER;
 
 pthread_mutex_t mutex_id_mensaje_get = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_id_mensaje_catch = PTHREAD_MUTEX_INITIALIZER;
-
+pthread_mutex_t mutex_mensajesLocalized = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_id_entrenadores = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_entrenador = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_hay_pokemones = PTHREAD_MUTEX_INITIALIZER;
