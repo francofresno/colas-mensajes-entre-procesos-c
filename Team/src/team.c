@@ -15,30 +15,29 @@ int main(void) {
 	t_config* config = leer_config();
 	inicializarConfig(config);
 
-	ponerEntrenadoresEnLista(config);
-	crearHilosEntrenadores();
+//	ponerEntrenadoresEnLista(config);
+//	crearHilosEntrenadores();
+//
+//	enviarMensajeGetABroker();
+//
+//	//suscribirseAColas();
 
-	enviarMensajeGetABroker();
-
-	suscribirseAColas();
-
-	puts("Soy un team!\n");
-
-	int socket_servidor = iniciar_servidor(IP_TEAM, PUERTO_TEAM);
-	quedarseALaEscucha(&socket_servidor);
+	quedarseALaEscucha();
 
 
 	return EXIT_SUCCESS;
 }
 
-void quedarseALaEscucha(int* socket_servidor) {
+void quedarseALaEscucha() {
+	int socket_servidor = iniciar_servidor(IP_TEAM, PUERTO_TEAM);
 	while(1) {
-		int socket_potencial = esperar_cliente(*socket_servidor);
+		int socket_potencial = esperar_cliente(socket_servidor);
 		if(socket_potencial > 0) {
+			printf("Llegó alguien\n");
 			int* socket_cliente = (int*) malloc(sizeof(int));
 			*socket_cliente = socket_potencial;
-			pthread_create(&thread,NULL,(void*)serve_client,socket_cliente);
-			pthread_detach(thread);
+			pthread_create(&threadEscucha,NULL,(void*)serve_client,socket_cliente);
+			pthread_detach(threadEscucha);
 		}
 	}
 }
@@ -94,7 +93,7 @@ void suscribirseAColas(){
 	pthread_create(&thread, NULL, (void*)suscribirseCaught, NULL);
 	pthread_detach(thread);
 	pthread_create(&thread, NULL, (void*)suscribirseLocalized, NULL);
-	pthread_join(thread, NULL);
+	pthread_detach(thread);
 
 }
 
@@ -213,7 +212,6 @@ void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido
 
 		case CAUGHT_POKEMON: ;
 
-
 		t_caughtPokemon_msg* mensajeCaught = (t_caughtPokemon_msg*) mensaje_recibido;
 		log_llegada_caught(id_correlativo, mensajeCaught->atrapado);
 
@@ -301,6 +299,7 @@ void enviarMensajeGet(t_nombrePokemon* pokemon){
 		log_error_comunicacion_con_broker();
 	}
 
+	free(estructuraPokemon);
 	liberar_conexion(socket_cliente);
 }
 

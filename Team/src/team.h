@@ -28,8 +28,9 @@ const static struct {
 };
 
 pthread_t thread;
+pthread_t threadEscucha;
 
-void quedarseALaEscucha(int*);
+void quedarseALaEscucha();
 
 t_log* iniciar_logger(void);
 

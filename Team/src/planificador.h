@@ -139,4 +139,6 @@ t_entrenador* elegirConQuienIntercambiar(t_entrenador*);
 
 int tengoAlgunPokemonQueQuiere2(t_entrenador*,t_entrenador*);
 
+void ordenarListaPorDistanciaAPokemon(t_list*);
+
 #endif /* PLANIFICADOR_H_ */

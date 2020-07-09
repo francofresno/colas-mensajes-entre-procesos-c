@@ -197,11 +197,7 @@ void planificarSegunSJFSinDesalojo(){
 
 		int tamanio = list_size(listaReady);
 
-//		bool ordenarMenorCicloDeCPU(){
-//			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-//		}
-//
-//		list_sort(listaReady, bool (*comparator)(void *, void *)); //TODO fran
+		ordenarListaPorDistanciaAPokemon(listaReady);
 
 		for (int i = 0; i < tamanio; i++) {
 
@@ -282,16 +278,15 @@ void chequearDeadlock(int algoritmo) {
 		if(tamanioEntrenadores == tamanioFinalizados){
 			log_resultado_team("el team cumplió el objetivo");
 		} else {
-
+			int distancia;
+			int tamanioDeadlock;
 			switch (algoritmo) {
 
 				case FIFO:
-
 					log_inicio_algoritmo_deadlock();
-					int distancia;
 					pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
 
-					int tamanioDeadlock = list_size(listaBloqueadosDeadlock);
+					tamanioDeadlock = list_size(listaBloqueadosDeadlock);
 					for (int b = 0; b < tamanioDeadlock; b++) {
 
 						t_entrenador* entrenador = (t_entrenador*) list_remove(listaBloqueadosDeadlock, 0);
@@ -355,17 +350,12 @@ void chequearDeadlock(int algoritmo) {
 				case SJFSD:
 
 					log_inicio_algoritmo_deadlock();
-					int distancia;
 					pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
 
 
-					//	bool ordenarMenorCicloDeCPU(){
-					//		distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
-					//	}
-					//
-					//	list_sort(listaBloqueadosDeadlock, bool (*comparator)(void *, void *)); //TODO fran
+					ordenarListaPorDistanciaAPokemon(listaBloqueadosDeadlock);
 
-					int tamanioDeadlock = list_size(listaBloqueadosDeadlock);
+					tamanioDeadlock = list_size(listaBloqueadosDeadlock);
 					for (int b = 0; b < tamanioDeadlock; b++) {
 
 						t_entrenador* entrenador = (t_entrenador*) list_remove(listaBloqueadosDeadlock, 0);
@@ -430,6 +420,20 @@ void chequearDeadlock(int algoritmo) {
 		}
 	}
 }
+
+void ordenarListaPorDistanciaAPokemon(t_list* list) {
+	bool ordenarMenorCicloDeCPU(void* elemento1, void* elemento2){
+		t_entrenador* entrenador1 = (t_entrenador*) elemento1;
+		t_entrenador* entrenador2 = (t_entrenador*) elemento2;
+
+		int distancia1 = distanciaA(entrenador1->coordenadas, entrenador1->pokemonInstantaneo->coordenadas);
+		int distancia2 = distanciaA(entrenador2->coordenadas, entrenador2->pokemonInstantaneo->coordenadas);
+
+		return distancia1 <= distancia2;
+	}
+	list_sort(listaReady, ordenarMenorCicloDeCPU);
+}
+
 
 int distanciaA(t_coordenadas* desde, t_coordenadas* hasta){
 
