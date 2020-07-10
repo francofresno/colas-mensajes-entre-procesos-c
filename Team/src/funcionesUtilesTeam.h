@@ -77,7 +77,11 @@ void aplanarDobleLista(t_list*);
 
 t_entrenador* entrenadorMasCercano(t_newPokemon*);
 
-void buscarPokemon(t_newPokemon*);
+void buscarPokemonAppeared(t_newPokemon*);
+
+void buscarPokemonLocalized(t_localizedPokemon_msg*, uint32_t);
+
+void ponerEntrenadorEnReady(t_entrenador*, t_newPokemon*);
 
 void moverAlEntrenadorHastaOtroEntrenador(uint32_t, uint32_t);
 

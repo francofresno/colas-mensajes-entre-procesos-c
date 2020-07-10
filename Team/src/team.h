@@ -52,7 +52,7 @@ void suscribirseA(op_code);
 
 void serve_client(int*);
 
-void process_request(int, uint32_t, void*, int);
+void process_request(char*, t_paquete*, int);
 
 op_code stringACodigoOperacion(const char*);
 

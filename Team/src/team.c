@@ -134,7 +134,7 @@ void suscribirseA(op_code tipo_cola){
 
 	for(int i = 0; i<cant_paquetes; i++){
 		t_paquete* paquete_recibido = list_get(paquetes, i);
-		process_request(paquete_recibido->codigo_operacion, paquete_recibido->id, paquete_recibido->mensaje, socket_cliente);
+		process_request(NULL, paquete_recibido, socket_cliente);
 		printf("Recibi un mensaje por haberme suscripto: %d\n", paquete_recibido->codigo_operacion);
 	}
 
@@ -158,7 +158,7 @@ void suscribirseA(op_code tipo_cola){
 		printf("COD OP: %d\n", paquete_recibido->codigo_operacion);
 		printf("ID: %d\n", paquete_recibido->id);
 		printf("ID_CORRELATIVO: %d\n", paquete_recibido->id_correlativo);
-		process_request(paquete_recibido->codigo_operacion, paquete_recibido->id_correlativo, paquete_recibido->mensaje, socket_cliente);
+		process_request(nombre_recibido, paquete_recibido, socket_cliente);
 
 		int status_ack = informar_ack(socket_cliente);
 		printf("informe ACK con status %d\n", status_ack);
@@ -173,85 +173,97 @@ void serve_client(int* socket_cliente)
 
 	t_paquete* paquete_recibido = recibir_paquete(*socket_cliente, &nombre_recibido, &tamanioRecibido);
 
-	process_request(paquete_recibido->codigo_operacion, paquete_recibido->id_correlativo, paquete_recibido->mensaje, *socket_cliente);
-
-	free_paquete_recibido(nombre_recibido, paquete_recibido);
+	process_request(nombre_recibido, paquete_recibido, *socket_cliente);
 }
 
-void process_request(int cod_op, uint32_t id_correlativo, void* mensaje_recibido, int socket_cliente)
+void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int socket_cliente)
 {
-	switch(cod_op)
+
+	switch(paquete_recibido->codigo_operacion)
 	{
 		case APPEARED_POKEMON: ;
 
-			t_appearedPokemon_msg* mensajeAppeared = (t_appearedPokemon_msg*) mensaje_recibido;
+			t_appearedPokemon_msg* mensajeAppeared = (t_appearedPokemon_msg*) paquete_recibido->mensaje;
 
-			log_llegada_appeared(id_correlativo, mensajeAppeared->nombre_pokemon.nombre,
+			log_llegada_appeared(paquete_recibido->id_correlativo, mensajeAppeared->nombre_pokemon.nombre,
 					mensajeAppeared->coordenadas.posX,
 					mensajeAppeared->coordenadas.posY);
 
 			requiere(mensajeAppeared);
 
+			free_paquete_recibido(nombre_recibido, paquete_recibido);
+
 		break;
 
 		case LOCALIZED_POKEMON: ;
 
-			t_localizedPokemon_msg* mensajeLocalized = (t_localizedPokemon_msg*) mensaje_recibido;
+			t_localizedPokemon_msg* mensajeLocalized = (t_localizedPokemon_msg*) paquete_recibido->mensaje;
 
 			log_llegada_localized();
 
 			bool compararId(void* elemento){
 				uint32_t* id = (uint32_t*) elemento;
-				return id == id_correlativo;
+				return *id == (paquete_recibido->id_correlativo);
 			}
 
-			if(list_any_satisfy(id_mensajeGet, compararId)){
+			if(list_any_satisfy(id_mensajeGet, compararId) && (necesitaTeamAlPokemon(&(mensajeLocalized->nombre_pokemon)))){
 
-				uint32_t cantidadCoordenadas = mensajeLocalized->cantidad_coordenadas;
+				pthread_mutex_lock(&mutex_mensajesLocalized);
+				list_add(mensajesLocalized, paquete_recibido);
+				pthread_mutex_unlock(&mutex_mensajesLocalized);
 
-				if(necesitaTeamAlPokemon(&(mensajeLocalized->nombre_pokemon))){	//TODO al pedi
-					pthread_mutex_lock(&mutex_mensajesLocalized);
-					list_add(mensajesLocalized, mensajeLocalized);
-					pthread_mutex_unlock(&mutex_mensajesLocalized);
-					t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
-					pokemonNuevo->pokemon = &(mensajeLocalized->nombre_pokemon);
+				buscarPokemonLocalized(mensajeLocalized, paquete_recibido->id);
+				planificarSegun();
 
-					for(int i=0; i<cantidadCoordenadas; i++){
-
-						pokemonNuevo->coordenadas->posX = mensajeLocalized->coordenadas[i]->posX;
-						pokemonNuevo->coordenadas->posX = mensajeLocalized->coordenadas[i]->posY;
-						buscarPokemon(pokemonNuevo);
-
-						//Si lo atrapó => break => sino i++  --> resolverlo en el caught? --> qe determine si vino de un localized
-					}
-				}
 			}
-
-
 
 			break;
 
 		case CAUGHT_POKEMON: ;
 
-		t_caughtPokemon_msg* mensajeCaught = (t_caughtPokemon_msg*) mensaje_recibido;
-		log_llegada_caught(id_correlativo, mensajeCaught->atrapado);
+		t_caughtPokemon_msg* mensajeCaught = (t_caughtPokemon_msg*) paquete_recibido->mensaje;
+		log_llegada_caught(paquete_recibido->id_correlativo, mensajeCaught->atrapado);
 
 		pthread_mutex_lock(&mutex_entrenadores);
 		int a = list_size(entrenadores);
 		for(int i=0; i<a; i++){
 			t_entrenador* entrenador = list_get(entrenadores, i);
-			if(entrenador->idMensajeCaught == id_correlativo){
+			if(entrenador->idMensajeCaught == paquete_recibido->id_correlativo){
 				if(mensajeCaught->atrapado){
 					entrenador->puedeAtrapar = 1;
+					entrenador->esLocalized = 0;
 				} else {
+
 					entrenador->puedeAtrapar = 0;
 					entrenador->idMensajeCaught = 0;
 					entrenador->pokemonInstantaneo = NULL;
+
+					if(entrenador->esLocalized){
+
+						bool esElMensaje(void* elemento){
+							t_paquete* paquete= (t_paquete*) elemento;
+
+							return (entrenador->esLocalized) == (paquete->id);
+						}
+
+						pthread_mutex_lock(&mutex_mensajesLocalized);
+						t_paquete* paquete = list_find(mensajesLocalized, esElMensaje);
+						pthread_mutex_unlock(&mutex_mensajesLocalized);
+
+						buscarPokemonLocalized(paquete->mensaje, paquete->id);
+					}
+
 				}
 				planificarSegun();
 			}
 		}
 		pthread_mutex_unlock(&mutex_entrenadores);
+
+		free_paquete_recibido(nombre_recibido, paquete_recibido);
+
+			break;
+
+		default:
 
 			break;
 	}
@@ -358,7 +370,8 @@ void requiere(t_appearedPokemon_msg* mensajeAppeared){
 		t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
 		pokemonNuevo->pokemon = &(mensajeAppeared->nombre_pokemon);
 		pokemonNuevo->coordenadas = &(mensajeAppeared->coordenadas);
-		buscarPokemon(pokemonNuevo);
+		buscarPokemonAppeared(pokemonNuevo);
+		planificarSegun();
 	}
 }
 

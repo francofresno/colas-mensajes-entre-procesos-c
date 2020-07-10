@@ -122,6 +122,7 @@ t_entrenador* crear_entrenador(uint32_t id_entrenador, t_coordenadas* coordenada
 	entrenador->estado = estado;
 	entrenador->idMensajeCaught = 0;
 	entrenador->puedeAtrapar = 0;
+	entrenador->esLocalized = 0;
 
 	return entrenador;
 }
@@ -271,6 +272,7 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 						//free(entrenador->pokemonInstantaneo->coordenadas);
 						//free(entrenador->pokemonInstantaneo); TODO chequear esto
 						entrenador->pokemonInstantaneo = NULL;
+						entrenador->esLocalized = 0;
 					}
 
 					entrenador->idMensajeCaught = id;
@@ -458,36 +460,82 @@ t_entrenador* entrenadorMasCercano(t_newPokemon* pokemon){
 
 	list_destroy(entrenadores_new);
 
-	if(menorDistanciaNew <= menorDistanciaBlocked ){
-		entrenadorMasCercanoNew->estado = READY;
-		log_entrenador_cambio_de_cola_planificacion(entrenadorMasCercanoNew->id_entrenador, "es el mas cercano al pokemon que apareció", "READY");
-
-		pthread_mutex_lock(&mutex_listaReady);
-		list_add(listaReady, entrenadorMasCercanoNew);
-		pthread_mutex_unlock(&mutex_listaReady);
-
-		entrenadorMasCercanoNew->pokemonInstantaneo = pokemon;
-		return entrenadorMasCercanoNew;
-
-	} else{
-		entrenadorMasCercanoBlocked->estado = READY;
-		log_entrenador_cambio_de_cola_planificacion(entrenadorMasCercanoBlocked->id_entrenador, "es el mas cercano al pokemon que apareció", "READY");
-
-		pthread_mutex_lock(&mutex_listaReady);
-		list_add(listaReady, entrenadorMasCercanoBlocked);
-		pthread_mutex_unlock(&mutex_listaReady);
-		entrenadorMasCercanoBlocked->pokemonInstantaneo = pokemon;
-		return entrenadorMasCercanoBlocked;
-	}
+	return (menorDistanciaNew <= menorDistanciaBlocked) ? entrenadorMasCercanoNew : entrenadorMasCercanoBlocked;
 
 }
 
-void buscarPokemon(t_newPokemon* pokemon){  //Busca al entrenador más cercano y pone a planificar (para que ejecute, es decir, para que busque al pokemon en cuestión)
+void buscarPokemonAppeared(t_newPokemon* pokemon){  //Busca al entrenador más cercano y pone a planificar (para que ejecute, es decir, para que busque al pokemon en cuestión)
 
-	entrenadorMasCercano(pokemon);
+	t_entrenador* entrenador = entrenadorMasCercano(pokemon);
 
-	planificarSegun();
+	ponerEntrenadorEnReady(entrenador, pokemon);
+}
 
+void buscarPokemonLocalized(t_localizedPokemon_msg* mensajeLocalized, uint32_t idMensaje){  //Busca al entrenador más cercano y pone a planificar (para que ejecute, es decir, para que busque al pokemon en cuestión)
+
+	int cantidadCoords = mensajeLocalized->cantidad_coordenadas;
+
+	t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
+
+	pokemonNuevo->pokemon = &(mensajeLocalized->nombre_pokemon);
+
+	pokemonNuevo->coordenadas->posX = mensajeLocalized->coordenadas[0].posX;
+	pokemonNuevo->coordenadas->posY = mensajeLocalized->coordenadas[0].posY;
+
+	t_entrenador* entrenador = entrenadorMasCercano(pokemonNuevo);
+	int distancia = distanciaA(entrenador->coordenadas, pokemonNuevo->coordenadas);
+
+	int j=0;
+
+	for(int i=1; i<cantidadCoords; i++){
+		t_newPokemon* pokemonTemporal = malloc(sizeof(t_newPokemon));
+		pokemonTemporal->pokemon = &(mensajeLocalized->nombre_pokemon);
+
+		pokemonTemporal->coordenadas->posX = mensajeLocalized->coordenadas[i].posX;
+		pokemonTemporal->coordenadas->posY = mensajeLocalized->coordenadas[i].posY;
+
+		t_entrenador* entrenadorTemporal = entrenadorMasCercano(pokemonTemporal);
+		int distanciaTemporal = distanciaA(entrenador->coordenadas, pokemonTemporal->coordenadas);
+
+		if(distanciaTemporal < distancia){
+			free(pokemonNuevo);
+			entrenador = entrenadorTemporal;
+			pokemonNuevo = pokemonTemporal;
+			distancia = distanciaTemporal;
+			j=i;
+		}
+	}
+
+	entrenador->esLocalized = idMensaje;
+
+	ponerEntrenadorEnReady(entrenador, pokemonNuevo);
+
+	t_coordenadas nuevasCoords[cantidadCoords-1];
+
+	int m=0;
+
+	for(int i=0; i<cantidadCoords; i++){
+			if(i!=j){
+				nuevasCoords[m] = mensajeLocalized->coordenadas[i];
+				m++;
+			}
+	}
+
+	mensajeLocalized->cantidad_coordenadas = cantidadCoords-1;
+
+	mensajeLocalized->coordenadas = nuevasCoords;
+
+}
+
+void ponerEntrenadorEnReady(t_entrenador* entrenador, t_newPokemon* pokemon){
+	entrenador->estado = READY;
+	log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "es el mas cercano al pokemon que apareció", "READY");
+
+	pthread_mutex_lock(&mutex_listaReady);
+	list_add(listaReady, entrenador);
+	pthread_mutex_unlock(&mutex_listaReady);
+
+	entrenador->pokemonInstantaneo = pokemon;
 }
 
 void moverAlEntrenadorHastaOtroEntrenador(uint32_t idEntrenador1, uint32_t idEntrenador2){

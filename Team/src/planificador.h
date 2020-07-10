@@ -108,6 +108,7 @@ typedef struct
 	status_code estado;
 	uint32_t idMensajeCaught;
 	uint32_t puedeAtrapar;
+	uint32_t esLocalized;
 
 } t_entrenador;
 
