@@ -34,6 +34,7 @@ int TIEMPO_RECONEXION;
 extern pthread_mutex_t mutex_id_entrenadores;
 extern pthread_mutex_t mutex_entrenador;
 extern pthread_mutex_t mutex_hay_pokemones;
+extern pthread_mutex_t mutex_ciclo_CPU;
 
 extern pthread_mutex_t mutex_send;
 
@@ -60,10 +61,6 @@ void ejecutarEntrenador(t_entrenador*);
 uint32_t enviarMensajeCatch(t_newPokemon*);
 
 uint32_t esperarIdCatch(int);
-
-int llegoAlObjetivoPokemon(t_entrenador*);
-
-int llegoAlObjetivoEntrenador(t_entrenador*, t_entrenador*);
 
 void moverAlEntrenadorHastaUnPokemon(uint32_t);
 

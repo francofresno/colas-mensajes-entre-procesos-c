@@ -15,10 +15,13 @@ pthread_mutex_t mutex_mensajesLocalized = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_id_entrenadores = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_entrenador = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_hay_pokemones = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_ciclo_CPU = PTHREAD_MUTEX_INITIALIZER;
+
 
 void ponerEntrenadoresEnLista(t_config* config) {
 
 	inicializarListasDeEstados();
+	ciclosCPUTotalesTeam = 0;
 
 	entrenadores = list_create(); //Creamos la lista de entrenadores
 
@@ -123,6 +126,7 @@ t_entrenador* crear_entrenador(uint32_t id_entrenador, t_coordenadas* coordenada
 	entrenador->idMensajeCaught = 0;
 	entrenador->puedeAtrapar = 0;
 	entrenador->esLocalized = 0;
+	entrenador->misCiclosDeCPU = 0;
 
 	return entrenador;
 }
@@ -242,6 +246,10 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 			if((entrenador->pokemonInstantaneo) != NULL) {
 				sleep(retardoCPU);
 
+				pthread_mutex_lock(&mutex_ciclo_CPU);
+				ciclosCPUTotalesTeam++;
+				pthread_mutex_unlock(&mutex_ciclo_CPU);
+
 				moverAlEntrenadorHastaUnPokemon(entrenador->id_entrenador);
 
 				if(llegoAlObjetivoPokemon(entrenador)){
@@ -282,6 +290,10 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 			} else {
 				sleep(retardoCPU);
 
+				pthread_mutex_lock(&mutex_ciclo_CPU);
+				ciclosCPUTotalesTeam++;
+				pthread_mutex_unlock(&mutex_ciclo_CPU);
+
 				t_entrenador* entrenadorConQuienIntercambiar = elegirConQuienIntercambiar(entrenador);
 
 				moverAlEntrenadorHastaOtroEntrenador(entrenador->id_entrenador, entrenadorConQuienIntercambiar->id_entrenador);
@@ -290,6 +302,11 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 
 					intercambiarPokemones(entrenador->id_entrenador, entrenadorConQuienIntercambiar->id_entrenador);
 
+//					pthread_mutex_lock(&mutex_ciclo_CPU);
+//					ciclosCPUTotalesTeam++;
+//					pthread_mutex_unlock(&mutex_ciclo_CPU);
+
+					//TODO falta que el intercambio sea de a 1 ciclo de CPU como los mov.
 				}
 			}
 		}
@@ -332,28 +349,6 @@ uint32_t esperarIdCatch(int socket_cliente){
 	pthread_mutex_unlock(&mutex_id_mensaje_catch);
 
 	return *id_respuesta;
-}
-
-int llegoAlObjetivoPokemon(t_entrenador* entrenador){
-
-	uint32_t posicionXEntrenador = entrenador->coordenadas->posX;
-	uint32_t posicionYEntrenador = entrenador->coordenadas->posY;
-
-	uint32_t posicionXPokemon = entrenador->pokemonInstantaneo->coordenadas->posX;
-	uint32_t posicionYPokemon = entrenador->pokemonInstantaneo->coordenadas->posY;
-
-	return (posicionXEntrenador == posicionXPokemon) && (posicionYEntrenador == posicionYPokemon);
-}
-
-int llegoAlObjetivoEntrenador(t_entrenador* entrenador1, t_entrenador* entrenador2){
-
-	uint32_t posicionXEntrenador1 = entrenador1->coordenadas->posX;
-	uint32_t posicionYEntrenador1 = entrenador1->coordenadas->posY;
-
-	uint32_t posicionXEntrenador2 = entrenador2->coordenadas->posX;
-	uint32_t posicionYEntrenador2 = entrenador2->coordenadas->posY;
-
-	return (posicionXEntrenador1 == posicionXEntrenador2) && (posicionYEntrenador1 == posicionYEntrenador2);
 }
 
 void moverAlEntrenadorHastaUnPokemon(uint32_t idEntrenador){

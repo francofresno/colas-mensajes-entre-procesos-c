@@ -30,6 +30,7 @@ int quantum;
 int estimacionInicial;
 double alfa;
 int retardoCPU;
+int ciclosCPUTotalesTeam;
 
 //Listas de entrenadores segun estado
 t_list* listaNuevos;
@@ -109,6 +110,7 @@ typedef struct
 	uint32_t idMensajeCaught;
 	uint32_t puedeAtrapar;
 	uint32_t esLocalized;
+	uint32_t misCiclosDeCPU;
 
 } t_entrenador;
 
@@ -118,7 +120,9 @@ void planificarSegunFifo();
 
 void planificarSegunSJFSinDesalojo();
 
-void chequearDeadlock(int);
+void planificarSegunRR(int);
+
+void chequearDeadlock(int, int);
 
 algoritmo_code stringACodigoAlgoritmo(const char*);
 
@@ -141,5 +145,11 @@ t_entrenador* elegirConQuienIntercambiar(t_entrenador*);
 int tengoAlgunPokemonQueQuiere2(t_entrenador*,t_entrenador*);
 
 void ordenarListaPorDistanciaAPokemon(t_list*);
+
+void ordenarListaPorDistanciaAEntrenador(t_list*);
+
+int llegoAlObjetivoPokemon(t_entrenador*);
+
+int llegoAlObjetivoEntrenador(t_entrenador*, t_entrenador*);
 
 #endif /* PLANIFICADOR_H_ */
