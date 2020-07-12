@@ -443,7 +443,6 @@ void chequearDeadlock(int algoritmo, int quantumPorEntrenador) {
 						}
 
 						entrenador->misCiclosDeCPU = entrenador->misCiclosDeCPU +5;
-						entrenadorConQuienIntercambiar->misCiclosDeCPU = entrenadorConQuienIntercambiar->misCiclosDeCPU +5;
 
 						verificarTieneTodoLoQueQuiere(entrenador);
 						verificarTieneTodoLoQueQuiere(entrenadorConQuienIntercambiar);
@@ -589,7 +588,6 @@ void chequearDeadlock(int algoritmo, int quantumPorEntrenador) {
 						}
 
 						entrenador->misCiclosDeCPU = entrenador->misCiclosDeCPU +5;
-						entrenadorConQuienIntercambiar->misCiclosDeCPU = entrenadorConQuienIntercambiar->misCiclosDeCPU +5;
 
 						verificarTieneTodoLoQueQuiere(entrenador);
 						verificarTieneTodoLoQueQuiere(entrenadorConQuienIntercambiar);
