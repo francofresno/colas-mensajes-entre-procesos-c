@@ -8,7 +8,6 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
--include src/memory/subdir.mk
 -include src/subdir.mk
 -include subdir.mk
 -include objects.mk
@@ -27,7 +26,7 @@ endif
 all: Broker
 
 dependents:
-	-cd /home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug && $(MAKE) all
+	-cd /home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug && $(MAKE) clean all
 
 # Tool invocations
 Broker: $(OBJS) $(USER_OBJS) /home/utnso/tp-2020-1c-Fran-co/nuestras-commons/Debug/libnuestras-commons.so
