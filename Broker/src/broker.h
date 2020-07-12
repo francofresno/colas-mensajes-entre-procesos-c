@@ -19,7 +19,7 @@
 #include "nuestras-commons/conexion.h"
 #include "nuestras-commons/mensajes.h"
 #include "messages_queues.h"
-#include "memory/memory.h"
+#include "memory.h"
 
 #define BROKER_NAME "broker"
 #define BROKER_CONFIG "broker.config"

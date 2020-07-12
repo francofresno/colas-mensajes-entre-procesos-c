@@ -17,7 +17,7 @@
 #include <string.h>
 
 #include <commons/collections/list.h>
-#include "../logger.h"
+#include "logger.h"
 
 
 // Enums memorias
