@@ -30,7 +30,6 @@ int quantum;
 int estimacionInicial;
 double alfa;
 int retardoCPU;
-int ciclosCPUTotalesTeam;
 
 //Listas de entrenadores segun estado
 t_list* listaNuevos;
@@ -46,6 +45,9 @@ t_list* atrapados;
 t_list* pendientes;
 t_list* objetivoTeam;
 t_list* entrenadores;
+
+//lista quantum
+t_list* quantumPorEntrenador;
 
 //semaforos
 t_list* sem_entrenadores_ejecutar;
@@ -111,6 +113,8 @@ typedef struct
 	uint32_t puedeAtrapar;
 	uint32_t esLocalized;
 	uint32_t misCiclosDeCPU;
+	uint32_t quantumDisponible;
+	uint32_t quantumIntercambio;
 
 } t_entrenador;
 

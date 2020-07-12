@@ -15,6 +15,7 @@ int main(void) {
 	t_config* config = leer_config();
 	inicializarConfig(config);
 
+
 	ponerEntrenadoresEnLista(config);
 	crearHilosEntrenadores();
 
@@ -199,7 +200,22 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 
 			t_localizedPokemon_msg* mensajeLocalized = (t_localizedPokemon_msg*) paquete_recibido->mensaje;
 
-			log_llegada_localized();
+			char* coordenadas =  string_new();
+			for(int i=0; i<(mensajeLocalized->cantidad_coordenadas); i++){
+
+				char* x = string_itoa(mensajeLocalized->coordenadas[i].posX);
+				char* y = string_itoa(mensajeLocalized->coordenadas[i].posY);
+
+				string_append(&coordenadas, "[");
+				string_append(&coordenadas, x);
+				string_append(&coordenadas, ";");
+				string_append(&coordenadas, y);
+				string_append(&coordenadas, "]");
+				string_append(&coordenadas, " ");
+			}
+
+
+			log_llegada_localized(paquete_recibido->id, mensajeLocalized->nombre_pokemon, mensajeLocalized->cantidad_coordenadas, coordenadas);
 
 			bool compararId(void* elemento){
 				uint32_t* id = (uint32_t*) elemento;
