@@ -34,7 +34,6 @@ int TIEMPO_RECONEXION;
 extern pthread_mutex_t mutex_id_entrenadores;
 extern pthread_mutex_t mutex_entrenador;
 extern pthread_mutex_t mutex_hay_pokemones;
-extern pthread_mutex_t mutex_ciclo_CPU;
 
 extern pthread_mutex_t mutex_send;
 

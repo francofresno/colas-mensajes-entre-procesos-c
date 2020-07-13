@@ -15,13 +15,11 @@ pthread_mutex_t mutex_mensajesLocalized = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_id_entrenadores = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_entrenador = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_hay_pokemones = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex_ciclo_CPU = PTHREAD_MUTEX_INITIALIZER;
 
 
 void ponerEntrenadoresEnLista(t_config* config) {
 
 	inicializarListasDeEstados();
-	ciclosCPUTotalesTeam = 0;
 
 	entrenadores = list_create(); //Creamos la lista de entrenadores
 
@@ -127,6 +125,8 @@ t_entrenador* crear_entrenador(uint32_t id_entrenador, t_coordenadas* coordenada
 	entrenador->puedeAtrapar = 0;
 	entrenador->esLocalized = 0;
 	entrenador->misCiclosDeCPU = 0;
+	entrenador->quantumDisponible = quantum;
+	entrenador->quantumIntercambio = 5;
 
 	return entrenador;
 }
@@ -244,11 +244,6 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 		} else {
 
 			if((entrenador->pokemonInstantaneo) != NULL) {
-				sleep(retardoCPU);
-
-				pthread_mutex_lock(&mutex_ciclo_CPU);
-				ciclosCPUTotalesTeam++;
-				pthread_mutex_unlock(&mutex_ciclo_CPU);
 
 				moverAlEntrenadorHastaUnPokemon(entrenador->id_entrenador);
 
@@ -288,11 +283,6 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 				}
 
 			} else {
-				sleep(retardoCPU);
-
-				pthread_mutex_lock(&mutex_ciclo_CPU);
-				ciclosCPUTotalesTeam++;
-				pthread_mutex_unlock(&mutex_ciclo_CPU);
 
 				t_entrenador* entrenadorConQuienIntercambiar = elegirConQuienIntercambiar(entrenador);
 
@@ -302,11 +292,6 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 
 					intercambiarPokemones(entrenador->id_entrenador, entrenadorConQuienIntercambiar->id_entrenador);
 
-//					pthread_mutex_lock(&mutex_ciclo_CPU);
-//					ciclosCPUTotalesTeam++;
-//					pthread_mutex_unlock(&mutex_ciclo_CPU);
-
-					//TODO falta que el intercambio sea de a 1 ciclo de CPU como los mov.
 				}
 			}
 		}
@@ -352,6 +337,8 @@ uint32_t esperarIdCatch(int socket_cliente){
 }
 
 void moverAlEntrenadorHastaUnPokemon(uint32_t idEntrenador){
+
+	sleep(retardoCPU);
 
 	pthread_mutex_lock(&mutex_entrenadores);
 	t_entrenador* entrenador = list_get(entrenadores, idEntrenador);
@@ -535,6 +522,8 @@ void ponerEntrenadorEnReady(t_entrenador* entrenador, t_newPokemon* pokemon){
 
 void moverAlEntrenadorHastaOtroEntrenador(uint32_t idEntrenador1, uint32_t idEntrenador2){
 
+	sleep(retardoCPU);
+
 	pthread_mutex_lock(&mutex_entrenadores);
 	t_entrenador* entrenador1 = list_get(entrenadores, idEntrenador1);
 	t_entrenador* entrenador2 = list_get(entrenadores, idEntrenador2);
@@ -575,13 +564,23 @@ void intercambiarPokemones(uint32_t idEntrenador1, uint32_t idEntrenador2){
 	t_entrenador* entrenador2 = list_get(entrenadores, idEntrenador2);
 	pthread_mutex_unlock(&mutex_entrenadores);
 
+	if(entrenador1->quantumIntercambio <= entrenador1->quantumDisponible){
 
-	sleep(5*retardoCPU);
-	dameTuPokemon(entrenador1,entrenador2);
-	dameTuPokemon(entrenador2, entrenador1);
+		sleep((entrenador1->quantumIntercambio)*retardoCPU);
+		dameTuPokemon(entrenador1,entrenador2);
+		dameTuPokemon(entrenador2, entrenador1);
 
-	log_intercambio_pokemones(idEntrenador1, idEntrenador2);
+		log_intercambio_pokemones(idEntrenador1, idEntrenador2);
 
+		entrenador1->quantumDisponible -= entrenador1->quantumIntercambio;
+		entrenador1->quantumIntercambio = 0;
+
+	} else{
+
+		sleep((entrenador1->quantumDisponible)*retardoCPU);
+		entrenador1->quantumIntercambio -= entrenador1->quantumDisponible;
+		entrenador1->quantumDisponible = 0;
+	}
 }
 
 void dameTuPokemon(t_entrenador* entrenador1, t_entrenador* entrenador2){

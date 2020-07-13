@@ -32,16 +32,7 @@ void planificarSegun() {
 
 	case RR:
 
-		pthread_mutex_lock(&mutex_entrenadores);
-		int quantumPorEntrenador[list_size(entrenadores)];
-
-		for(int i=0; i<list_size(entrenadores);i++){
-			quantumPorEntrenador[i]=quantum;
-		}
-
-		pthread_mutex_unlock(&mutex_entrenadores);
-
-		planificarSegunRR(quantumPorEntrenador);
+		planificarSegunRR();
 
 		break;
 
@@ -340,24 +331,24 @@ void planificarSegunRR(int quantumPorEntrenador){
 				distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
 				int distanciaAnterior = distancia;
 
-				quantumPorEntrenador[entrenador->id_entrenador]--;
+				entrenador->quantumDisponible -=1;
 
-				while ((distancia != 0) && (quantumPorEntrenador[entrenador->id_entrenador]>0)) {
+				while (((distancia != 0) && (entrenador->quantumDisponible)>0)) {
 					if (distancia != distanciaAnterior) {
 						sem_post(semaforoDelEntrenador);
 						entrenador->misCiclosDeCPU++;
-						quantumPorEntrenador[entrenador->id_entrenador]--;
+						entrenador->quantumDisponible -=1;
 					}
 					distanciaAnterior = distancia;
 					distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
 				}
 
-				if((quantumPorEntrenador[entrenador->id_entrenador]==0) && (!llegoAlObjetivoPokemon(entrenador))){
+				if(((entrenador->quantumDisponible)==0) && (!llegoAlObjetivoPokemon(entrenador))){
 					pthread_mutex_lock(&mutex_listaReady);
 					list_add(listaReady, entrenador);
 					entrenador->estado = READY;
 					pthread_mutex_unlock(&mutex_listaReady);
-					quantumPorEntrenador[entrenador->id_entrenador]= quantum;
+					entrenador->quantumDisponible = quantum;
 				} else{
 					sem_wait(&sem_esperarCaught);
 					if(entrenador->idMensajeCaught){
@@ -402,7 +393,26 @@ void chequearDeadlock(int algoritmo, int quantumPorEntrenador) {
 		pthread_mutex_unlock(&mutex_listaFinalizados);
 
 		if(tamanioEntrenadores == tamanioFinalizados){
-			log_resultado_team("el team cumplió el objetivo");
+
+			int ciclosCPUTotales = 0;
+			char* cantidadCiclosCPUPorEntrenador =  string_new();
+
+			for(int i=0; i< list_size(entrenadores);i++){
+
+				t_entrenador* entrenador = list_get(entrenadores, i);
+				ciclosCPUTotales += entrenador->misCiclosDeCPU;
+
+				char* cicloCpu = string_itoa(entrenador->misCiclosDeCPU);
+
+				string_append(&cantidadCiclosCPUPorEntrenador, "Entrenador %d consumio: ", i);
+				string_append(&cantidadCiclosCPUPorEntrenador, entrenador->misCiclosDeCPU);
+				string_append(&cantidadCiclosCPUPorEntrenador, ";");
+
+			}
+
+
+			// log_resultado_team("el team cumplió el objetivo", ciclosCPUTotales , cantidadCambiosContexto, cantidadCiclosCPUPorEntrenador, int cantDeadlocks)//TODO return exit success?
+
 		} else {
 			int distancia;
 			int tamanioDeadlock;
@@ -481,34 +491,42 @@ void chequearDeadlock(int algoritmo, int quantumPorEntrenador) {
 
 						t_entrenador* entrenadorConQuienIntercambiar = elegirConQuienIntercambiar(entrenador);
 
+						distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
+
+						if(distancia!=0){
+							entrenador->quantumIntercambio = 5;
+						}
+
 						sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 						sem_post(semaforoDelEntrenador);
 
-						entrenador->misCiclosDeCPU++; //quizas sería una solucion ir mirando los ciclos de CPU consumidos.
+						entrenador->misCiclosDeCPU++;
 
 						distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
 						int distanciaAnterior = distancia;
 
-						quantumPorEntrenador[entrenador->id_entrenador]--;
+						entrenador->quantumDisponible-=1;
 
-						while ((distancia != 0) && (quantumPorEntrenador[entrenador->id_entrenador]>0)) {
+						while ((distancia != 0) && ((entrenador->quantumDisponible)>0)) {
+
 							if (distancia != distanciaAnterior) {
 								sem_post(semaforoDelEntrenador);
 								entrenador->misCiclosDeCPU++;
-								//TODO falta que el intercambio sea limitado por el quantum
-								quantumPorEntrenador[entrenador->id_entrenador]--;
+								entrenador->quantumDisponible-=1;
 							}
 							distanciaAnterior = distancia;
 							distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
 						}
 
-						if((quantumPorEntrenador[entrenador->id_entrenador]==0) && (!llegoAlObjetivoEntrenador(entrenador, entrenadorConQuienIntercambiar))){
+						if(entrenador->quantumIntercambio){
 							pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
 							list_add(listaBloqueadosDeadlock, entrenador);
 							entrenador->estado = BLOCKED;
 							pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
-							quantumPorEntrenador[entrenador->id_entrenador]= quantum;
+							entrenador->quantumDisponible = quantum;
 						} else{
+
+							entrenador->quantumIntercambio = 5;
 
 							pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
 							sacarEntrenadorDeLista(entrenadorConQuienIntercambiar, listaBloqueadosDeadlock);
@@ -573,7 +591,7 @@ void chequearDeadlock(int algoritmo, int quantumPorEntrenador) {
 						sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 						sem_post(semaforoDelEntrenador);
 
-						entrenador->misCiclosDeCPU++; //TODO ta bien?
+						entrenador->misCiclosDeCPU++;
 
 						distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
 						int distanciaAnterior = distancia;
@@ -767,7 +785,7 @@ void sacarEntrenadorDeLista(t_entrenador* entrenador, t_list* lista){
 	}
 }
 
-t_entrenador* elegirConQuienIntercambiar(t_entrenador* entrenador){ //TODO probar
+t_entrenador* elegirConQuienIntercambiar(t_entrenador* entrenador){
 
 	t_list* listaQuiere1 = list_duplicate(entrenador->pokemonesQueQuiere);
 	t_list* listaPosee1 = list_duplicate(entrenador->pokemonesQuePosee);

@@ -61,8 +61,16 @@ void log_llegada_appeared(uint32_t id_corr, char* nombre, uint32_t x, uint32_t y
 	log_info(LOGGER,log_msg);
 }
 
-void log_llegada_localized()
+void log_llegada_localized(uint32_t id_corr, t_nombrePokemon nombre, uint32_t cantidadCoords, char* datos)
 {
+	char log_msg[100];
+		sprintf(log_msg, "Llegó un mensaje 'Localized' a Team y sus datos son: \n ID Correlativo: %d \n Nombre Pokemon: %s \n Cantidad de Coordenadas: &d \n Coordenadas: %s",
+			id_corr,
+			nombre,
+			cantidadCoords,
+			datos
+		);
+			log_info(LOGGER,log_msg);
 }
 
 void log_llegada_caught(uint32_t id_corr, uint32_t atrapado)
@@ -76,10 +84,16 @@ void log_llegada_caught(uint32_t id_corr, uint32_t atrapado)
 	log_info(LOGGER,log_msg);
 }
 
-void log_resultado_team(char* resultado)
+void log_resultado_team(char* resultado, int ciclosCPUTotales, int cantidadCambiosContexto, char* cantCiclosCPUPorEntrenador, int cantDeadlocks)
 {
 	char log_msg[100];
-	sprintf(log_msg, "El resultado final es: %s", resultado);
+	sprintf(log_msg, "El resultado final es: %s /n Ciclos de CPU totales: %d \n Cantidad de cambios de contexto: %d \n Cantidad de ciclos de CPU realizados por entrenador: %s \n Deadlocks producidos y resueltos: %d ",
+			resultado,
+			ciclosCPUTotales,
+			cantidadCambiosContexto,
+			cantCiclosCPUPorEntrenador,
+			cantDeadlocks
+	);
 	log_info(LOGGER,log_msg);
 }
 
