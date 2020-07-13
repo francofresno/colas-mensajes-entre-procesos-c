@@ -101,44 +101,49 @@ void process_suscription(t_suscripcion_msg* subscription_msg, int socket_subscri
 
 void process_new_message(op_code cod_op, uint32_t id_correlative, void* received_message, uint32_t size_message, int socket_cliente)
 {
+	t_queue* queue = COLAS_MENSAJES[cod_op];
 	uint32_t id_message = generate_id();
 
-	t_queue* queue = COLAS_MENSAJES[cod_op];
-	t_list* subscribers = SUSCRIPTORES_MENSAJES[cod_op];
-	pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
+	if (find_message_by_id_correlativo(queue, id_correlative) == NULL) {
+		t_list* subscribers = SUSCRIPTORES_MENSAJES[cod_op];
+		pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
 
-	uint32_t net_size_message = size_message - sizeof(uint32_t)*3; // Se resta el tamanio del cod. op, id e id correlativo que son 3 uint32_t
+		uint32_t net_size_message = size_message - sizeof(uint32_t)*3; // Se resta el tamanio del cod. op, id e id correlativo que son 3 uint32_t
 
-	t_copy_args* args = malloc(sizeof(*args));
-	args->queue = cod_op;
-	args->id = id_message;
-	args->data = received_message;
-	args->data_size = net_size_message;
-	void* allocated_memory = memory_alloc(net_size_message);
-	args->alloc = allocated_memory;
-	void* allocated_message = memory_copy(args);
-	free(args);
-	free(received_message);
+		t_copy_args* args = malloc(sizeof(*args));
+		args->queue = cod_op;
+		args->id = id_message;
+		args->data = received_message;
+		args->data_size = net_size_message;
+		void* allocated_memory = memory_alloc(net_size_message);
+		args->alloc = allocated_memory;
+		void* allocated_message = memory_copy(args);
+		free(args);
+		free(received_message);
 
-	pthread_mutex_lock(&mutex_deleted_messages_ids);
-	int ids_count = 0;
-	t_list* ids_messages_deleted = get_victim_messages_ids(&ids_count);
+		pthread_mutex_lock(&mutex_deleted_messages_ids);
+		int ids_count = 0;
+		t_list* ids_messages_deleted = get_victim_messages_ids(&ids_count);
 
-	if (ids_count > 0) {
-		remove_messages_by_id(ids_messages_deleted, ids_count);
-		notify_all_victim_messages_deleted();
+		if (ids_count > 0) {
+			remove_messages_by_id(ids_messages_deleted, ids_count);
+			notify_all_victim_messages_deleted();
+		}
+		pthread_mutex_unlock(&mutex_deleted_messages_ids);
+
+		t_enqueued_message* mensaje_encolado = push_message_queue(queue, id_message, id_correlative, mutex);
+
+		enviar_id_respuesta(id_message, socket_cliente);
+		t_list* suscriptores_informados = inform_subscribers(cod_op, allocated_message, id_message, id_correlative, subscribers, mutex);
+		mensaje_encolado->subscribers_informed = suscriptores_informados;
+		log_new_message(id_message, cod_op);
+		notify_message_used(id_message);
+
+		receive_multiples_ack(cod_op, id_message, suscriptores_informados);
+	} else {
+		log_new_message(id_message, cod_op);
 	}
-	pthread_mutex_unlock(&mutex_deleted_messages_ids);
 
-	t_enqueued_message* mensaje_encolado = push_message_queue(queue, id_message, id_correlative, mutex);
-
-	enviar_id_respuesta(id_message, socket_cliente);
-	t_list* suscriptores_informados = inform_subscribers(cod_op, allocated_message, id_message, id_correlative, subscribers, mutex);
-	mensaje_encolado->subscribers_informed = suscriptores_informados;
-	log_new_message(id_message, cod_op);
-	notify_message_used(id_message);
-
-	receive_multiples_ack(cod_op, id_message, suscriptores_informados);
 }
 
 void remove_subscriber_if_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t temporal, pthread_mutex_t mutex)
