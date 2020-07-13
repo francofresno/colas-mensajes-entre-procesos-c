@@ -120,7 +120,7 @@ void write_dump_time_info(FILE* dump_file)
   struct tm* timeinfo;
   setenv("TZ", "America/Buenos_Aires", 1);
   timeinfo = localtime(&now);
-  fprintf(dump_file, "\n%d/%d/%d %d:%d:%d\n",timeinfo->tm_mday, timeinfo->tm_mon + 1, timeinfo->tm_year + 1900, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+  fprintf(dump_file, "\n%d/%d/%d %d:%d:%d\n", timeinfo->tm_mday, timeinfo->tm_mon + 1, timeinfo->tm_year + 1900, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
 }
 
 void write_partitions_info(FILE* dump_file)
@@ -165,17 +165,19 @@ void write_partitions_info(FILE* dump_file)
 
 void memory_dump()
 {
+	pthread_mutex_lock(&mutex_memory);
 	FILE* dump_file = fopen(DUMP_PATH, "w");
 
-	const char* line = "-----------------------------------------------------------------------------------------------------------------------------\n";
+	const char* line = "-----------------------------------------------------------------------------------------------------------------------------";
 
-	fprintf(dump_file,"%s", line);
+	fprintf(dump_file,"%s\n", line);
 	write_dump_time_info(dump_file);
 	write_partitions_info(dump_file);
-	fprintf(dump_file,"%s", line);
+	fprintf(dump_file,"%s\n", line);
 
 	log_dump();
 	fclose(dump_file);
+	pthread_mutex_unlock(&mutex_memory);
 }
 
 void ids_message_destroyer(void* message)
