@@ -15,6 +15,7 @@ pthread_mutex_t mutex_mensajesLocalized = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_id_entrenadores = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_entrenador = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_hay_pokemones = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_especies_requeridas = PTHREAD_MUTEX_INITIALIZER;
 
 
 void ponerEntrenadoresEnLista(t_config* config) {
@@ -127,6 +128,8 @@ t_entrenador* crear_entrenador(uint32_t id_entrenador, t_coordenadas* coordenada
 	entrenador->misCiclosDeCPU = 0;
 	entrenador->quantumDisponible = quantum;
 	entrenador->quantumIntercambio = 5;
+	entrenador->estimacionInicial = estimacionInicial;
+	entrenador->rafagaAnteriorReal = 0; //TODO preguntar
 
 	return entrenador;
 }

@@ -189,7 +189,9 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 					mensajeAppeared->coordenadas.posX,
 					mensajeAppeared->coordenadas.posY);
 
-			requiere(mensajeAppeared);
+			if(estaEnLaListaEspeciesRequeridas(mensajeAppeared->nombre_pokemon.nombre)){
+				requiere(mensajeAppeared);
+			}
 
 			free_paquete_recibido(nombre_recibido, paquete_recibido);
 
@@ -214,12 +216,14 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 			}
 
 
-			//log_llegada_localized(paquete_recibido->id, mensajeLocalized->nombre_pokemon, mensajeLocalized->cantidad_coordenadas, coordenadas);
+			log_llegada_localized(paquete_recibido->id, mensajeLocalized->nombre_pokemon.nombre, mensajeLocalized->cantidad_coordenadas, coordenadas);
 
 			bool compararId(void* elemento){
 				uint32_t* id = (uint32_t*) elemento;
 				return *id == (paquete_recibido->id_correlativo);
 			}
+
+			if(estaEnLaListaEspeciesRequeridas(mensajeLocalized->nombre_pokemon.nombre)){
 
 			if(list_any_satisfy(id_mensajeGet, compararId) && (necesitaTeamAlPokemon(&(mensajeLocalized->nombre_pokemon)))){
 
@@ -229,6 +233,8 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 
 				buscarPokemonLocalized(mensajeLocalized, paquete_recibido->id);
 				planificarSegun();
+
+			}
 
 			}
 
@@ -284,6 +290,16 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 	}
 }
 
+int estaEnLaListaEspeciesRequeridas(char* nombrePokemon){
+
+	bool esMismaEspecie(void* elemento){
+		char* nombrePokemonLista = (char*) elemento;
+		return string_equals_ignore_case(nombrePokemonLista, nombrePokemon);
+	}
+
+	return list_any_satisfy(especiesRequeridas, esMismaEspecie);
+}
+
 op_code stringACodigoOperacion(const char* string)
 {
 	for(int i = 0; i < sizeof(conversionCodigoOp) / sizeof(conversionCodigoOp[0]); i++)
@@ -303,6 +319,10 @@ void enviarMensajeGetABroker(){
 	for(int a=0; a< tamanioObjTeamSinRepetidos ; a++){
 		t_nombrePokemon* pokemon = (t_nombrePokemon*) list_get(objetivoTeamSinRepe, a);
 		enviarMensajeGet(pokemon);
+
+		pthread_mutex_lock(&mutex_especies_requeridas);
+		list_add(especiesRequeridas, pokemon->nombre);
+		pthread_mutex_unlock(&mutex_especies_requeridas);
 	}
 
 	list_destroy(objetivoTeamSinRepe);
@@ -357,6 +377,7 @@ void inicializarListas(){
 	mensajesLocalized = list_create();
 	atrapados = list_create();
 	objetivoTeam = list_create();
+	especiesRequeridas = list_create();
 }
 
 void esperarIdGet(int socket_cliente){

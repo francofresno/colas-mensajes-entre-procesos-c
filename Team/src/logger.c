@@ -61,17 +61,17 @@ void log_llegada_appeared(uint32_t id_corr, char* nombre, uint32_t x, uint32_t y
 	log_info(LOGGER,log_msg);
 }
 
-//void log_llegada_localized(uint32_t id_corr, t_nombrePokemon nombre, uint32_t cantidadCoords, char* datos)
-//{
-//	char log_msg[100];
-//		sprintf(log_msg, "Llegó un mensaje 'Localized' a Team y sus datos son: \n ID Correlativo: %d \n Nombre Pokemon: %s \n Cantidad de Coordenadas: &d \n Coordenadas: %s",
-//			id_corr,
-//			nombre,
-//			cantidadCoords,
-//			datos
-//		);
-//			log_info(LOGGER,log_msg);
-//}
+void log_llegada_localized(uint32_t id_corr, char* nombre, uint32_t cantidadCoords, char* datos)
+{
+	char log_msg[100];
+		sprintf(log_msg, "Llegó un mensaje 'Localized' a Team y sus datos son: \n ID Correlativo: %d \n Nombre Pokemon: %s \n Cantidad de Coordenadas: &d \n Coordenadas: %s",
+			id_corr,
+			nombre,
+			cantidadCoords,
+			datos
+		);
+			log_info(LOGGER,log_msg);
+}
 
 void log_llegada_caught(uint32_t id_corr, uint32_t atrapado)
 {

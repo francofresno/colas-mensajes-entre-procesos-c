@@ -21,6 +21,7 @@ t_list* pendientes;
 t_list* id_mensajeGet;
 t_list* id_mensajeCatch;
 t_list* mensajesLocalized;
+t_list* especiesRequeridas;
 
 // Variables globales
 char* IP_TEAM;
@@ -40,6 +41,8 @@ extern pthread_mutex_t mutex_send;
 extern pthread_mutex_t mutex_id_mensaje_get;
 extern pthread_mutex_t mutex_id_mensaje_catch;
 extern pthread_mutex_t mutex_mensajesLocalized;
+
+extern pthread_mutex_t mutex_especies_requeridas;
 
 t_list* organizarPokemones(char**);
 

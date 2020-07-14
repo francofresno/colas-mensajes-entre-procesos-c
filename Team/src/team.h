@@ -54,6 +54,8 @@ void serve_client(int*);
 
 void process_request(char*, t_paquete*, int);
 
+int estaEnLaListaEspeciesRequeridas(char*);
+
 op_code stringACodigoOperacion(const char*);
 
 void enviarMensajeGetABroker();

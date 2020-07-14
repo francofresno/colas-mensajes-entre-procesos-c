@@ -30,6 +30,8 @@ int quantum;
 int estimacionInicial;
 double alfa;
 int retardoCPU;
+int cantidadDeadlocksResueltos;
+int cantidadCambiosDeContexto;
 
 //Listas de entrenadores segun estado
 t_list* listaNuevos;
@@ -65,6 +67,9 @@ extern pthread_mutex_t mutex_listaBloqueadosDeadlock;
 extern pthread_mutex_t mutex_listaBloqueadosEsperandoMensaje;
 extern pthread_mutex_t mutex_listaBloqueadosEsperandoPokemones;
 extern pthread_mutex_t mutex_listaFinalizados;
+
+extern pthread_mutex_t mutex_cantidadDeadlocks;
+extern pthread_mutex_t mutex_cantidadCambiosContexto;
 
 typedef enum{
 	NEW = 1,
@@ -115,6 +120,8 @@ typedef struct
 	uint32_t misCiclosDeCPU;
 	uint32_t quantumDisponible;
 	uint32_t quantumIntercambio;
+	double estimacionInicial;
+	uint32_t rafagaAnteriorReal;
 
 } t_entrenador;
 
@@ -124,9 +131,11 @@ void planificarSegunFifo();
 
 void planificarSegunSJFSinDesalojo();
 
-void planificarSegunRR(int);
+void planificarSegunRR();
 
-void chequearDeadlock(int, int);
+void planificarSegunSJFConDesalojo();
+
+void chequearDeadlock(int);
 
 algoritmo_code stringACodigoAlgoritmo(const char*);
 
@@ -148,9 +157,7 @@ t_entrenador* elegirConQuienIntercambiar(t_entrenador*);
 
 int tengoAlgunPokemonQueQuiere2(t_entrenador*,t_entrenador*);
 
-void ordenarListaPorDistanciaAPokemon(t_list*);
-
-void ordenarListaPorDistanciaAEntrenador(t_list*);
+void ordenarListaPorEstimacion(t_list*);
 
 int llegoAlObjetivoPokemon(t_entrenador*);
 
