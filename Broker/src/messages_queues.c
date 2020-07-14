@@ -78,7 +78,7 @@ t_enqueued_message* find_message_by_id(t_queue* queue, uint32_t id)
 	return message;
 }
 
-t_enqueued_message* find_message_by_id_correlativo(t_queue* queue, uint32_t id)
+t_enqueued_message* find_message_by_id_correlative(t_queue* queue, uint32_t id)
 {
 	t_link_element *element = queue->elements->head;
 

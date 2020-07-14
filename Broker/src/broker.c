@@ -104,7 +104,7 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 	t_queue* queue = COLAS_MENSAJES[cod_op];
 	uint32_t id_message = generate_id();
 
-	if (find_message_by_id_correlativo(queue, id_correlative) == NULL) {
+	if (find_message_by_id_correlative(queue, id_correlative) == NULL) {
 		t_list* subscribers = SUSCRIPTORES_MENSAJES[cod_op];
 		pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
 
