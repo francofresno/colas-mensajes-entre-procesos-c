@@ -15,7 +15,6 @@ int main(void) {
 	t_config* config = leer_config();
 	inicializarConfig(config);
 
-
 	ponerEntrenadoresEnLista(config);
 	crearHilosEntrenadores();
 
@@ -94,7 +93,7 @@ void suscribirseAColas(){
 	pthread_create(&thread, NULL, (void*)suscribirseCaught, NULL);
 	pthread_detach(thread);
 	pthread_create(&thread, NULL, (void*)suscribirseLocalized, NULL);
-	pthread_join(thread, NULL);
+	pthread_detach(thread);
 
 }
 
@@ -215,7 +214,7 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 			}
 
 
-			log_llegada_localized(paquete_recibido->id, mensajeLocalized->nombre_pokemon, mensajeLocalized->cantidad_coordenadas, coordenadas);
+			//log_llegada_localized(paquete_recibido->id, mensajeLocalized->nombre_pokemon, mensajeLocalized->cantidad_coordenadas, coordenadas);
 
 			bool compararId(void* elemento){
 				uint32_t* id = (uint32_t*) elemento;

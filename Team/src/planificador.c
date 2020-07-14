@@ -32,7 +32,7 @@ void planificarSegun() {
 
 	case RR:
 
-		planificarSegunRR();
+		//planificarSegunRR();
 
 		break;
 
@@ -404,7 +404,7 @@ void chequearDeadlock(int algoritmo, int quantumPorEntrenador) {
 
 				char* cicloCpu = string_itoa(entrenador->misCiclosDeCPU);
 
-				string_append(&cantidadCiclosCPUPorEntrenador, "Entrenador %d consumio: ", i);
+				//string_append(&cantidadCiclosCPUPorEntrenador, "Entrenador %d consumio: ", i);
 				string_append(&cantidadCiclosCPUPorEntrenador, entrenador->misCiclosDeCPU);
 				string_append(&cantidadCiclosCPUPorEntrenador, ";");
 
