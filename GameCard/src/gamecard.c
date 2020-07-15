@@ -20,6 +20,7 @@ int main(void) {
 	PUNTO_MONTAJE = config_get_string_value(configGeneral, "PUNTO_MONTAJE_TALLGRASS");
 
 	configuracionInicial();
+//	probar();
 
 	t_suscripcion_msg datosHiloNP;
 	datosHiloNP.id_proceso = config_get_int_value(configGeneral, "ID_HILO_NP");
@@ -37,12 +38,12 @@ int main(void) {
 	datosHiloCP.temporal = 0;
 
 	pthread_create(&threadNewPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloNP);
-//	pthread_create(&threadGetPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloGP);
+	pthread_create(&threadGetPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloGP);
 //	pthread_create(&threadCatchPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloCP);
 //	pthread_create(&threadMessages, NULL, (void*)esperarMensajes, NULL);
 
 	pthread_join(threadNewPokemon, NULL);
-//	pthread_join(threadGetPokemon, NULL);
+	pthread_join(threadGetPokemon, NULL);
 //	pthread_join(threadCatchPokemon, NULL);
 
 	config_destroy(configGeneral);
@@ -93,6 +94,8 @@ void recepcionMensajesDeCola(t_suscripcion_msg* datosHilo, int socket_cliente)
 		printf("ID_CORRELATIVO: %d\n", paquete_recibido->id_correlativo);
 
 		devolverMensajeCorrespondiente(paquete_recibido);
+		free(paquete_recibido->mensaje);
+		free(paquete_recibido);
 	}
 
 	list_destroy(paquetes);
@@ -118,6 +121,7 @@ void recepcionMensajesDeCola(t_suscripcion_msg* datosHilo, int socket_cliente)
 		devolverMensajeCorrespondiente(paquete_recibido);
 
 		free(paquete_recibido);
+//		break;
 	}
 }
 
@@ -129,7 +133,7 @@ void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
 	{
 		case NEW_POKEMON: ;
 			t_newPokemon_msg* estructuraNew = (t_newPokemon_msg*) paquete_recibido->mensaje;
-			printf("nombre recibido: %s\n", estructuraNew->nombre_pokemon.nombre);
+
 
 			if(procesarNewPokemon(estructuraNew) != 0)
 				exit(-1);
@@ -142,26 +146,17 @@ void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
 				enviar_mensaje(APPEARED_POKEMON, 0, paquete_recibido->id, &estructuraAppeared, socketTemporal);
 
 			free(estructuraNew);
-//			free(estructuraNew->nombre_pokemon.nombre);
 			break;
 		case GET_POKEMON: ;
-			t_getPokemon_msg* estructuraGet = malloc(sizeof(t_getPokemon_msg));
-			estructuraGet = (t_getPokemon_msg*) paquete_recibido->mensaje;
+			t_getPokemon_msg* estructuraGet = (t_getPokemon_msg*) paquete_recibido->mensaje;
 
-			t_localizedPokemon_msg estructuraLocalized;
-			estructuraLocalized.cantidad_coordenadas = 1;
-			estructuraLocalized.nombre_pokemon = estructuraGet->nombre_pokemon;
-			estructuraLocalized.coordenadas = malloc(sizeof(uint32_t) * estructuraLocalized.cantidad_coordenadas * 2);
-			for(int i = 0; i < estructuraLocalized.cantidad_coordenadas; i++)
-			{
-				estructuraLocalized.coordenadas[i].posX = 1;
-				estructuraLocalized.coordenadas[i].posY = 1;
-			}
+			t_localizedPokemon_msg estructuraLocalized = procesarGetPokemon(estructuraGet);
 
 			if(chequearMensajeBroker(socketTemporal))
 				enviar_mensaje(LOCALIZED_POKEMON, 0, paquete_recibido->id, &estructuraLocalized, socketTemporal);
 
 			free(estructuraGet);
+			free(estructuraLocalized.coordenadas);
 			break;
 		case CATCH_POKEMON: ;
 			t_catchPokemon_msg* estructuraCatch = malloc(sizeof(t_catchPokemon_msg));

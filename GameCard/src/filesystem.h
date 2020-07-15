@@ -32,7 +32,7 @@ t_config* configGeneral;
 void configuracionInicial(void);
 
 void verificarDirectorio(char*);
-char* verificarPokemon(t_nombrePokemon);
+char* verificarPokemon(char*);
 void verificarMetadataPokemon(char*);
 char* verificarBloque(t_config*);
 
@@ -47,13 +47,21 @@ int obtenerLugarEnBitmap();
 char* armarArrayDeBloques(char**, int);
 
 bool sePuedeEscribirElUltimoBloque(int);
+bool existePokemon(char*);
+void separarLinea(char*, int*);
+char* leerBloque(char*);
+int leerArchivoPokemon(char*, int**);
 
 t_config* abrirArchivo(char*);
 void cerrarArchivo(t_config*);
 char* asignarBloque(t_config*);
 void escribirArchivoPokemon(char*, char*);
 int escribirBloque(char*, char*);
+int cantidadElementosArray(char**);
+void liberarArray(char**, int);
 
 int procesarNewPokemon(t_newPokemon_msg*);
+t_localizedPokemon_msg procesarGetPokemon(t_getPokemon_msg*);
+char* arreglarNombrePokemon(t_nombrePokemon);
 
 #endif /* FILESYSTEM_H_ */
