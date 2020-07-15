@@ -1,7 +1,6 @@
 /*
  ============================================================================
  Name        : Broker
-
  Author      : Fran and Co
  Description : Proceso Broker
  ============================================================================
@@ -104,7 +103,7 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 	t_queue* queue = COLAS_MENSAJES[cod_op];
 	uint32_t id_message = generate_id();
 
-	if (find_message_by_id_correlative(queue, id_correlative) == NULL) {
+	if (id_correlative == 0 || find_message_by_id_correlative(queue, id_correlative) == NULL) {
 		t_list* subscribers = SUSCRIPTORES_MENSAJES[cod_op];
 		pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
 
@@ -141,6 +140,7 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 
 		receive_multiples_ack(cod_op, id_message, suscriptores_informados);
 	} else {
+		enviar_id_respuesta(id_message, socket_cliente); //TODO devolver -1?
 		log_new_message(id_message, cod_op);
 	}
 
@@ -284,6 +284,8 @@ void receive_ack(t_list* mensajes_encolados, uint32_t cantidad_mensajes, t_subsc
 {
 	uint32_t response_status = 0;
 	int status = recv(subscriber->socket_subscriber, &response_status, sizeof(response_status), MSG_WAITALL);
+
+	printf("Recibi ACK status %d\n", status);
 
 	if(status > 0 && response_status == 200) {
 		add_new_ack_suscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber);

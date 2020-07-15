@@ -130,11 +130,6 @@ void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_corr
 			serializar_variable(a_enviar, &(estNew->coordenadas.posY), sizeof(estNew->coordenadas.posY), &offset);
 			serializar_variable(a_enviar, &(estNew->cantidad_pokemons), sizeof(estNew->cantidad_pokemons), &offset);
 
-			printf("Nombre: %s\n", estNew->nombre_pokemon.nombre);
-			printf("Largo: %d\n", estNew->nombre_pokemon.nombre_lenght);
-			printf("PosX: %d\n", estNew->coordenadas.posX);
-			printf("PosY: %d\n", estNew->coordenadas.posY);
-			printf("Cant: %d\n", estNew->cantidad_pokemons);
 			break;
 		case APPEARED_POKEMON: ;
 			t_appearedPokemon_msg* estAppeared = estructura;
@@ -293,6 +288,7 @@ void deserializar_paquete(void* stream, t_paquete* paquete_recibido, int* offset
 
 			*nombre_recibido = estructuraNew->nombre_pokemon.nombre;
 			paquete_recibido->mensaje = estructuraNew;
+
 			break;
 		case APPEARED_POKEMON: ;
 			t_appearedPokemon_msg* estructuraAppeared = malloc(sizeof(*estructuraAppeared));
