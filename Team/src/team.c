@@ -189,7 +189,13 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 					mensajeAppeared->coordenadas.posX,
 					mensajeAppeared->coordenadas.posY);
 
-			if(estaEnLaListaEspeciesRequeridas(mensajeAppeared->nombre_pokemon.nombre)){
+			if (!especieEstaEnLista(especiesQueLlegaron, mensajeAppeared->nombre_pokemon.nombre, mutex_especies_que_llegaron)) {
+				pthread_mutex_lock(&mutex_especies_que_llegaron);
+				list_add(especiesQueLlegaron, &(mensajeAppeared->nombre_pokemon.nombre));
+				pthread_mutex_unlock(&mutex_especies_que_llegaron);
+			}
+
+			if (especieEstaEnLista(especiesRequeridas, mensajeAppeared->nombre_pokemon.nombre, mutex_especies_requeridas)){
 				requiere(mensajeAppeared);
 			}
 
@@ -223,19 +229,21 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 				return *id == (paquete_recibido->id_correlativo);
 			}
 
-			if(estaEnLaListaEspeciesRequeridas(mensajeLocalized->nombre_pokemon.nombre)){
+			if(
+				!especieEstaEnLista(especiesQueLlegaron, mensajeLocalized->nombre_pokemon.nombre, mutex_especies_que_llegaron)
+				&& list_any_satisfy(id_mensajeGet, compararId)
+				&& necesitaTeamAlPokemon(&(mensajeLocalized->nombre_pokemon))
+			){
+					pthread_mutex_lock(&mutex_especies_que_llegaron);
+					list_add(especiesQueLlegaron, &(mensajeLocalized->nombre_pokemon.nombre));
+					pthread_mutex_unlock(&mutex_especies_que_llegaron);
 
-			if(list_any_satisfy(id_mensajeGet, compararId) && (necesitaTeamAlPokemon(&(mensajeLocalized->nombre_pokemon)))){
+					pthread_mutex_lock(&mutex_mensajesLocalized);
+					list_add(mensajesLocalized, paquete_recibido);
+					pthread_mutex_unlock(&mutex_mensajesLocalized);
 
-				pthread_mutex_lock(&mutex_mensajesLocalized);
-				list_add(mensajesLocalized, paquete_recibido);
-				pthread_mutex_unlock(&mutex_mensajesLocalized);
-
-				buscarPokemonLocalized(mensajeLocalized, paquete_recibido->id);
-				planificarSegun();
-
-			}
-
+					buscarPokemonLocalized(mensajeLocalized, paquete_recibido->id);
+					planificarSegun();
 			}
 
 			break;
@@ -290,14 +298,18 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 	}
 }
 
-int estaEnLaListaEspeciesRequeridas(char* nombrePokemon){
+bool especieEstaEnLista(t_list* list, char* nombrePokemon, pthread_mutex_t mutex) {
 
 	bool esMismaEspecie(void* elemento){
 		char* nombrePokemonLista = (char*) elemento;
 		return string_equals_ignore_case(nombrePokemonLista, nombrePokemon);
 	}
 
-	return list_any_satisfy(especiesRequeridas, esMismaEspecie);
+	pthread_mutex_lock(&mutex);
+	bool estaEnLista = list_any_satisfy(list, esMismaEspecie);
+	pthread_mutex_unlock(&mutex);
+
+	return estaEnLista;
 }
 
 op_code stringACodigoOperacion(const char* string)
@@ -378,6 +390,7 @@ void inicializarListas(){
 	atrapados = list_create();
 	objetivoTeam = list_create();
 	especiesRequeridas = list_create();
+	especiesQueLlegaron = list_create();
 }
 
 void esperarIdGet(int socket_cliente){

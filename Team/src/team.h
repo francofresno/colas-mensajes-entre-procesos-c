@@ -54,7 +54,7 @@ void serve_client(int*);
 
 void process_request(char*, t_paquete*, int);
 
-int estaEnLaListaEspeciesRequeridas(char*);
+bool especieEstaEnLista(t_list*, char*, pthread_mutex_t);
 
 op_code stringACodigoOperacion(const char*);
 
