@@ -125,6 +125,8 @@ typedef struct
 
 } t_entrenador;
 
+void planificarCaught();
+
 void planificarSegun();
 
 void planificarSegunFifo();
@@ -133,7 +135,7 @@ void planificarSegunSJFSinDesalojo();
 
 void planificarSegunRR();
 
-void planificarSegunSJFConDesalojo();
+int planificarSegunSJFConDesalojo();
 
 void chequearDeadlock(int);
 

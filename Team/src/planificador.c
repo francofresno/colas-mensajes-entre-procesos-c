@@ -22,10 +22,9 @@ pthread_mutex_t mutex_listaFinalizados = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_cantidadDeadlocks = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_cantidadCambiosContexto = PTHREAD_MUTEX_INITIALIZER;
 
-void planificarSegun() {
+void planificarCaught() {
 
-	int fueUnCaught0 = 0;
-
+	int cantidadCaughts1 = 0;
 	pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
 	if(!(list_is_empty(listaBloqueadosEsperandoMensaje))){
 		int j = list_size(listaBloqueadosEsperandoMensaje);
@@ -40,6 +39,7 @@ void planificarSegun() {
 				list_add(listaReady, entrenador);
 				pthread_mutex_unlock(&mutex_listaReady);
 				list_remove(listaBloqueadosEsperandoMensaje, i);
+				cantidadCaughts1++;
 			}
 
 			if((entrenador->pokemonInstantaneo) == NULL){
@@ -47,41 +47,45 @@ void planificarSegun() {
 				list_add(listaBloqueadosEsperandoPokemones, entrenador);
 				pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoPokemones);
 				list_remove(listaBloqueadosEsperandoMensaje, i);
-
-				fueUnCaught0 = 1;
 			}
 		}
 	}
 	pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
 
-	if (!fueUnCaught0) {
-		switch (stringACodigoAlgoritmo(algoritmoPlanificacion)) {
-
-		case FIFO:
-			planificarSegunFifo();
-			break;
-
-		case RR:
-			planificarSegunRR();
-			break;
-
-		case SJFCD:
-			planificarSegunSJFConDesalojo();
-			break;
-
-		case SJFSD:
-			planificarSegunSJFSinDesalojo();
-			break;
-
-		case ERROR_CODIGO_ALGORITMO:
-			puts("Se recibio mal el codigo\n");
-			break;
-
-		default:
-			puts("Error desconocido\n");
-			break;
-		}
+	for (int i=0; i < cantidadCaughts1; i++) {
+		planificarSegun();
 	}
+}
+
+void planificarSegun() {
+
+	switch (stringACodigoAlgoritmo(algoritmoPlanificacion)) {
+
+	case FIFO:
+		planificarSegunFifo();
+		break;
+
+	case RR:
+		planificarSegunRR();
+		break;
+
+	case SJFCD:
+		planificarSegunSJFConDesalojo(); //TODO ver de replanificar
+		break;
+
+	case SJFSD:
+		planificarSegunSJFSinDesalojo();
+		break;
+
+	case ERROR_CODIGO_ALGORITMO:
+		puts("Se recibio mal el codigo\n");
+		break;
+
+	default:
+		puts("Error desconocido\n");
+		break;
+	}
+
 }
 
 void planificarSegunFifo() {
@@ -324,7 +328,7 @@ void planificarSegunRR(){
 	chequearDeadlock(RR);
 }
 
-void planificarSegunSJFConDesalojo(){
+int planificarSegunSJFConDesalojo(){
 
 	int distancia;
 
@@ -341,6 +345,10 @@ void planificarSegunSJFConDesalojo(){
 		sem_init(&sem_esperarCaught, 0, 0);
 
 		t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, i);
+
+		//Cambia los datos del entrenador para cuando calcule su prox rafaga
+		double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
+		entrenador->estimacionInicial = estimadoProxRafaga;
 
 		entrenador->estado = EXEC;
 
@@ -361,6 +369,10 @@ void planificarSegunSJFConDesalojo(){
 		} else {
 			//Esto es un appeared o un localized
 			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+
+			//Cambia los datos del entrenador para cuando calcule su prox rafaga
+			entrenador->rafagaAnteriorReal = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+
 			sem_post(semaforoDelEntrenador);
 
 			entrenador->misCiclosDeCPU++;
@@ -368,8 +380,19 @@ void planificarSegunSJFConDesalojo(){
 			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
 			int distanciaAnterior = distancia;
 
+			int tamanio_ready_actual = tamanio - 1;
 			while (distancia != 0) {
 				if (distancia != distanciaAnterior) {
+					if (tamanio_ready_actual < list_size(listaReady)) {
+						int distanciaQueLeQueda = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+						entrenador->rafagaAnteriorReal = entrenador->rafagaAnteriorReal - distanciaQueLeQueda;
+						entrenador->estado = READY;
+
+						list_add(listaReady, entrenador);
+						pthread_mutex_unlock(&mutex_listaReady);
+						sem_post(&sem_planificar);
+						return 1;
+					}
 					sem_post(semaforoDelEntrenador);
 					entrenador->misCiclosDeCPU++;
 				}
@@ -396,6 +419,8 @@ void planificarSegunSJFConDesalojo(){
 	pthread_mutex_unlock(&mutex_listaReady);
 
 	chequearDeadlock(SJFCD);
+
+	return 0;
 }
 
 void chequearDeadlock(int algoritmo) {

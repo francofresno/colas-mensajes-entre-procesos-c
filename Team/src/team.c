@@ -195,9 +195,7 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 				pthread_mutex_unlock(&mutex_especies_que_llegaron);
 			}
 
-			if (especieEstaEnLista(especiesRequeridas, mensajeAppeared->nombre_pokemon.nombre, mutex_especies_requeridas)){
-				requiere(mensajeAppeared);
-			}
+			requiere(mensajeAppeared);
 
 			free_paquete_recibido(nombre_recibido, paquete_recibido);
 
@@ -261,6 +259,7 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 				if(mensajeCaught->atrapado){
 					entrenador->puedeAtrapar = 1;
 					entrenador->esLocalized = 0;
+					planificarCaught();
 				} else {
 
 					entrenador->puedeAtrapar = 0;
@@ -280,10 +279,11 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 						pthread_mutex_unlock(&mutex_mensajesLocalized);
 
 						buscarPokemonLocalized(paquete->mensaje, paquete->id);
+						planificarSegun();
+					} else {
+						planificarCaught();
 					}
-
 				}
-				planificarSegun();
 			}
 		}
 		pthread_mutex_unlock(&mutex_entrenadores);

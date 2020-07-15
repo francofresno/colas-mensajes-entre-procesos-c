@@ -497,6 +497,7 @@ void buscarPokemonLocalized(t_localizedPokemon_msg* mensajeLocalized, uint32_t i
 	ponerEntrenadorEnReady(entrenador, pokemonNuevo);
 
 	t_coordenadas nuevasCoords[cantidadCoords-1];
+	// TODO Posibilemente hay que hacer un malloc t_coordenadas* nuevasCoords = malloc((cantidadCoords-1) * sizeof(*nuevasCoords)); y hacer frees
 
 	int m=0;
 
