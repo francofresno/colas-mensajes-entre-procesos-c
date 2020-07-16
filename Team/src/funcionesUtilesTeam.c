@@ -446,7 +446,21 @@ t_entrenador* entrenadorMasCercano(t_newPokemon* pokemon){
 
 	list_destroy(entrenadores_new);
 
-	return (menorDistanciaNew <= menorDistanciaBlocked) ? entrenadorMasCercanoNew : entrenadorMasCercanoBlocked;
+	if(menorDistanciaNew <= menorDistanciaBlocked){
+
+		pthread_mutex_lock(&mutex_listaNuevos);
+		sacarPokemonDe(entrenadorMasCercanoNew, listaNuevos);
+		pthread_mutex_unlock(&mutex_listaNuevos);
+
+		return entrenadorMasCercanoNew;
+
+	} else{
+		pthread_mutex_lock(&mutex_listaBloqueadosEsperandoPokemones);
+		sacarPokemonDe(entrenadorMasCercanoNew, listaBloqueadosEsperandoPokemones);
+		pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoPokemones);
+
+		return entrenadorMasCercanoBlocked; //TODO creo que hay un problema porq son 3 entrenadores y nos mandan 5 msjs entonces no sabe esperar al entrenador
+	}
 
 }
 

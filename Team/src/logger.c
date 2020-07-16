@@ -49,10 +49,10 @@ void log_fin_algoritmo_deadlock(char* resultado)
 	log_info(LOGGER,log_msg);
 }
 
-void log_llegada_appeared(uint32_t id_corr, char* nombre, uint32_t x, uint32_t y)
+void log_llegada_appeared(uint32_t id_corr, char* nombrePokemon, uint32_t x, uint32_t y)
 {
 	char* log_msg = "Llegó un mensaje 'Appeared' a Team y sus datos son: \n ID Correlativo: %d \n Nombre Pokemon: %s \n Coordenadas [%d,%d]";
-	log_info(LOGGER,log_msg, id_corr, nombre, x, y);
+	log_info(LOGGER,log_msg, id_corr, nombrePokemon, x, y);
 }
 
 void log_llegada_localized(uint32_t id_corr, char* nombre, uint32_t cantidadCoords, char* datos)

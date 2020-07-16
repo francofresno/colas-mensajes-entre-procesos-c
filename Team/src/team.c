@@ -180,12 +180,18 @@ void serve_client(int* socket_cliente)
 
 void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int socket_cliente)
 {
-
+	char* nombrePosta;
 	switch(paquete_recibido->codigo_operacion)
 	{
 		case APPEARED_POKEMON: ;
 
 			t_appearedPokemon_msg* mensajeAppeared = (t_appearedPokemon_msg*) paquete_recibido->mensaje;
+
+			nombrePosta = arreglarNombrePokemon(mensajeAppeared->nombre_pokemon);
+
+			free(mensajeAppeared->nombre_pokemon.nombre);
+
+			mensajeAppeared->nombre_pokemon.nombre = nombrePosta;
 
 			log_llegada_appeared(paquete_recibido->id_correlativo, mensajeAppeared->nombre_pokemon.nombre,
 					mensajeAppeared->coordenadas.posX,
@@ -206,6 +212,12 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 		case LOCALIZED_POKEMON: ;
 
 			t_localizedPokemon_msg* mensajeLocalized = (t_localizedPokemon_msg*) paquete_recibido->mensaje;
+
+			nombrePosta = arreglarNombrePokemon(mensajeLocalized->nombre_pokemon);
+
+			free(mensajeLocalized->nombre_pokemon.nombre);
+
+			mensajeLocalized->nombre_pokemon.nombre = nombrePosta;
 
 			char* coordenadas =  string_new();
 			for(int i=0; i<(mensajeLocalized->cantidad_coordenadas); i++){
@@ -298,6 +310,15 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 
 			break;
 	}
+}
+
+char* arreglarNombrePokemon(t_nombrePokemon nombrePokemon)
+{
+	char* nombreAUsar = malloc(nombrePokemon.nombre_lenght+1);
+	memcpy(nombreAUsar, nombrePokemon.nombre, nombrePokemon.nombre_lenght);
+	char caracterNulo = '\0';
+	memcpy(nombreAUsar+nombrePokemon.nombre_lenght, &caracterNulo, 1);
+	return nombreAUsar;
 }
 
 bool especieEstaEnLista(t_list* list, char* nombrePokemon, pthread_mutex_t mutex) {

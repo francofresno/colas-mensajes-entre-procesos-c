@@ -54,6 +54,8 @@ void serve_client(int*);
 
 void process_request(char*, t_paquete*, int);
 
+char* arreglarNombrePokemon(t_nombrePokemon);
+
 bool especieEstaEnLista(t_list*, char*, pthread_mutex_t);
 
 op_code stringACodigoOperacion(const char*);

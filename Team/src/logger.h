@@ -9,6 +9,8 @@
 #define LOGGER_H_
 
 #include<stdint.h>
+#include<string.h>
+#include<stdlib.h>
 #include<commons/log.h>
 
 t_log* LOGGER;
