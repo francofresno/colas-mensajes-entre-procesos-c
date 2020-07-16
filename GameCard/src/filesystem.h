@@ -50,18 +50,25 @@ bool sePuedeEscribirElUltimoBloque(int);
 bool existePokemon(char*);
 void separarLinea(char*, int*);
 char* leerBloque(char*);
-int leerArchivoPokemon(char*, int**);
+int armarVectorCoordenadas(char*, int**);
 
 t_config* abrirArchivo(char*);
 void cerrarArchivo(t_config*);
 char* asignarBloque(t_config*);
-void escribirArchivoPokemon(char*, char*);
+void escribirArchivoPokemon(char* stringAEscribir, t_config* configMetadataPokemon);
 int escribirBloque(char*, char*);
 int cantidadElementosArray(char**);
-void liberarArray(char**, int);
+void liberarArray(char**);
+void borrarBloques(t_config* configMetadataPokemon);
+char* armarArchivoPokemon(char** lineasTotales);
+char* modificarCoordenada(char* linea, int cantidadAAgregar);
 
 int procesarNewPokemon(t_newPokemon_msg*);
 t_localizedPokemon_msg procesarGetPokemon(t_getPokemon_msg*);
 char* arreglarNombrePokemon(t_nombrePokemon);
+
+char** obtenerLineasPokemon(t_config* configMetadataPokemon);
+void obtenerCoordenadas(char** todasLasLineas, int* aDevolver);
+int existeCoordenada(char** lineasTotales, char* stringAEscribir);
 
 #endif /* FILESYSTEM_H_ */
