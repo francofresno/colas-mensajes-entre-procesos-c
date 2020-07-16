@@ -22,6 +22,8 @@ int main(void) {
 
 	suscribirseAColas();
 
+	printf("team!\n");
+
 	quedarseALaEscucha();
 
 
