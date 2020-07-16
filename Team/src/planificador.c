@@ -52,7 +52,7 @@ void planificarCaught() {
 	}
 	pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
 
-	for (int i=0; i < cantidadCaughts1; i++) {
+	for (int i=0; i < cantidadCaughts1; i++) {		//TODO ver
 		planificarSegun();
 	}
 }
@@ -928,6 +928,7 @@ void sacarEntrenadorDeLista(t_entrenador* entrenador, t_list* lista){
 		t_entrenador* entrenadorDeLista = list_get(lista, i);
 		if(entrenador->id_entrenador == entrenadorDeLista->id_entrenador){
 			list_remove(lista, i);
+			break;
 		}
 	}
 }

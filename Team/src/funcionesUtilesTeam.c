@@ -130,7 +130,7 @@ t_entrenador* crear_entrenador(uint32_t id_entrenador, t_coordenadas* coordenada
 	entrenador->quantumDisponible = quantum;
 	entrenador->quantumIntercambio = 5;
 	entrenador->estimacionInicial = estimacionInicial;
-	entrenador->rafagaAnteriorReal = 0; //TODO preguntar
+	entrenador->rafagaAnteriorReal = 0;
 
 	return entrenador;
 }
@@ -449,17 +449,17 @@ t_entrenador* entrenadorMasCercano(t_newPokemon* pokemon){
 	if(menorDistanciaNew <= menorDistanciaBlocked){
 
 		pthread_mutex_lock(&mutex_listaNuevos);
-		sacarPokemonDe(entrenadorMasCercanoNew, listaNuevos);
+		sacarEntrenadorDeLista(entrenadorMasCercanoNew, listaNuevos);
 		pthread_mutex_unlock(&mutex_listaNuevos);
 
 		return entrenadorMasCercanoNew;
 
 	} else{
 		pthread_mutex_lock(&mutex_listaBloqueadosEsperandoPokemones);
-		sacarPokemonDe(entrenadorMasCercanoNew, listaBloqueadosEsperandoPokemones);
+		sacarEntrenadorDeLista(entrenadorMasCercanoNew, listaBloqueadosEsperandoPokemones);
 		pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoPokemones);
 
-		return entrenadorMasCercanoBlocked; //TODO creo que hay un problema porq son 3 entrenadores y nos mandan 5 msjs entonces no sabe esperar al entrenador
+		return entrenadorMasCercanoBlocked;
 	}
 
 }
