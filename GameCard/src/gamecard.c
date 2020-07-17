@@ -38,13 +38,13 @@ int main(void) {
 	datosHiloCP.temporal = 0;
 
 	pthread_create(&threadNewPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloNP);
-//	pthread_create(&threadGetPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloGP);
-//	pthread_create(&threadCatchPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloCP);
-//	pthread_create(&threadMessages, NULL, (void*)esperarMensajes, NULL);
+	pthread_create(&threadGetPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloGP);
+	pthread_create(&threadCatchPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloCP);
+	pthread_create(&threadMessages, NULL, (void*)esperarMensajes, NULL);
 
 	pthread_join(threadNewPokemon, NULL);
-//	pthread_join(threadGetPokemon, NULL);
-//	pthread_join(threadCatchPokemon, NULL);
+	pthread_join(threadGetPokemon, NULL);
+	pthread_join(threadCatchPokemon, NULL);
 
 	config_destroy(configGeneral);
 	return EXIT_SUCCESS;
@@ -99,8 +99,8 @@ void recepcionMensajesDeCola(t_suscripcion_msg* datosHilo, int socket_cliente)
 	}
 
 	list_destroy(paquetes);
-	int i = 0;
-	while(i < 48)
+
+	while(1)
 	{
 		char* nombre_recibido = NULL;
 		uint32_t tamanio_recibido;
@@ -121,7 +121,7 @@ void recepcionMensajesDeCola(t_suscripcion_msg* datosHilo, int socket_cliente)
 		devolverMensajeCorrespondiente(paquete_recibido);
 
 		free(paquete_recibido);
-		i++;
+//		break;
 	}
 }
 
@@ -159,13 +159,13 @@ void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
 			free(estructuraLocalized.coordenadas);
 			break;
 		case CATCH_POKEMON: ;
-			t_catchPokemon_msg* estructuraCatch = malloc(sizeof(t_catchPokemon_msg));
-			estructuraCatch = (t_catchPokemon_msg*) paquete_recibido->mensaje;
+			t_catchPokemon_msg* estructuraCatch = (t_catchPokemon_msg*) paquete_recibido->mensaje;
 
-			t_caughtPokemon_msg estructuraCaught;
-			estructuraCaught.atrapado = 1;
+			t_caughtPokemon_msg estructuraCaught = procesarCatchPokemon(estructuraCatch);
 
-			if(chequearMensajeBroker(socketTemporal))
+			if(estructuraCaught.atrapado < 0)
+				log_error(logger, "No se pudo atrapar el pokemon.");
+			else if(chequearMensajeBroker(socketTemporal))
 				enviar_mensaje(CAUGHT_POKEMON, 0, paquete_recibido->id, &estructuraCaught, socketTemporal);
 
 			free(estructuraCatch);

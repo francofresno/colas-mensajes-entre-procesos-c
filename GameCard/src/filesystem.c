@@ -175,7 +175,6 @@ bool existePokemon(char* nombrePokemon)
 int existeCoordenada(char** lineasTotales, char* stringAEscribir)
 {
 	char** coordenadaABuscar = string_split(stringAEscribir, "=");
-
 	for(int i = 0; lineasTotales[i]; i++)
 	{
 		char** coordenadaPelada = string_split(lineasTotales[i], "=");
@@ -232,13 +231,10 @@ void obtenerCoordenadas(char** todasLasLineas, int* aDevolver)
 		char** coordenadasLinea = string_split(lineaDividida[0], "-");
 		aDevolver[j] = atoi(coordenadasLinea[0]);
 		aDevolver[j+1] = atoi(coordenadasLinea[1]);
-		printf("X: %d\nY: %d\n\n", aDevolver[j], aDevolver[j+1]);
 		liberarArray(lineaDividida);
 		liberarArray(coordenadasLinea);
 		j+=2;
 	}
-
-	liberarArray(todasLasLineas);
 }
 
 char* arreglarNombrePokemon(t_nombrePokemon nombrePokemon)
@@ -380,11 +376,8 @@ int escribirBloque(char* pathBloqueAEscribir, char* stringAEscribir)
 	return bytesEscritos;
 }
 
-int armarVectorCoordenadas(char* pathMetadataPokemon, int** aDevolver)
+int armarVectorCoordenadas(char** lineasTotales, int** aDevolver)
 {
-	t_config* configMetadataPokemon = abrirArchivo(pathMetadataPokemon);
-	char** lineasTotales = obtenerLineasPokemon(configMetadataPokemon);
-
 	int cantidadLineas = cantidadElementosArray(lineasTotales);
 
 	int *coordenadasFinales = malloc(2*sizeof(int)*cantidadLineas);
@@ -392,8 +385,6 @@ int armarVectorCoordenadas(char* pathMetadataPokemon, int** aDevolver)
 	obtenerCoordenadas(lineasTotales, coordenadasFinales);
 
 	*aDevolver = coordenadasFinales;
-
-	cerrarArchivo(configMetadataPokemon);
 
 	return cantidadLineas;
 }
@@ -405,28 +396,6 @@ char* leerBloque(char* pathBloque)
 	fread(stringLeido, BLOCK_SIZE, 1, archivoBloque);
 	fclose(archivoBloque);
 	return stringLeido;
-}
-
-char** obtenerLineasPokemon(t_config* configMetadataPokemon)
-{
-	char** bloquesAsignados = config_get_array_value(configMetadataPokemon, "BLOCKS");
-
-	char* archivoPokemon = string_new();
-
-	for(int i = 0; bloquesAsignados[i]; i++)
-	{
-		char* pathBloqueActual = obtenerRutaBloque(atoi(bloquesAsignados[i]));
-		char* stringLeido = leerBloque(pathBloqueActual);
-		string_append(&archivoPokemon, stringLeido);
-
-		free(pathBloqueActual);
-		free(stringLeido);
-	}
-
-	liberarArray(bloquesAsignados);
-	char** todasLasLineas =  string_split(archivoPokemon, "\n");
-	free(archivoPokemon);
-	return todasLasLineas;
 }
 
 char* leerArchivoPokemon(t_config* configMetadataPokemon)
@@ -462,15 +431,19 @@ char* armarArchivoPokemon(char** lineasTotales)
 	char* archivoNuevoPokemon = string_new();
 	for(int i = 0; lineasTotales[i]; i++)
 	{
-		char* lineaAAgregar = string_from_format("%s\n", lineasTotales[i]);
-		string_append(&archivoNuevoPokemon, lineaAAgregar);
-		free(lineaAAgregar);
+		if(strlen(lineasTotales[i]) != 0)
+		{
+			char* lineaAAgregar = string_from_format("%s\n", lineasTotales[i]);
+			string_append(&archivoNuevoPokemon, lineaAAgregar);
+			free(lineaAAgregar);
+		}
 	}
 	return archivoNuevoPokemon;
 }
 
 void borrarBloques(t_config* configMetadataPokemon)
 {
+	config_set_value(configMetadataPokemon, "SIZE", "0");
 	char** bloquesAsignados = config_get_array_value(configMetadataPokemon, "BLOCKS");
 	config_set_value(configMetadataPokemon, "BLOCKS", "[]");
 
@@ -491,6 +464,27 @@ void borrarBloques(t_config* configMetadataPokemon)
 	liberarArray(bloquesAsignados);
 }
 
+void rearmarArchivosPokemon(char** lineasTotales, t_config* configMetadataPokemon, int indiceCoordenada, int cantidadNueva)
+{
+	char* coordenadaModificada = modificarCoordenada(lineasTotales[indiceCoordenada], cantidadNueva);
+	free(lineasTotales[indiceCoordenada]);
+	lineasTotales[indiceCoordenada] = string_duplicate(coordenadaModificada);
+
+	char* archivoNuevoPokemon = armarArchivoPokemon(lineasTotales);
+	borrarBloques(configMetadataPokemon);
+	escribirArchivoPokemon(archivoNuevoPokemon, configMetadataPokemon);
+
+	free(archivoNuevoPokemon);
+	free(coordenadaModificada);
+}
+
+char* borrarLinea(int indiceCoordenada, char** lineasTotales)
+{
+	free(lineasTotales[indiceCoordenada]);
+	lineasTotales[indiceCoordenada] = string_new();
+	return armarArchivoPokemon(lineasTotales);
+}
+
 /**************************************************
  ******Funciones de procesamiento de mensajes******
  **************************************************/
@@ -506,21 +500,11 @@ int procesarNewPokemon(t_newPokemon_msg* estructuraNew)
 	char* archivoPokemonMapeado = leerArchivoPokemon(configMetadataPokemon);
 
 	char** lineasTotales = string_split(archivoPokemonMapeado, "\n");
+
 	int indiceCoordenada = existeCoordenada(lineasTotales, stringAEscribir);
 	if(indiceCoordenada >= 0)
 	{
-		char* coordenadaModificada = modificarCoordenada(lineasTotales[indiceCoordenada], estructuraNew->cantidad_pokemons);
-		free(lineasTotales[indiceCoordenada]);
-		lineasTotales[indiceCoordenada] = string_duplicate(coordenadaModificada);
-
-		config_set_value(configMetadataPokemon, "SIZE", "0");
-
-		char* archivoNuevoPokemon = armarArchivoPokemon(lineasTotales);
-		borrarBloques(configMetadataPokemon);
-		escribirArchivoPokemon(archivoNuevoPokemon, configMetadataPokemon);
-
-		free(archivoNuevoPokemon);
-		free(coordenadaModificada);
+		rearmarArchivosPokemon(lineasTotales, configMetadataPokemon, indiceCoordenada, estructuraNew->cantidad_pokemons);
 	}
 	else
 	{
@@ -548,26 +532,32 @@ t_localizedPokemon_msg procesarGetPokemon(t_getPokemon_msg* estructuraGet)
 		estructuraLocalized.coordenadas = NULL;
 		return estructuraLocalized;
 	}
+
 	char* pathMetadataPokemon = verificarPokemon(nombrePokemon);
+
+	t_config* configMetadataPokemon = abrirArchivo(pathMetadataPokemon);
+	char* archivoPokemonMapeado = leerArchivoPokemon(configMetadataPokemon);
+	char** lineasTotales = string_split(archivoPokemonMapeado, "\n");
+	cerrarArchivo(configMetadataPokemon);
+
 	int* aImprimir = NULL;
-	estructuraLocalized.cantidad_coordenadas = armarVectorCoordenadas(pathMetadataPokemon, &aImprimir);
+	estructuraLocalized.cantidad_coordenadas = armarVectorCoordenadas(lineasTotales, &aImprimir);
 
 	estructuraLocalized.nombre_pokemon = estructuraGet->nombre_pokemon;
-
-	printf("CantCoor: %d\n", estructuraLocalized.cantidad_coordenadas);
 	estructuraLocalized.coordenadas = malloc(sizeof(uint32_t) * estructuraLocalized.cantidad_coordenadas * 2);
 
 	int j = 0;
 	for(int i = 0; i < estructuraLocalized.cantidad_coordenadas; i++)
 	{
-		printf("J: %d - J+1: %d\n", aImprimir[j], aImprimir[j+1]);
+		printf("X: %d\nY: %d\n\n", aImprimir[j], aImprimir[j+1]);
 		estructuraLocalized.coordenadas[i].posX = aImprimir[j];
 		estructuraLocalized.coordenadas[i].posY = aImprimir[j+1];
 		j+=2;
 	}
 
-
+	liberarArray(lineasTotales);
 	free(nombrePokemon);
+	free(archivoPokemonMapeado);
 	free(aImprimir);
 	free(pathMetadataPokemon);
 	return estructuraLocalized;
@@ -577,12 +567,58 @@ t_caughtPokemon_msg procesarCatchPokemon(t_catchPokemon_msg* estructuraCatch)
 {
 	char* nombrePokemon = arreglarNombrePokemon(estructuraCatch->nombre_pokemon);
 
+	t_caughtPokemon_msg estructuraCaught;
+
 	if(!existePokemon(nombrePokemon))
 	{
-		t_caughtPokemon_msg estructuraCaught;
-		estructuraCaught.atrapado = 0;
+		estructuraCaught.atrapado = -1;
 		return estructuraCaught;
 	}
+
+	char* pathMetadataPokemon = verificarPokemon(nombrePokemon);
+
+	t_config* configMetadataPokemon = abrirArchivo(pathMetadataPokemon);
+
+	char* archivoPokemonMapeado = leerArchivoPokemon(configMetadataPokemon);
+	char** lineasTotales = string_split(archivoPokemonMapeado, "\n");
+	char* coordenadaABuscar = string_from_format("%d-%d=", estructuraCatch->coordenadas.posX, estructuraCatch->coordenadas.posY);
+
+	int indiceCoordenada = existeCoordenada(lineasTotales, coordenadaABuscar);
+	if(indiceCoordenada < 0)
+	{
+		estructuraCaught.atrapado = 0;
+		cerrarArchivo(configMetadataPokemon);
+		return estructuraCaught;
+	}
+
+	char** coordenadaAModificar = string_split(lineasTotales[indiceCoordenada], "=");
+	int cantidadPokemon = atoi(coordenadaAModificar[1]);
+
+	if(cantidadPokemon == 1)
+	{
+		char* archivoNuevoPokemon = borrarLinea(indiceCoordenada, lineasTotales);
+		borrarBloques(configMetadataPokemon);
+		if(strlen(archivoNuevoPokemon) != 0)
+			escribirArchivoPokemon(archivoNuevoPokemon, configMetadataPokemon);
+		free(archivoNuevoPokemon);
+	}
+	else
+	{
+		rearmarArchivosPokemon(lineasTotales, configMetadataPokemon, indiceCoordenada, -1);
+	}
+	cerrarArchivo(configMetadataPokemon);
+
+
+	free(nombrePokemon);
+	liberarArray(coordenadaAModificar);
+	free(archivoPokemonMapeado);
+	liberarArray(lineasTotales);
+	free(coordenadaABuscar);
+	free(pathMetadataPokemon);
+
+	estructuraCaught.atrapado = 1;
+
+	return estructuraCaught;
 }
 
 
