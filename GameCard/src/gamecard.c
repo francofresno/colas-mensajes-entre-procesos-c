@@ -37,13 +37,13 @@ int main(void) {
 	datosHiloCP.temporal = 0;
 
 	pthread_create(&threadNewPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloNP);
-//	pthread_create(&threadGetPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloGP);
-//	pthread_create(&threadCatchPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloCP);
-//	pthread_create(&threadMessages, NULL, (void*)esperarMensajes, NULL);
+	pthread_create(&threadGetPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloGP);
+	pthread_create(&threadCatchPokemon, NULL, (void*)conectarseYSuscribirse, &datosHiloCP);
+	pthread_create(&threadMessages, NULL, (void*)esperarMensajes, NULL);
 
 	pthread_join(threadNewPokemon, NULL);
-//	pthread_join(threadGetPokemon, NULL);
-//	pthread_join(threadCatchPokemon, NULL);
+	pthread_join(threadGetPokemon, NULL);
+	pthread_join(threadCatchPokemon, NULL);
 
 	config_destroy(configGeneral);
 	return EXIT_SUCCESS;
@@ -108,7 +108,6 @@ void recepcionMensajesDeCola(t_suscripcion_msg* datosHilo, int socket_cliente)
 		devolverMensajeCorrespondiente(paquete_recibido);
 
 		free(paquete_recibido);
-		break;
 	}
 }
 
