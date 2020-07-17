@@ -136,9 +136,12 @@ void suscribirse(const char* tipo_cola, uint32_t tiempo, int socket_broker)
 		for(int i=0; i < cant_paquetes; i++) {
 			t_paquete* paquete_recibido = list_get(paquetes, i);
 			log_nuevo_mensaje(tipo_cola, paquete_recibido->id, paquete_recibido->id_correlativo);
+			free(paquete_recibido->mensaje);
+			free(paquete_recibido);
 		}
 
 		free(estructuraSuscripcion);
+		list_destroy(paquetes);
 
 		while(1) {
 			char* nombre_recibido = NULL;
@@ -151,6 +154,9 @@ void suscribirse(const char* tipo_cola, uint32_t tiempo, int socket_broker)
 			log_nuevo_mensaje(tipo_cola, paquete_recibido->id, paquete_recibido->id_correlativo);
 
 			informar_ack(socket_broker);
+			free(paquete_recibido->mensaje);
+			free(paquete_recibido);
+			break;
 		}
 	}
 

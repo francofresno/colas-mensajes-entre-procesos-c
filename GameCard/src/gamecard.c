@@ -126,6 +126,7 @@ void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
 			if(chequearMensajeBroker(socketTemporal))
 				enviar_mensaje(APPEARED_POKEMON, 0, paquete_recibido->id, &estructuraAppeared, socketTemporal);
 
+			free(estructuraNew->nombre_pokemon.nombre);
 			free(estructuraNew);
 			break;
 		case GET_POKEMON: ;
@@ -136,6 +137,7 @@ void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
 			if(chequearMensajeBroker(socketTemporal))
 				enviar_mensaje(LOCALIZED_POKEMON, 0, paquete_recibido->id, &estructuraLocalized, socketTemporal);
 
+			free(estructuraGet->nombre_pokemon.nombre);
 			free(estructuraGet);
 			free(estructuraLocalized.coordenadas);
 			break;
@@ -158,7 +160,7 @@ void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
 			if(chequearMensajeBroker(socketTemporal))
 				enviar_mensaje(CAUGHT_POKEMON, 0, paquete_recibido->id, &estructuraCaught, socketTemporal);
 
-
+			free(estructuraCatch->nombre_pokemon.nombre);
 			free(estructuraCatch);
 			break;
 		default: break;
