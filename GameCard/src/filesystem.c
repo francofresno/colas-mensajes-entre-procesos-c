@@ -196,13 +196,13 @@ int existeCoordenada(char** lineasTotales, char* stringAEscribir)
 
 char* armarArrayDeBloques(char** arrayOriginal, int numeroBloque)
 {
-	int j = 0;
+	int i = 0;
 	char* bloquesAsignadosComoArray = string_new();
 	string_append(&bloquesAsignadosComoArray, "[");
-	while(arrayOriginal[j])
+	while(arrayOriginal[i])
 	{
-		string_append_with_format(&bloquesAsignadosComoArray, "%s,", arrayOriginal[j]);
-		j++;
+		string_append_with_format(&bloquesAsignadosComoArray, "%s,", arrayOriginal[i]);
+		i++;
 	}
 	string_append_with_format(&bloquesAsignadosComoArray, "%d]", numeroBloque);
 	return bloquesAsignadosComoArray;
@@ -301,6 +301,7 @@ t_config* abrirArchivo(char* pathArchivo)
 
 void cerrarArchivo(t_config* configArchivo)
 {
+	sleep(config_get_int_value(configGeneral, "TIEMPO_RETARDO_OPERACION"));
 	config_set_value(configArchivo, "OPEN", "N");
 	config_save(configArchivo);
 	config_destroy(configArchivo);
@@ -355,14 +356,9 @@ void escribirArchivoPokemon(char* stringAEscribir, t_config* configMetadataPokem
 
 int escribirBloque(char* pathBloqueAEscribir, char* stringAEscribir)
 {
+	char* stringLeido = leerBloque(pathBloqueAEscribir);
+
 	FILE* archivoBloque = fopen(pathBloqueAEscribir, "rb+");
-
-	char* stringLeido = malloc(BLOCK_SIZE+1);
-
-	int bytesLeidos = fread(stringLeido, BLOCK_SIZE, 1, archivoBloque);
-
-	if(bytesLeidos != 1)
-		exit(-1);
 
 	int bytesEscritos = 0;
 	fseek(archivoBloque, strlen(stringLeido), SEEK_SET);
@@ -489,8 +485,9 @@ char* borrarLinea(int indiceCoordenada, char** lineasTotales)
  ******Funciones de procesamiento de mensajes******
  **************************************************/
 
-int procesarNewPokemon(t_newPokemon_msg* estructuraNew)
+t_appearedPokemon_msg procesarNewPokemon(t_newPokemon_msg* estructuraNew)
 {
+	t_appearedPokemon_msg estructuraAppeared;
 	char* nombrePokemon = arreglarNombrePokemon(estructuraNew->nombre_pokemon);
 
 	char* pathMetadataPokemon = verificarPokemon(nombrePokemon);
@@ -516,7 +513,10 @@ int procesarNewPokemon(t_newPokemon_msg* estructuraNew)
 	free(stringAEscribir);
 	free(pathMetadataPokemon);
 	free(nombrePokemon);
-	return 0;
+
+	estructuraAppeared.nombre_pokemon = estructuraNew->nombre_pokemon;
+	estructuraAppeared.coordenadas = estructuraNew->coordenadas;
+	return estructuraAppeared;
 }
 
 t_localizedPokemon_msg procesarGetPokemon(t_getPokemon_msg* estructuraGet)
@@ -549,7 +549,6 @@ t_localizedPokemon_msg procesarGetPokemon(t_getPokemon_msg* estructuraGet)
 	int j = 0;
 	for(int i = 0; i < estructuraLocalized.cantidad_coordenadas; i++)
 	{
-		printf("X: %d\nY: %d\n\n", aImprimir[j], aImprimir[j+1]);
 		estructuraLocalized.coordenadas[i].posX = aImprimir[j];
 		estructuraLocalized.coordenadas[i].posY = aImprimir[j+1];
 		j+=2;
@@ -586,7 +585,7 @@ t_caughtPokemon_msg procesarCatchPokemon(t_catchPokemon_msg* estructuraCatch)
 	int indiceCoordenada = existeCoordenada(lineasTotales, coordenadaABuscar);
 	if(indiceCoordenada < 0)
 	{
-		estructuraCaught.atrapado = 0;
+		estructuraCaught.atrapado = -2;
 		cerrarArchivo(configMetadataPokemon);
 		return estructuraCaught;
 	}

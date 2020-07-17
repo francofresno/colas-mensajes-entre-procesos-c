@@ -20,7 +20,6 @@ int main(void) {
 	PUNTO_MONTAJE = config_get_string_value(configGeneral, "PUNTO_MONTAJE_TALLGRASS");
 
 	configuracionInicial();
-//	probar();
 
 	t_suscripcion_msg datosHiloNP;
 	datosHiloNP.id_proceso = config_get_int_value(configGeneral, "ID_HILO_NP");
@@ -66,11 +65,9 @@ void conectarseYSuscribirse(t_suscripcion_msg* datosHilo)
 
 	while(socket_cliente < 0)
 	{
-		printf("Intentando reconectar...\n");
 		sleep(tiempoReconexion);
 		socket_cliente = crear_conexion(ip, puerto);
 	}
-	printf("Conectado!\n");
 
 	suscribirse_a_cola(datosHilo, socket_cliente);
 
@@ -87,14 +84,9 @@ void recepcionMensajesDeCola(t_suscripcion_msg* datosHilo, int socket_cliente)
 	for(int i=0; i < cant_paquetes; i++)
 	{
 		t_paquete* paquete_recibido = list_get(paquetes, i);
-		printf("----------------------\n");
-		printf("Paquete: %d\n", i);
-		printf("COD OP: %d\n", paquete_recibido->codigo_operacion);
-		printf("ID: %d\n", paquete_recibido->id);
-		printf("ID_CORRELATIVO: %d\n", paquete_recibido->id_correlativo);
 
 		devolverMensajeCorrespondiente(paquete_recibido);
-		free(paquete_recibido->mensaje);
+
 		free(paquete_recibido);
 	}
 
@@ -107,21 +99,15 @@ void recepcionMensajesDeCola(t_suscripcion_msg* datosHilo, int socket_cliente)
 		t_paquete* paquete_recibido = recibir_paquete(socket_cliente, &nombre_recibido, &tamanio_recibido);
 		while(paquete_recibido == NULL)
 		{
-			printf("Intentando reconectar...\n");
 			sleep(tiempoReconexion);
 			conectarseYSuscribirse(datosHilo);
 		}
 
-		printf("----------------------\n");
-		printf("COD OP: %d\n", paquete_recibido->codigo_operacion);
-		printf("ID: %d\n", paquete_recibido->id);
-		printf("ID_CORRELATIVO: %d\n", paquete_recibido->id_correlativo);
 		informar_ack(socket_cliente);
 
 		devolverMensajeCorrespondiente(paquete_recibido);
 
 		free(paquete_recibido);
-//		break;
 	}
 }
 
@@ -135,12 +121,7 @@ void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
 			t_newPokemon_msg* estructuraNew = (t_newPokemon_msg*) paquete_recibido->mensaje;
 
 
-			if(procesarNewPokemon(estructuraNew) != 0)
-				exit(-1);
-
-			t_appearedPokemon_msg estructuraAppeared;
-			estructuraAppeared.coordenadas = estructuraNew->coordenadas;
-			estructuraAppeared.nombre_pokemon = estructuraNew->nombre_pokemon;
+			t_appearedPokemon_msg estructuraAppeared = procesarNewPokemon(estructuraNew);
 
 			if(chequearMensajeBroker(socketTemporal))
 				enviar_mensaje(APPEARED_POKEMON, 0, paquete_recibido->id, &estructuraAppeared, socketTemporal);
@@ -163,10 +144,20 @@ void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
 
 			t_caughtPokemon_msg estructuraCaught = procesarCatchPokemon(estructuraCatch);
 
-			if(estructuraCaught.atrapado < 0)
-				log_error(logger, "No se pudo atrapar el pokemon.");
-			else if(chequearMensajeBroker(socketTemporal))
+			if(estructuraCaught.atrapado == -1)
+			{
+				log_error(logger, "El pokemon no existe en el FileSystem.");
+				estructuraCaught.atrapado = 0;
+			}
+			else if(estructuraCaught.atrapado == -2)
+			{
+				log_error(logger, "El pokemon no se encuentra en la coordenada solicitada.");
+				estructuraCaught.atrapado = 0;
+			}
+
+			if(chequearMensajeBroker(socketTemporal))
 				enviar_mensaje(CAUGHT_POKEMON, 0, paquete_recibido->id, &estructuraCaught, socketTemporal);
+
 
 			free(estructuraCatch);
 			break;
@@ -181,7 +172,6 @@ void esperarMensajes(void)
 	char* puertoLocal = config_get_string_value(configGeneral, "PUERTO_GAMECARD");
 	int socket_servidor = iniciar_servidor(ipLocal, puertoLocal);
 	while(1) {
-//		printf("Esperando cliente...\n");
 		int clientePotencial = esperar_cliente(socket_servidor);
 		if(clientePotencial > 0) {
 			int* socket_cliente = (int*) malloc(sizeof(int));

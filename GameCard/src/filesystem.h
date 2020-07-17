@@ -50,24 +50,24 @@ bool sePuedeEscribirElUltimoBloque(int);
 bool existePokemon(char*);
 void separarLinea(char*, int*);
 char* leerBloque(char*);
-int armarVectorCoordenadas(char** lineasTotales, int** aDevolver);
+int armarVectorCoordenadas(char**, int**);
 
 t_config* abrirArchivo(char*);
 void cerrarArchivo(t_config*);
 char* asignarBloque(t_config*);
-void escribirArchivoPokemon(char* stringAEscribir, t_config* configMetadataPokemon);
+void escribirArchivoPokemon(char*, t_config*);
 int escribirBloque(char*, char*);
 int cantidadElementosArray(char**);
 void liberarArray(char**);
-void borrarBloques(t_config* configMetadataPokemon);
-char* armarArchivoPokemon(char** lineasTotales);
-char* modificarCoordenada(char* linea, int cantidadAAgregar);
+void borrarBloques(t_config*);
+char* armarArchivoPokemon(char**);
+char* modificarCoordenada(char*, int);
 
-int procesarNewPokemon(t_newPokemon_msg*);
+t_appearedPokemon_msg procesarNewPokemon(t_newPokemon_msg*);
 t_localizedPokemon_msg procesarGetPokemon(t_getPokemon_msg*);
-t_caughtPokemon_msg procesarCatchPokemon(t_catchPokemon_msg* estructuraCatch);
+t_caughtPokemon_msg procesarCatchPokemon(t_catchPokemon_msg*);
 char* arreglarNombrePokemon(t_nombrePokemon);
-void rearmarArchivosPokemon(char** lineasTotales, t_config* configMetadataPokemon, int indiceCoordenada, int cantidadNueva);
+void rearmarArchivosPokemon(char**, t_config*, int, int);
 
 void obtenerCoordenadas(char**, int*);
 int existeCoordenada(char**, char*);
