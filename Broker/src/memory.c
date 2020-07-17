@@ -120,7 +120,7 @@ void write_dump_time_info(FILE* dump_file)
   struct tm* timeinfo;
   setenv("TZ", "America/Buenos_Aires", 1);
   timeinfo = localtime(&now);
-  fprintf(dump_file, "\n%d/%d/%d %d:%d:%d\n", timeinfo->tm_mday, timeinfo->tm_mon + 1, timeinfo->tm_year + 1900, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+  fprintf(dump_file, "%d/%d/%d %d:%d:%d\n", timeinfo->tm_mday, timeinfo->tm_mon + 1, timeinfo->tm_year + 1900, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
 }
 
 void write_partitions_info(FILE* dump_file)
@@ -137,7 +137,7 @@ void write_partitions_info(FILE* dump_file)
 			t_buddy* buddy = (t_buddy*) list_get(ALL_PARTITIONS, i);
 			base = buddy->base;
 			size = buddy->size;
-			limit = base + size;
+			limit = base + size - 1;
 			queue = op_code_a_string(buddy->queue);
 			id = buddy->id_data;
 			is_free = buddy->is_free;
@@ -145,7 +145,7 @@ void write_partitions_info(FILE* dump_file)
 			t_partition* partition = (t_partition*) list_get(ALL_PARTITIONS, i);
 			base = partition->base;
 			size = partition->size;
-			limit = base + size;
+			limit = base + size - 1;
 			queue = op_code_a_string(partition->queue);
 			id = partition->id_data;
 			is_free = partition->is_free;
@@ -165,6 +165,7 @@ void write_partitions_info(FILE* dump_file)
 
 void memory_dump()
 {
+	printf("dump triggered\n");
 	pthread_mutex_lock(&mutex_memory);
 	FILE* dump_file = fopen(DUMP_PATH, "w");
 
