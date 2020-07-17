@@ -34,7 +34,7 @@ void log_new_message(uint32_t id_message, op_code queue)
 void log_message_to_subscriber(uint32_t id_subscriber, uint32_t id_message)
 {
 	char log_msg[100];
-	sprintf(log_msg, "El mensaje id: %d ha sido enviado al suscriptor id: %d", id_subscriber, id_message);
+	sprintf(log_msg, "El mensaje id: %d ha sido enviado al suscriptor id: %d", id_message, id_subscriber);
 	log_info(LOGGER,log_msg);
 }
 
