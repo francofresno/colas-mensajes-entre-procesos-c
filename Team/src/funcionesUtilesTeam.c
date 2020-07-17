@@ -65,6 +65,11 @@ void ponerEntrenadoresEnLista(t_config* config) {
 
 	}
 
+	pthread_mutex_lock(&mutex_entrenadores);
+	int cantEntrenadores = list_size(entrenadores);
+	sem_init(&sem_buscarEntrenadorMasCercano, 0, cantEntrenadores);
+	pthread_mutex_unlock(&mutex_entrenadores);
+
 	hacerObjetivoTeam(listaDePokemonesDeEntrenadores, listaDePokemonesObjetivoDeEntrenadores);
 
 	pendientes = list_duplicate(objetivoTeam);
@@ -456,7 +461,7 @@ t_entrenador* entrenadorMasCercano(t_newPokemon* pokemon){
 
 	} else{
 		pthread_mutex_lock(&mutex_listaBloqueadosEsperandoPokemones);
-		sacarEntrenadorDeLista(entrenadorMasCercanoNew, listaBloqueadosEsperandoPokemones);
+		sacarEntrenadorDeLista(entrenadorMasCercanoBlocked, listaBloqueadosEsperandoPokemones);
 		pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoPokemones);
 
 		return entrenadorMasCercanoBlocked;

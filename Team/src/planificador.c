@@ -52,7 +52,7 @@ void planificarCaught() {
 	}
 	pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
 
-	for (int i=0; i < cantidadCaughts1; i++) {		//TODO ver
+	for (int i=0; i < cantidadCaughts1; i++) {
 		planificarSegun();
 	}
 }
@@ -63,10 +63,13 @@ void planificarSegun() {
 
 		case FIFO:
 			planificarSegunFifo();
+
 			break;
 
 		case RR:
-			planificarSegunRR();
+			if (planificarSegunRR()){
+				planificarSegun();
+			}
 			break;
 
 		case SJFCD:
@@ -97,71 +100,67 @@ void planificarSegunFifo() {
 
 	pthread_mutex_lock(&mutex_listaReady);
 
-	int tamanio = list_size(listaReady);
+	sem_wait(&sem_planificar);
 
-	for (int i = 0; i < tamanio; i++) {
+	sem_init(&sem_esperarCaught, 0, 0);
 
-		sem_wait(&sem_planificar);
+	t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, 0);
 
-		sem_init(&sem_esperarCaught, 0, 0);
+	entrenador->estado = EXEC;
 
-		t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, i);
+	pthread_mutex_lock(&mutex_cantidadCambiosContexto);
+	cantidadCambiosDeContexto+=1;
+	pthread_mutex_unlock(&mutex_cantidadCambiosContexto);
 
-		entrenador->estado = EXEC;
+	log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "fue seleccionado para ejecutar", "EXEC");
 
-		pthread_mutex_lock(&mutex_cantidadCambiosContexto);
-		cantidadCambiosDeContexto+=1;
-		pthread_mutex_unlock(&mutex_cantidadCambiosContexto);
+	if(entrenador->puedeAtrapar) {
+		// Esto es un caught 1
+		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+		sem_post(semaforoDelEntrenador);
 
-		log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "fue seleccionado para ejecutar", "EXEC");
+		sem_wait(&sem_esperarCaught);
+		verificarTieneTodoLoQueQuiere(entrenador);
 
-		if(entrenador->puedeAtrapar) {
-			// Esto es un caught 1
-			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-			sem_post(semaforoDelEntrenador);
+	} else {
+		//Esto es un appeared o un localized
+		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+		sem_post(semaforoDelEntrenador);
 
-			sem_wait(&sem_esperarCaught);
-			verificarTieneTodoLoQueQuiere(entrenador);
+		entrenador->misCiclosDeCPU++;
 
-		} else {
-			//Esto es un appeared o un localized
-			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-			sem_post(semaforoDelEntrenador);
+		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+		int distanciaAnterior = distancia;
 
-			entrenador->misCiclosDeCPU++;
-
+		while (distancia != 0) {
+			if (distancia != distanciaAnterior) {
+				sem_post(semaforoDelEntrenador);
+				entrenador->misCiclosDeCPU++;
+			}
+			distanciaAnterior = distancia;
 			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-			int distanciaAnterior = distancia;
-
-			while (distancia != 0) {
-				if (distancia != distanciaAnterior) {
-					sem_post(semaforoDelEntrenador);
-					entrenador->misCiclosDeCPU++;
-				}
-				distanciaAnterior = distancia;
-				distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-			}
-
-			sem_wait(&sem_esperarCaught);
-			if(entrenador->idMensajeCaught){
-				entrenador->estado = BLOCKED;
-				log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se queda esperando un caught", "BLOCKED");
-
-				pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
-				list_add(listaBloqueadosEsperandoMensaje, entrenador);
-				pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
-
-			} else{
-				verificarTieneTodoLoQueQuiere(entrenador);
-			}
 		}
-		sem_post(&sem_planificar);
+
+		sem_wait(&sem_esperarCaught);
+		if(entrenador->idMensajeCaught){
+			entrenador->estado = BLOCKED;
+			log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se queda esperando un caught", "BLOCKED");
+
+			pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
+			list_add(listaBloqueadosEsperandoMensaje, entrenador);
+			pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
+
+		} else{
+			verificarTieneTodoLoQueQuiere(entrenador);
+		}
 	}
+	sem_post(&sem_planificar);
 
 	pthread_mutex_unlock(&mutex_listaReady);
 
 	chequearDeadlock(FIFO);
 
+	chequearSiEstaDisponible(entrenador);
 
 }
 
@@ -169,63 +168,141 @@ void planificarSegunSJFSinDesalojo(){
 
 	int distancia;
 
-	pthread_mutex_lock(&mutex_listaReady);
+	sem_wait(&sem_planificar);
 
-	int tamanio = list_size(listaReady);
+	pthread_mutex_lock(&mutex_listaReady);
 
 	ordenarListaPorEstimacion(listaReady);
 
-	for (int i = 0; i < tamanio; i++) {
+	sem_init(&sem_esperarCaught, 0, 0);
 
-		sem_wait(&sem_planificar);
+	t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, 0);
 
-		sem_init(&sem_esperarCaught, 0, 0);
+	//Cambia los datos del entrenador para cuando calcule su prox rafaga
+	double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
+	entrenador->estimacionInicial = estimadoProxRafaga;
 
-		t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, i);
+	entrenador->estado = EXEC;
+
+	pthread_mutex_lock(&mutex_cantidadCambiosContexto);
+	cantidadCambiosDeContexto+=1;
+	pthread_mutex_unlock(&mutex_cantidadCambiosContexto);
+
+	log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "fue seleccionado para ejecutar", "EXEC");
+
+	if(entrenador->puedeAtrapar) {
+		// Esto es un caught 1
+		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+		sem_post(semaforoDelEntrenador);
+
+		sem_wait(&sem_esperarCaught);
+		verificarTieneTodoLoQueQuiere(entrenador);
+
+	} else {
+		//Esto es un appeared o un localized
+		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 
 		//Cambia los datos del entrenador para cuando calcule su prox rafaga
-		double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
-		entrenador->estimacionInicial = estimadoProxRafaga;
+		entrenador->rafagaAnteriorReal = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
 
-		entrenador->estado = EXEC;
+		sem_post(semaforoDelEntrenador);
 
-		pthread_mutex_lock(&mutex_cantidadCambiosContexto);
-		cantidadCambiosDeContexto+=1;
-		pthread_mutex_unlock(&mutex_cantidadCambiosContexto);
+		entrenador->misCiclosDeCPU++;
 
-		log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "fue seleccionado para ejecutar", "EXEC");
+		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+		int distanciaAnterior = distancia;
 
-		if(entrenador->puedeAtrapar) {
-			// Esto es un caught 1
-			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-			sem_post(semaforoDelEntrenador);
-
-			sem_wait(&sem_esperarCaught);
-			verificarTieneTodoLoQueQuiere(entrenador);
-
-		} else {
-			//Esto es un appeared o un localized
-			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-
-			//Cambia los datos del entrenador para cuando calcule su prox rafaga
-			entrenador->rafagaAnteriorReal = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-
-			sem_post(semaforoDelEntrenador);
-
-			entrenador->misCiclosDeCPU++;
-
-			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-			int distanciaAnterior = distancia;
-
-			while (distancia != 0) {
-				if (distancia != distanciaAnterior) {
-					sem_post(semaforoDelEntrenador);
-					entrenador->misCiclosDeCPU++;
-				}
-				distanciaAnterior = distancia;
-				distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+		while (distancia != 0) {
+			if (distancia != distanciaAnterior) {
+				sem_post(semaforoDelEntrenador);
+				entrenador->misCiclosDeCPU++;
 			}
+			distanciaAnterior = distancia;
+			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+		}
 
+		sem_wait(&sem_esperarCaught);
+		if(entrenador->idMensajeCaught){
+			entrenador->estado = BLOCKED;
+			log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se queda esperando un caught", "BLOCKED");
+
+			pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
+			list_add(listaBloqueadosEsperandoMensaje, entrenador);
+			pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
+
+		} else{
+			verificarTieneTodoLoQueQuiere(entrenador);
+		}
+	}
+	sem_post(&sem_planificar);
+
+
+	pthread_mutex_unlock(&mutex_listaReady);
+
+	chequearDeadlock(SJFSD);
+
+	chequearSiEstaDisponible(entrenador);
+
+}
+
+int planificarSegunRR(){
+
+	int distancia;
+
+	pthread_mutex_lock(&mutex_listaReady);
+
+	sem_wait(&sem_planificar);
+
+	sem_init(&sem_esperarCaught, 0, 0);
+
+	t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, 0);
+
+	entrenador->estado = EXEC;
+
+	pthread_mutex_lock(&mutex_cantidadCambiosContexto);
+	cantidadCambiosDeContexto+=1;
+	pthread_mutex_unlock(&mutex_cantidadCambiosContexto);
+
+	log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "fue seleccionado para ejecutar", "EXEC");
+
+	if(entrenador->puedeAtrapar) {
+		// Esto es un caught 1
+		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+		sem_post(semaforoDelEntrenador);
+
+		sem_wait(&sem_esperarCaught);
+		verificarTieneTodoLoQueQuiere(entrenador);
+
+	} else {
+		//Esto es un appeared o un localized
+		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+		sem_post(semaforoDelEntrenador);
+
+		entrenador->misCiclosDeCPU++;
+
+		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+		int distanciaAnterior = distancia;
+
+		entrenador->quantumDisponible -=1;
+
+		while (((distancia != 0) && (entrenador->quantumDisponible)>0)) {
+			if (distancia != distanciaAnterior) {
+				sem_post(semaforoDelEntrenador);
+				entrenador->misCiclosDeCPU++;
+				entrenador->quantumDisponible -=1;
+			}
+			distanciaAnterior = distancia;
+			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+		}
+
+		if(((entrenador->quantumDisponible)==0) && (!llegoAlObjetivoPokemon(entrenador))){
+			pthread_mutex_lock(&mutex_listaReady);
+			list_add(listaReady, entrenador);
+			entrenador->estado = READY;
+			pthread_mutex_unlock(&mutex_listaReady);
+			entrenador->quantumDisponible = quantum;
+			return 1;
+		} else{
 			sem_wait(&sem_esperarCaught);
 			if(entrenador->idMensajeCaught){
 				entrenador->estado = BLOCKED;
@@ -240,190 +317,129 @@ void planificarSegunSJFSinDesalojo(){
 			}
 		}
 		sem_post(&sem_planificar);
-	}
-
-	pthread_mutex_unlock(&mutex_listaReady);
-
-	chequearDeadlock(SJFSD);
-
-}
-
-void planificarSegunRR(){
-
-	int distancia;
-
-	pthread_mutex_lock(&mutex_listaReady);
-
-	int tamanio = list_size(listaReady);
-
-	for (int i = 0; i < tamanio; i++) {
-
-		sem_wait(&sem_planificar);
-
-		sem_init(&sem_esperarCaught, 0, 0);
-
-		t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, i);
-
-		entrenador->estado = EXEC;
-
-		pthread_mutex_lock(&mutex_cantidadCambiosContexto);
-		cantidadCambiosDeContexto+=1;
-		pthread_mutex_unlock(&mutex_cantidadCambiosContexto);
-
-		log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "fue seleccionado para ejecutar", "EXEC");
-
-		if(entrenador->puedeAtrapar) {
-			// Esto es un caught 1
-			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-			sem_post(semaforoDelEntrenador);
-
-			sem_wait(&sem_esperarCaught);
-			verificarTieneTodoLoQueQuiere(entrenador);
-
-		} else {
-			//Esto es un appeared o un localized
-			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-			sem_post(semaforoDelEntrenador);
-
-			entrenador->misCiclosDeCPU++;
-
-			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-			int distanciaAnterior = distancia;
-
-			entrenador->quantumDisponible -=1;
-
-			while (((distancia != 0) && (entrenador->quantumDisponible)>0)) {
-				if (distancia != distanciaAnterior) {
-					sem_post(semaforoDelEntrenador);
-					entrenador->misCiclosDeCPU++;
-					entrenador->quantumDisponible -=1;
-				}
-				distanciaAnterior = distancia;
-				distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-			}
-
-			if(((entrenador->quantumDisponible)==0) && (!llegoAlObjetivoPokemon(entrenador))){
-				pthread_mutex_lock(&mutex_listaReady);
-				list_add(listaReady, entrenador);
-				entrenador->estado = READY;
-				pthread_mutex_unlock(&mutex_listaReady);
-				entrenador->quantumDisponible = quantum;
-			} else{
-				sem_wait(&sem_esperarCaught);
-				if(entrenador->idMensajeCaught){
-					entrenador->estado = BLOCKED;
-					log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se queda esperando un caught", "BLOCKED");
-
-					pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
-					list_add(listaBloqueadosEsperandoMensaje, entrenador);
-					pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
-
-				} else{
-					verificarTieneTodoLoQueQuiere(entrenador);
-				}
-			}
-			sem_post(&sem_planificar);
 		}
-	}
+
 
 	pthread_mutex_unlock(&mutex_listaReady);
 
 	chequearDeadlock(RR);
+
+	chequearSiEstaDisponible(entrenador);
+
+	return 0;
 }
 
 int planificarSegunSJFConDesalojo(){
 
 	int distancia;
 
-	pthread_mutex_lock(&mutex_listaReady);
+	sem_wait(&sem_planificar);
 
-	int tamanio = list_size(listaReady);
+	pthread_mutex_lock(&mutex_listaReady);
 
 	ordenarListaPorEstimacion(listaReady);
 
-	for (int i = 0; i < tamanio; i++) {
+	sem_init(&sem_esperarCaught, 0, 0);
 
-		sem_wait(&sem_planificar);
+	t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, 0);
 
-		sem_init(&sem_esperarCaught, 0, 0);
+	//Cambia los datos del entrenador para cuando calcule su prox rafaga
+	double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
+	entrenador->estimacionInicial = estimadoProxRafaga;
 
-		t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, i);
+	entrenador->estado = EXEC;
+
+	pthread_mutex_lock(&mutex_cantidadCambiosContexto);
+	cantidadCambiosDeContexto+=1;
+	pthread_mutex_unlock(&mutex_cantidadCambiosContexto);
+
+	log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "fue seleccionado para ejecutar", "EXEC");
+
+	if(entrenador->puedeAtrapar) {
+		// Esto es un caught 1
+		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+		sem_post(semaforoDelEntrenador);
+
+		sem_wait(&sem_esperarCaught);
+		verificarTieneTodoLoQueQuiere(entrenador);
+
+	} else {
+		//Esto es un appeared o un localized
+		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 
 		//Cambia los datos del entrenador para cuando calcule su prox rafaga
-		double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
-		entrenador->estimacionInicial = estimadoProxRafaga;
+		entrenador->rafagaAnteriorReal = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
 
-		entrenador->estado = EXEC;
+		sem_post(semaforoDelEntrenador);
 
-		pthread_mutex_lock(&mutex_cantidadCambiosContexto);
-		cantidadCambiosDeContexto+=1;
-		pthread_mutex_unlock(&mutex_cantidadCambiosContexto);
+		entrenador->misCiclosDeCPU++;
 
-		log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "fue seleccionado para ejecutar", "EXEC");
+		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+		int distanciaAnterior = distancia;
 
-		if(entrenador->puedeAtrapar) {
-			// Esto es un caught 1
-			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-			sem_post(semaforoDelEntrenador);
+		int tamanio_ready_actual = list_size(listaReady) - 1;
+		while (distancia != 0) {
+			if (distancia != distanciaAnterior) {
+				if (tamanio_ready_actual < list_size(listaReady)) {
+					int distanciaQueLeQueda = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+					entrenador->rafagaAnteriorReal = entrenador->rafagaAnteriorReal - distanciaQueLeQueda;
+					entrenador->estado = READY;
 
-			sem_wait(&sem_esperarCaught);
-			verificarTieneTodoLoQueQuiere(entrenador);
-
-		} else {
-			//Esto es un appeared o un localized
-			sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-
-			//Cambia los datos del entrenador para cuando calcule su prox rafaga
-			entrenador->rafagaAnteriorReal = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-
-			sem_post(semaforoDelEntrenador);
-
-			entrenador->misCiclosDeCPU++;
-
-			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-			int distanciaAnterior = distancia;
-
-			int tamanio_ready_actual = tamanio - 1;
-			while (distancia != 0) {
-				if (distancia != distanciaAnterior) {
-					if (tamanio_ready_actual < list_size(listaReady)) {
-						int distanciaQueLeQueda = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-						entrenador->rafagaAnteriorReal = entrenador->rafagaAnteriorReal - distanciaQueLeQueda;
-						entrenador->estado = READY;
-
-						list_add(listaReady, entrenador);
-						pthread_mutex_unlock(&mutex_listaReady);
-						sem_post(&sem_planificar);
-						return 1;
-					}
-					sem_post(semaforoDelEntrenador);
-					entrenador->misCiclosDeCPU++;
+					list_add(listaReady, entrenador);
+					pthread_mutex_unlock(&mutex_listaReady);
+					sem_post(&sem_planificar);
+					return 1;
 				}
-				distanciaAnterior = distancia;
-				distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+				sem_post(semaforoDelEntrenador);
+				entrenador->misCiclosDeCPU++;
 			}
-
-			sem_wait(&sem_esperarCaught);
-			if(entrenador->idMensajeCaught){
-				entrenador->estado = BLOCKED;
-				log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se queda esperando un caught", "BLOCKED");
-
-				pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
-				list_add(listaBloqueadosEsperandoMensaje, entrenador);
-				pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
-
-			} else{
-				verificarTieneTodoLoQueQuiere(entrenador);
-			}
+			distanciaAnterior = distancia;
+			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
 		}
-		sem_post(&sem_planificar);
+
+		sem_wait(&sem_esperarCaught);
+		if(entrenador->idMensajeCaught){
+			entrenador->estado = BLOCKED;
+			log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se queda esperando un caught", "BLOCKED");
+
+			pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
+			list_add(listaBloqueadosEsperandoMensaje, entrenador);
+			pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
+
+		} else{
+			verificarTieneTodoLoQueQuiere(entrenador);
+		}
 	}
+	sem_post(&sem_planificar);
+
 
 	pthread_mutex_unlock(&mutex_listaReady);
 
 	chequearDeadlock(SJFCD);
 
+	chequearSiEstaDisponible(entrenador);
+
 	return 0;
+}
+
+void chequearSiEstaDisponible(t_entrenador* entrenador){
+
+	bool estaEnLista(void* elemento){
+			t_entrenador* otroEntrenador = (t_entrenador*) elemento;
+			return otroEntrenador->id_entrenador == entrenador->id_entrenador;
+		}
+
+		pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
+		bool estaEnListaCatch = list_any_satisfy(listaBloqueadosEsperandoMensaje, estaEnLista);
+		pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
+
+		pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
+		bool estaEnListaDeadlock = list_any_satisfy(listaBloqueadosDeadlock, estaEnLista);
+		pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
+
+		if(!estaEnListaCatch &&  !estaEnListaDeadlock){
+			sem_post(&sem_buscarEntrenadorMasCercano);
+		}
 }
 
 void chequearDeadlock(int algoritmo) {

@@ -55,6 +55,7 @@ t_list* quantumPorEntrenador;
 t_list* sem_entrenadores_ejecutar;
 sem_t sem_planificar;
 sem_t sem_esperarCaught;
+sem_t sem_buscarEntrenadorMasCercano;
 
 extern pthread_mutex_t mutex_atrapados;
 extern pthread_mutex_t mutex_pendientes;
@@ -133,9 +134,11 @@ void planificarSegunFifo();
 
 void planificarSegunSJFSinDesalojo();
 
-void planificarSegunRR();
+int planificarSegunRR();
 
 int planificarSegunSJFConDesalojo();
+
+void chequearSiEstaDisponible(t_entrenador*);
 
 void chequearDeadlock(int);
 
