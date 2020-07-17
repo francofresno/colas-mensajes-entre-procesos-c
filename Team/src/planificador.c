@@ -124,21 +124,20 @@ void planificarSegunFifo() {
 
 	} else {
 		//Esto es un appeared o un localized
+		sem_init(&sem_entrenadorMoviendose, 0, 0);
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 		sem_post(semaforoDelEntrenador);
 
 		entrenador->misCiclosDeCPU++;
 
+		sem_wait(&sem_entrenadorMoviendose);
 		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-		int distanciaAnterior = distancia;
 
-		while (distancia != 0) {
-			if (distancia != distanciaAnterior) {
-				sem_post(semaforoDelEntrenador);
-				entrenador->misCiclosDeCPU++;
-			}
-			distanciaAnterior = distancia;
-			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+		while (distancia != 0 && distancia != -1) {
+			sem_post(semaforoDelEntrenador);
+			sem_wait(&sem_entrenadorMoviendose);
+			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo != NULL ? entrenador->pokemonInstantaneo->coordenadas : NULL);
+			entrenador->misCiclosDeCPU++;
 		}
 
 		sem_wait(&sem_esperarCaught);
@@ -199,6 +198,7 @@ void planificarSegunSJFSinDesalojo(){
 		verificarTieneTodoLoQueQuiere(entrenador);
 
 	} else {
+		sem_init(&sem_entrenadorMoviendose, 0, 0);
 		//Esto es un appeared o un localized
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 
@@ -209,16 +209,14 @@ void planificarSegunSJFSinDesalojo(){
 
 		entrenador->misCiclosDeCPU++;
 
+		sem_wait(&sem_entrenadorMoviendose);
 		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-		int distanciaAnterior = distancia;
 
-		while (distancia != 0) {
-			if (distancia != distanciaAnterior) {
-				sem_post(semaforoDelEntrenador);
-				entrenador->misCiclosDeCPU++;
-			}
-			distanciaAnterior = distancia;
-			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+		while (distancia != 0 && distancia != -1) {
+			sem_post(semaforoDelEntrenador);
+			sem_wait(&sem_entrenadorMoviendose);
+			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo != NULL ? entrenador->pokemonInstantaneo->coordenadas : NULL);
+			entrenador->misCiclosDeCPU++;
 		}
 
 		sem_wait(&sem_esperarCaught);
@@ -274,25 +272,24 @@ int planificarSegunRR(){
 		verificarTieneTodoLoQueQuiere(entrenador);
 
 	} else {
+		sem_init(&sem_entrenadorMoviendose, 0, 0);
 		//Esto es un appeared o un localized
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 		sem_post(semaforoDelEntrenador);
 
 		entrenador->misCiclosDeCPU++;
 
+		sem_wait(&sem_entrenadorMoviendose);
 		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-		int distanciaAnterior = distancia;
 
 		entrenador->quantumDisponible -=1;
 
-		while (((distancia != 0) && (entrenador->quantumDisponible)>0)) {
-			if (distancia != distanciaAnterior) {
-				sem_post(semaforoDelEntrenador);
-				entrenador->misCiclosDeCPU++;
-				entrenador->quantumDisponible -=1;
-			}
-			distanciaAnterior = distancia;
-			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+		while (((distancia != 0) && (entrenador->quantumDisponible)>0) && (distancia != -1)) {
+			sem_post(semaforoDelEntrenador);
+			sem_wait(&sem_entrenadorMoviendose);
+			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo != NULL ? entrenador->pokemonInstantaneo->coordenadas : NULL);
+			entrenador->misCiclosDeCPU++;
+			entrenador->quantumDisponible -= 1;
 		}
 
 		if(((entrenador->quantumDisponible)==0) && (!llegoAlObjetivoPokemon(entrenador))){
@@ -364,6 +361,7 @@ int planificarSegunSJFConDesalojo(){
 		verificarTieneTodoLoQueQuiere(entrenador);
 
 	} else {
+		sem_init(&sem_entrenadorMoviendose, 0, 0);
 		//Esto es un appeared o un localized
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 
@@ -374,13 +372,13 @@ int planificarSegunSJFConDesalojo(){
 
 		entrenador->misCiclosDeCPU++;
 
+		sem_wait(&sem_entrenadorMoviendose);
 		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-		int distanciaAnterior = distancia;
 
 		int tamanio_ready_actual = list_size(listaReady) - 1;
-		while (distancia != 0) {
-			if (distancia != distanciaAnterior) {
-				if (tamanio_ready_actual < list_size(listaReady)) {
+		while (distancia != 0 && distancia != -1) {
+
+			if (tamanio_ready_actual < list_size(listaReady)) {
 					int distanciaQueLeQueda = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
 					entrenador->rafagaAnteriorReal = entrenador->rafagaAnteriorReal - distanciaQueLeQueda;
 					entrenador->estado = READY;
@@ -389,13 +387,29 @@ int planificarSegunSJFConDesalojo(){
 					pthread_mutex_unlock(&mutex_listaReady);
 					sem_post(&sem_planificar);
 					return 1;
-				}
-				sem_post(semaforoDelEntrenador);
-				entrenador->misCiclosDeCPU++;
 			}
-			distanciaAnterior = distancia;
-			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+
+			sem_post(semaforoDelEntrenador);
+			sem_wait(&sem_entrenadorMoviendose);
+			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo != NULL ? entrenador->pokemonInstantaneo->coordenadas : NULL);
+			entrenador->misCiclosDeCPU++;
 		}
+
+		sem_wait(&sem_entrenadorMoviendose);
+		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+
+		while (distancia != 0 && distancia != -1) {
+			sem_post(semaforoDelEntrenador);
+			sem_wait(&sem_entrenadorMoviendose);
+			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo != NULL ? entrenador->pokemonInstantaneo->coordenadas : NULL);
+			entrenador->misCiclosDeCPU++;
+		}
+
+
+
+
+
+
 
 		sem_wait(&sem_esperarCaught);
 		if(entrenador->idMensajeCaught){
@@ -842,6 +856,10 @@ void ordenarListaPorEstimacion(t_list* list) {
 }
 
 int distanciaA(t_coordenadas* desde, t_coordenadas* hasta){
+
+	if (desde == NULL || hasta == NULL) {
+		return -1;
+	}
 
 	int distanciaX = abs(desde->posX - hasta->posX);
 	int distanciaY = abs(desde->posY - hasta->posY);

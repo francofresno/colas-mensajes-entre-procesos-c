@@ -229,6 +229,7 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 
 			t_nombrePokemon* pokemonAtrapado = malloc(sizeof(t_nombrePokemon));
 			pokemonAtrapado = entrenador->pokemonInstantaneo->pokemon;
+
 			list_add(entrenador->pokemonesQuePosee, (void*) pokemonAtrapado);
 			entrenador->cantidad_pokemons++;
 
@@ -254,6 +255,7 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 
 			if((entrenador->pokemonInstantaneo) != NULL) {
 
+				printf("me voy a mover hacia el pkm: ID ENT %d\n", entrenador->id_entrenador);
 				moverAlEntrenadorHastaUnPokemon(entrenador->id_entrenador);
 
 				if(llegoAlObjetivoPokemon(entrenador)){
@@ -262,11 +264,11 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 					if(id==0){
 						log_error_comunicacion_con_broker();
 
-						list_add(entrenador->pokemonesQuePosee, (void*) entrenador->pokemonInstantaneo);
-						entrenador->cantidad_pokemons++;
-
 						t_nombrePokemon* pokemonAtrapado = malloc(sizeof(t_nombrePokemon));
 						pokemonAtrapado = entrenador->pokemonInstantaneo->pokemon;
+
+						list_add(entrenador->pokemonesQuePosee, (void*) pokemonAtrapado);
+						entrenador->cantidad_pokemons++;
 
 						log_atrapo_al_pokemon(entrenador->id_entrenador,
 										pokemonAtrapado->nombre,
@@ -290,6 +292,8 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 					entrenador->idMensajeCaught = id;
 					sem_post(&sem_esperarCaught);
 				}
+
+				sem_post(&sem_entrenadorMoviendose);
 
 			} else {
 
@@ -347,17 +351,26 @@ uint32_t esperarIdCatch(int socket_cliente){
 
 void moverAlEntrenadorHastaUnPokemon(uint32_t idEntrenador){
 
+	printf("comienza sleep\n");
+	printf("caca %d\n", retardoCPU);
 	sleep(retardoCPU);
+	printf("termina sleep\n");
 
 	pthread_mutex_lock(&mutex_entrenadores);
 	t_entrenador* entrenador = list_get(entrenadores, idEntrenador);
 	pthread_mutex_unlock(&mutex_entrenadores);
 
+	printf("Agarre al entrenador ID: %d \n", entrenador->id_entrenador);
+
 	uint32_t posicionXEntrenador = entrenador->coordenadas->posX;
 	uint32_t posicionYEntrenador = entrenador->coordenadas->posY;
 
+	printf("saque las coordenadas del entrenador\n");
+
 	uint32_t posicionXPokemon = entrenador->pokemonInstantaneo->coordenadas->posX;
 	uint32_t posicionYPokemon = entrenador->pokemonInstantaneo->coordenadas->posY;
+
+	printf("saque coords del pkm %s\n", entrenador->pokemonInstantaneo->pokemon->nombre);
 
 	if (posicionXEntrenador != posicionXPokemon) {
 

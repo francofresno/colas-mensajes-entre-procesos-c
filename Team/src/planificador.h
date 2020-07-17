@@ -56,6 +56,7 @@ t_list* sem_entrenadores_ejecutar;
 sem_t sem_planificar;
 sem_t sem_esperarCaught;
 sem_t sem_buscarEntrenadorMasCercano;
+sem_t sem_entrenadorMoviendose;
 
 extern pthread_mutex_t mutex_atrapados;
 extern pthread_mutex_t mutex_pendientes;
