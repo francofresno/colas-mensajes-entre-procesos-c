@@ -123,10 +123,14 @@ void planificarSegunFifo() {
 		verificarTieneTodoLoQueQuiere(entrenador);
 
 	} else {
+		printf("Empieza a planificar para mover\n");
 		//Esto es un appeared o un localized
 		sem_init(&sem_entrenadorMoviendose, 0, 0);
+		printf("Init al sem\n");
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+		printf("Traje el sem entrenador\n");
 		sem_post(semaforoDelEntrenador);
+		printf("post al sem entrenador\n");
 
 		entrenador->misCiclosDeCPU++;
 
@@ -139,6 +143,8 @@ void planificarSegunFifo() {
 			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo != NULL ? entrenador->pokemonInstantaneo->coordenadas : NULL);
 			entrenador->misCiclosDeCPU++;
 		}
+
+		sem_destroy(&sem_entrenadorMoviendose);
 
 		sem_wait(&sem_esperarCaught);
 		if(entrenador->idMensajeCaught){
@@ -219,6 +225,8 @@ void planificarSegunSJFSinDesalojo(){
 			entrenador->misCiclosDeCPU++;
 		}
 
+		sem_destroy(&sem_entrenadorMoviendose);
+
 		sem_wait(&sem_esperarCaught);
 		if(entrenador->idMensajeCaught){
 			entrenador->estado = BLOCKED;
@@ -291,6 +299,8 @@ int planificarSegunRR(){
 			entrenador->misCiclosDeCPU++;
 			entrenador->quantumDisponible -= 1;
 		}
+
+		sem_destroy(&sem_entrenadorMoviendose);
 
 		if(((entrenador->quantumDisponible)==0) && (!llegoAlObjetivoPokemon(entrenador))){
 			pthread_mutex_lock(&mutex_listaReady);
@@ -395,21 +405,7 @@ int planificarSegunSJFConDesalojo(){
 			entrenador->misCiclosDeCPU++;
 		}
 
-		sem_wait(&sem_entrenadorMoviendose);
-		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-
-		while (distancia != 0 && distancia != -1) {
-			sem_post(semaforoDelEntrenador);
-			sem_wait(&sem_entrenadorMoviendose);
-			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo != NULL ? entrenador->pokemonInstantaneo->coordenadas : NULL);
-			entrenador->misCiclosDeCPU++;
-		}
-
-
-
-
-
-
+		sem_destroy(&sem_entrenadorMoviendose);
 
 		sem_wait(&sem_esperarCaught);
 		if(entrenador->idMensajeCaught){

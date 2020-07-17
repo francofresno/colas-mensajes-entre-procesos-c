@@ -221,6 +221,7 @@ void aplanarDobleLista(t_list* lista){
 }
 
 void ejecutarEntrenador(t_entrenador* entrenador){
+	printf("Arranca a ejecutar el entrenador %d\n", entrenador->id_entrenador);
 	while(1) {
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 		sem_wait(semaforoDelEntrenador);
@@ -360,12 +361,8 @@ void moverAlEntrenadorHastaUnPokemon(uint32_t idEntrenador){
 	t_entrenador* entrenador = list_get(entrenadores, idEntrenador);
 	pthread_mutex_unlock(&mutex_entrenadores);
 
-	printf("Agarre al entrenador ID: %d \n", entrenador->id_entrenador);
-
 	uint32_t posicionXEntrenador = entrenador->coordenadas->posX;
 	uint32_t posicionYEntrenador = entrenador->coordenadas->posY;
-
-	printf("saque las coordenadas del entrenador\n");
 
 	uint32_t posicionXPokemon = entrenador->pokemonInstantaneo->coordenadas->posX;
 	uint32_t posicionYPokemon = entrenador->pokemonInstantaneo->coordenadas->posY;
