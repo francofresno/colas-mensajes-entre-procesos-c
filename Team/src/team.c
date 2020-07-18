@@ -15,6 +15,8 @@ int main(void) {
 	t_config* config = leer_config();
 	inicializarConfig(config);
 
+	inicioAlgoritmoDeadlock = 0;
+
 	ponerEntrenadoresEnLista(config);
 	crearHilosEntrenadores();
 
@@ -422,6 +424,9 @@ void inicializarListas(){
 	objetivoTeam = list_create();
 	especiesRequeridas = list_create();
 	especiesQueLlegaron = list_create();
+	entrenadorIntercambio = list_create();
+	entrenadorConQuienIntercambiar = list_create();
+	entrenadoresNoSeleccionables = list_create();
 }
 
 void esperarIdGet(int socket_cliente){

@@ -33,6 +33,8 @@ int retardoCPU;
 int cantidadDeadlocksResueltos;
 int cantidadCambiosDeContexto;
 
+int inicioAlgoritmoDeadlock;
+
 //Listas de entrenadores segun estado
 t_list* listaNuevos;
 t_list* listaReady;
@@ -47,6 +49,10 @@ t_list* atrapados;
 t_list* pendientes;
 t_list* objetivoTeam;
 t_list* entrenadores;
+
+t_list* entrenadorIntercambio;
+t_list* entrenadorConQuienIntercambiar;
+t_list* entrenadoresNoSeleccionables;
 
 //lista quantum
 t_list* quantumPorEntrenador;
@@ -124,7 +130,6 @@ typedef struct
 	uint32_t quantumIntercambio;
 	double estimacionInicial;
 	uint32_t rafagaAnteriorReal;
-
 } t_entrenador;
 
 void planificarCaught();
@@ -168,5 +173,7 @@ void ordenarListaPorEstimacion(t_list*);
 int llegoAlObjetivoPokemon(t_entrenador*);
 
 int llegoAlObjetivoEntrenador(t_entrenador*, t_entrenador*);
+
+int getIndexEntrenadorEnLista(t_list*, t_entrenador*);
 
 #endif /* PLANIFICADOR_H_ */

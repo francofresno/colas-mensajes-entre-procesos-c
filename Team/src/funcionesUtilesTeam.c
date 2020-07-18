@@ -225,6 +225,7 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 	while(1) {
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 		sem_wait(semaforoDelEntrenador);
+		printf("Arranco yo! id: %d\n", entrenador->id_entrenador);
 
 		if(entrenador->puedeAtrapar){
 
@@ -253,8 +254,8 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 			sem_post(&sem_esperarCaught);
 
 		} else {
-
 			if((entrenador->pokemonInstantaneo) != NULL) {
+			printf("Entre a este movimiento!\n");
 
 				moverAlEntrenadorHastaUnPokemon(entrenador->id_entrenador);
 
@@ -295,16 +296,19 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 
 				sem_post(&sem_entrenadorMoviendose);
 
+			} else if (list_get(entrenadorIntercambio,0) != NULL) {
+				t_entrenador* elEntrenador =  list_get(entrenadorIntercambio,0);
+				printf("Moviendome hacia un entrenador %d\n", elEntrenador->id_entrenador);
+				moverAlEntrenadorHastaOtroEntrenador(entrenador->id_entrenador, elEntrenador->id_entrenador);
+
+				sem_post(&sem_entrenadorMoviendose);
 			} else {
-
-				t_entrenador* entrenadorConQuienIntercambiar = elegirConQuienIntercambiar(entrenador);
-
-				moverAlEntrenadorHastaOtroEntrenador(entrenador->id_entrenador, entrenadorConQuienIntercambiar->id_entrenador);
-
-				if(llegoAlObjetivoEntrenador(entrenador, entrenadorConQuienIntercambiar)){
-
-					intercambiarPokemones(entrenador->id_entrenador, entrenadorConQuienIntercambiar->id_entrenador);
-
+				printf("Vamos a intercambiar");
+				t_entrenador* entrenadorParaIntercambiar = elegirConQuienIntercambiar(entrenador);
+				if (entrenadorParaIntercambiar != NULL) { //TODO puede pasar ese null??
+					list_add(entrenadorConQuienIntercambiar, entrenadorParaIntercambiar);
+					intercambiarPokemones(entrenador->id_entrenador, entrenadorParaIntercambiar->id_entrenador);
+					sem_post(&sem_entrenadorMoviendose);
 				}
 			}
 		}
@@ -550,7 +554,9 @@ void ponerEntrenadorEnReady(t_entrenador* entrenador, t_newPokemon* pokemon){
 
 void moverAlEntrenadorHastaOtroEntrenador(uint32_t idEntrenador1, uint32_t idEntrenador2){
 
+	printf("Antes del sleep\n");
 	sleep(retardoCPU);
+	printf("Despues del sleep\n");
 
 	pthread_mutex_lock(&mutex_entrenadores);
 	t_entrenador* entrenador1 = list_get(entrenadores, idEntrenador1);
@@ -564,25 +570,29 @@ void moverAlEntrenadorHastaOtroEntrenador(uint32_t idEntrenador1, uint32_t idEnt
 	uint32_t posicionXEntrenador2 = entrenador2->coordenadas->posX;
 	uint32_t posicionYEntrenador2 = entrenador2->coordenadas->posY;
 
-	uint32_t distanciaEnX = posicionXEntrenador2 - posicionXEntrenador1;
-	uint32_t distanciaEnY = posicionYEntrenador2 - posicionYEntrenador1;
 
-	if(posicionXEntrenador1 !=  posicionXEntrenador2){
+	if (posicionXEntrenador1 != posicionXEntrenador2) {
 
-		if(distanciaEnX>0){
-			entrenador1->coordenadas->posX = posicionXEntrenador1++;
-		}else if(distanciaEnX<0){
-			entrenador1->coordenadas->posX = posicionXEntrenador1--;
+		int diferenciaEnX = posicionXEntrenador2 - posicionXEntrenador1;
+		if (diferenciaEnX > 0) {
+			entrenador1->coordenadas->posX = posicionXEntrenador1 + 1;
+		} else if (diferenciaEnX < 0) {
+			entrenador1->coordenadas->posX = posicionXEntrenador1 - 1;
 		}
 
-	}else if(posicionYEntrenador1 != posicionYEntrenador2){
-		if(distanciaEnY>0){
-			entrenador1->coordenadas->posY = posicionYEntrenador1++;
-		}else if(distanciaEnX<0){
-			entrenador1->coordenadas->posY = posicionYEntrenador1--;
+	} else if (posicionYEntrenador1 != posicionYEntrenador2) {
+
+		int diferenciaEnY = posicionYEntrenador2 - posicionYEntrenador1;
+		if (diferenciaEnY > 0) {
+			entrenador1->coordenadas->posY = posicionYEntrenador1 + 1;
+		} else if (diferenciaEnY < 0) {
+			entrenador1->coordenadas->posY = posicionYEntrenador1 - 1;
 		}
+
 	}
+
 	log_movimiento_entrenador(idEntrenador1, entrenador1->coordenadas->posX, entrenador1->coordenadas->posY);
+
 }
 
 void intercambiarPokemones(uint32_t idEntrenador1, uint32_t idEntrenador2){
@@ -592,7 +602,7 @@ void intercambiarPokemones(uint32_t idEntrenador1, uint32_t idEntrenador2){
 	t_entrenador* entrenador2 = list_get(entrenadores, idEntrenador2);
 	pthread_mutex_unlock(&mutex_entrenadores);
 
-	if(entrenador1->quantumIntercambio <= entrenador1->quantumDisponible){
+	if (entrenador1->quantumIntercambio <= entrenador1->quantumDisponible || stringACodigoAlgoritmo(algoritmoPlanificacion) != RR) {
 
 		sleep((entrenador1->quantumIntercambio)*retardoCPU);
 		dameTuPokemon(entrenador1,entrenador2);
@@ -603,7 +613,7 @@ void intercambiarPokemones(uint32_t idEntrenador1, uint32_t idEntrenador2){
 		entrenador1->quantumDisponible -= entrenador1->quantumIntercambio;
 		entrenador1->quantumIntercambio = 0;
 
-	} else{
+	} else {
 
 		sleep((entrenador1->quantumDisponible)*retardoCPU);
 		entrenador1->quantumIntercambio -= entrenador1->quantumDisponible;
@@ -624,12 +634,13 @@ void dameTuPokemon(t_entrenador* entrenador1, t_entrenador* entrenador2){
 
 	diferenciaYCargarLista(listaQuiere1, listaPosee1, leFaltanParaObj1);
 	diferenciaYCargarLista(listaPosee2, listaQuiere2, tienePeroNoQuiere2);
+	t_list* tienePeroNoQuiere2AUX = list_duplicate(tienePeroNoQuiere2);
 	diferenciaYCargarLista(leFaltanParaObj1, tienePeroNoQuiere2, pokemonesDe2QueQuiere1);
 
 	t_list* listaParaCondicion;
 
 	if(list_is_empty(pokemonesDe2QueQuiere1)) {
-		listaParaCondicion = tienePeroNoQuiere2;
+		listaParaCondicion = tienePeroNoQuiere2AUX;
 	} else {
 		listaParaCondicion = pokemonesDe2QueQuiere1;
 	}
@@ -648,6 +659,7 @@ void dameTuPokemon(t_entrenador* entrenador1, t_entrenador* entrenador2){
 	list_destroy(listaPosee2);
 	list_destroy(leFaltanParaObj1);
 	list_destroy(tienePeroNoQuiere2);
+	list_destroy(tienePeroNoQuiere2AUX);
 	list_destroy(pokemonesDe2QueQuiere1);
 }
 
