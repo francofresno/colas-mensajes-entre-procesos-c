@@ -123,14 +123,10 @@ void planificarSegunFifo() {
 		verificarTieneTodoLoQueQuiere(entrenador);
 
 	} else {
-		printf("Empieza a planificar para mover\n");
 		//Esto es un appeared o un localized
 		sem_init(&sem_entrenadorMoviendose, 0, 0);
-		printf("Init al sem\n");
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-		printf("Traje el sem entrenador\n");
 		sem_post(semaforoDelEntrenador);
-		printf("post al sem entrenador\n");
 
 		entrenador->misCiclosDeCPU++;
 
@@ -159,7 +155,6 @@ void planificarSegunFifo() {
 			verificarTieneTodoLoQueQuiere(entrenador);
 		}
 	}
-	sem_post(&sem_planificar);
 
 	pthread_mutex_unlock(&mutex_listaReady);
 
@@ -167,6 +162,8 @@ void planificarSegunFifo() {
 
 	chequearSiEstaDisponible(entrenador);
 
+	printf("termino fifo\n");
+	sem_post(&sem_planificar);
 }
 
 void planificarSegunSJFSinDesalojo(){
@@ -240,8 +237,6 @@ void planificarSegunSJFSinDesalojo(){
 			verificarTieneTodoLoQueQuiere(entrenador);
 		}
 	}
-	sem_post(&sem_planificar);
-
 
 	pthread_mutex_unlock(&mutex_listaReady);
 
@@ -249,6 +244,7 @@ void planificarSegunSJFSinDesalojo(){
 
 	chequearSiEstaDisponible(entrenador);
 
+	sem_post(&sem_planificar);
 }
 
 int planificarSegunRR(){
@@ -308,6 +304,7 @@ int planificarSegunRR(){
 			entrenador->estado = READY;
 			pthread_mutex_unlock(&mutex_listaReady);
 			entrenador->quantumDisponible = quantum;
+			sem_post(&sem_planificar);
 			return 1;
 		} else{
 			sem_wait(&sem_esperarCaught);
@@ -323,8 +320,7 @@ int planificarSegunRR(){
 				verificarTieneTodoLoQueQuiere(entrenador);
 			}
 		}
-		sem_post(&sem_planificar);
-		}
+	}
 
 
 	pthread_mutex_unlock(&mutex_listaReady);
@@ -332,6 +328,8 @@ int planificarSegunRR(){
 	chequearDeadlock(RR);
 
 	chequearSiEstaDisponible(entrenador);
+
+	sem_post(&sem_planificar);
 
 	return 0;
 }
@@ -346,9 +344,12 @@ int planificarSegunSJFConDesalojo(){
 
 	ordenarListaPorEstimacion(listaReady);
 
-	sem_init(&sem_esperarCaught, 0, 0);
+	sem_init(&sem_esperarCaught, 0, 0); //TODO ver de destruir este al final de todos los planificar
 
 	t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, 0);
+	int tamanio_ready_actual = list_size(listaReady);
+
+	pthread_mutex_unlock(&mutex_listaReady);
 
 	//Cambia los datos del entrenador para cuando calcule su prox rafaga
 	double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
@@ -385,18 +386,18 @@ int planificarSegunSJFConDesalojo(){
 		sem_wait(&sem_entrenadorMoviendose);
 		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
 
-		int tamanio_ready_actual = list_size(listaReady) - 1;
 		while (distancia != 0 && distancia != -1) {
 
 			if (tamanio_ready_actual < list_size(listaReady)) {
-					int distanciaQueLeQueda = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-					entrenador->rafagaAnteriorReal = entrenador->rafagaAnteriorReal - distanciaQueLeQueda;
-					entrenador->estado = READY;
+				int distanciaQueLeQueda = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+				entrenador->rafagaAnteriorReal = entrenador->rafagaAnteriorReal - distanciaQueLeQueda;
+				entrenador->estado = READY;
 
-					list_add(listaReady, entrenador);
-					pthread_mutex_unlock(&mutex_listaReady);
-					sem_post(&sem_planificar);
-					return 1;
+				pthread_mutex_lock(&mutex_listaReady);
+				list_add(listaReady, entrenador);
+				pthread_mutex_unlock(&mutex_listaReady);
+				sem_post(&sem_planificar);
+				return 1;
 			}
 
 			sem_post(semaforoDelEntrenador);
@@ -420,36 +421,34 @@ int planificarSegunSJFConDesalojo(){
 			verificarTieneTodoLoQueQuiere(entrenador);
 		}
 	}
-	sem_post(&sem_planificar);
-
-
-	pthread_mutex_unlock(&mutex_listaReady);
 
 	chequearDeadlock(SJFCD);
 
 	chequearSiEstaDisponible(entrenador);
+
+	sem_post(&sem_planificar);
 
 	return 0;
 }
 
 void chequearSiEstaDisponible(t_entrenador* entrenador){
 
-	bool estaEnLista(void* elemento){
-			t_entrenador* otroEntrenador = (t_entrenador*) elemento;
-			return otroEntrenador->id_entrenador == entrenador->id_entrenador;
-		}
+	bool estaEnLista(void* elemento) {
+		t_entrenador* otroEntrenador = (t_entrenador*) elemento;
+		return otroEntrenador->id_entrenador == entrenador->id_entrenador;
+	}
 
-		pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
-		bool estaEnListaCatch = list_any_satisfy(listaBloqueadosEsperandoMensaje, estaEnLista);
-		pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
+	pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
+	bool estaEnListaCatch = list_any_satisfy(listaBloqueadosEsperandoMensaje, estaEnLista);
+	pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
 
-		pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
-		bool estaEnListaDeadlock = list_any_satisfy(listaBloqueadosDeadlock, estaEnLista);
-		pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
+	pthread_mutex_lock(&mutex_listaBloqueadosDeadlock);
+	bool estaEnListaDeadlock = list_any_satisfy(listaBloqueadosDeadlock, estaEnLista);
+	pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
 
-		if(!estaEnListaCatch &&  !estaEnListaDeadlock){
-			sem_post(&sem_buscarEntrenadorMasCercano);
-		}
+	if (!estaEnListaCatch && !estaEnListaDeadlock && entrenador->estado != FINISHED) {
+		sem_post(&sem_buscarEntrenadorMasCercano);
+	}
 }
 
 void chequearDeadlock(int algoritmo) {
@@ -516,22 +515,23 @@ void chequearDeadlock(int algoritmo) {
 
 						sacarEntrenadorDeLista(entrenadorConQuienIntercambiar, listaBloqueadosDeadlock);
 
+						sem_init(&sem_entrenadorMoviendose, 0, 0);
 						sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 						sem_post(semaforoDelEntrenador);
 
 						entrenador->misCiclosDeCPU++;
 
+						sem_wait(&sem_entrenadorMoviendose);
 						distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
-						int distanciaAnterior = distancia;
 
-						while (distancia != 0) {
-							if (distancia != distanciaAnterior) {
-								sem_post(semaforoDelEntrenador);
-								entrenador->misCiclosDeCPU++;
-							}
-							distanciaAnterior = distancia;
+						while (distancia != 0 && distancia != -1) {
+							sem_post(semaforoDelEntrenador);
+							sem_wait(&sem_entrenadorMoviendose);
 							distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
+							entrenador->misCiclosDeCPU++;
 						}
+
+						sem_destroy(&sem_entrenadorMoviendose);
 
 						entrenador->misCiclosDeCPU = entrenador->misCiclosDeCPU +5;
 
@@ -586,26 +586,27 @@ void chequearDeadlock(int algoritmo) {
 							entrenador->quantumIntercambio = 5;
 						}
 
+						sem_init(&sem_entrenadorMoviendose, 0, 0);
 						sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 						sem_post(semaforoDelEntrenador);
 
 						entrenador->misCiclosDeCPU++;
 
+						sem_wait(&sem_entrenadorMoviendose);
 						distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
-						int distanciaAnterior = distancia;
 
 						entrenador->quantumDisponible-=1;
 
-						while ((distancia != 0) && ((entrenador->quantumDisponible)>0)) {
 
-							if (distancia != distanciaAnterior) {
-								sem_post(semaforoDelEntrenador);
-								entrenador->misCiclosDeCPU++;
-								entrenador->quantumDisponible-=1;
-							}
-							distanciaAnterior = distancia;
+						while (((distancia != 0) && (entrenador->quantumDisponible)>0) && (distancia != -1)) {
+							sem_post(semaforoDelEntrenador);
+							sem_wait(&sem_entrenadorMoviendose);
 							distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
+							entrenador->misCiclosDeCPU++;
+							entrenador->quantumDisponible -= 1;
 						}
+
+						sem_destroy(&sem_entrenadorMoviendose);
 
 						if(entrenador->quantumIntercambio){
 							list_add(listaBloqueadosDeadlock, entrenador);
@@ -654,6 +655,8 @@ void chequearDeadlock(int algoritmo) {
 
 					ordenarListaPorEstimacion(listaBloqueadosDeadlock);
 
+					int tamanio_ready_actual = list_size(listaReady);
+
 					tamanioDeadlock = list_size(listaBloqueadosDeadlock);
 					for (int b = 0; b < tamanioDeadlock; b++) {
 
@@ -674,41 +677,40 @@ void chequearDeadlock(int algoritmo) {
 
 						sacarEntrenadorDeLista(entrenadorConQuienIntercambiar, listaBloqueadosDeadlock);
 
+						sem_init(&sem_entrenadorMoviendose, 0, 0);
 						sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 
 						//Cambia los datos del entrenador para cuando calcule su prox rafaga
-						entrenador->rafagaAnteriorReal = 5 + distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
+						entrenador->rafagaAnteriorReal = 5 + distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas); //TODO se hace distinto aca que en segun
 
 						sem_post(semaforoDelEntrenador);
 
 						entrenador->misCiclosDeCPU++;
 
+						sem_wait(&sem_entrenadorMoviendose);
 						distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
-						int distanciaAnterior = distancia;
 
 						int fueDesalojado = 0;
-						pthread_mutex_lock(&mutex_listaReady);
-						int tamanio_ready_actual = list_size(listaReady) - 1;
-						while (distancia != 0) {
-							if (distancia != distanciaAnterior) {
-								if (tamanio_ready_actual < list_size(listaReady)) {
-									int distanciaQueLeQueda = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
-									entrenador->rafagaAnteriorReal = entrenador->rafagaAnteriorReal - distanciaQueLeQueda - 5;
-									entrenador->estado = BLOCKED;
+						while (distancia != 0 && distancia != -1) {
 
-									list_add(listaBloqueadosDeadlock, entrenador);
-									list_add(listaBloqueadosDeadlock, entrenadorConQuienIntercambiar);
+							if (tamanio_ready_actual < list_size(listaReady)) {
+									int distanciaQueLeQueda = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+									entrenador->rafagaAnteriorReal = entrenador->rafagaAnteriorReal - distanciaQueLeQueda;
+									entrenador->estado = READY;
+
+									list_add(listaReady, entrenador);
 									sem_post(&sem_planificar);
 									fueDesalojado = 1;
 									break;
-								}
-								sem_post(semaforoDelEntrenador);
-								entrenador->misCiclosDeCPU++;
 							}
-							distanciaAnterior = distancia;
+
+							sem_post(semaforoDelEntrenador);
+							sem_wait(&sem_entrenadorMoviendose);
 							distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
+							entrenador->misCiclosDeCPU++;
 						}
-						pthread_mutex_unlock(&mutex_listaReady);
+
+						sem_destroy(&sem_entrenadorMoviendose);
 
 						if (!fueDesalojado) {
 							entrenador->misCiclosDeCPU = entrenador->misCiclosDeCPU + 5;
@@ -769,26 +771,27 @@ void chequearDeadlock(int algoritmo) {
 
 						sacarEntrenadorDeLista(entrenadorConQuienIntercambiar, listaBloqueadosDeadlock);
 
+						sem_init(&sem_entrenadorMoviendose, 0, 0);
 						sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 
 						//Cambia los datos del entrenador para cuando calcule su prox rafaga
-						entrenador->rafagaAnteriorReal = 5 + distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
+						entrenador->rafagaAnteriorReal = 5 + distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas); //TODO esta distinto en el segun
 
 						sem_post(semaforoDelEntrenador);
 
 						entrenador->misCiclosDeCPU++;
 
+						sem_wait(&sem_entrenadorMoviendose);
 						distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
-						int distanciaAnterior = distancia;
 
-						while (distancia != 0) {
-							if (distancia != distanciaAnterior) {
-								sem_post(semaforoDelEntrenador);
-								entrenador->misCiclosDeCPU++;
-							}
-							distanciaAnterior = distancia;
+						while (distancia != 0 && distancia != -1) {
+							sem_post(semaforoDelEntrenador);
+							sem_wait(&sem_entrenadorMoviendose);
 							distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
+							entrenador->misCiclosDeCPU++;
 						}
+
+						sem_destroy(&sem_entrenadorMoviendose);
 
 						entrenador->misCiclosDeCPU = entrenador->misCiclosDeCPU +5;
 

@@ -102,7 +102,7 @@ void suscribirseAColas(){
 void suscribirseA(op_code tipo_cola){
 
 	printf("===============\n");
-	printf("TEST SUSCRIPCION A COLA\n");
+	printf("SUSCRIPCION A COLA\n");
 	printf("===============\n");
 	fflush(stdout);
 
@@ -452,6 +452,7 @@ void requiere(t_appearedPokemon_msg* mensajeAppeared){
 		pokemonNuevo->coordenadas = &(mensajeAppeared->coordenadas);
 
 		sem_wait(&sem_buscarEntrenadorMasCercano);//TODO contador de entrenadores que van a buscar
+		printf("busco entrenador\n");
 
 		buscarPokemonAppeared(pokemonNuevo);
 		planificarSegun();

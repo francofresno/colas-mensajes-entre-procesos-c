@@ -221,7 +221,7 @@ void aplanarDobleLista(t_list* lista){
 }
 
 void ejecutarEntrenador(t_entrenador* entrenador){
-	printf("Arranca a ejecutar el entrenador %d\n", entrenador->id_entrenador);
+
 	while(1) {
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 		sem_wait(semaforoDelEntrenador);
@@ -256,7 +256,6 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 
 			if((entrenador->pokemonInstantaneo) != NULL) {
 
-				printf("me voy a mover hacia el pkm: ID ENT %d\n", entrenador->id_entrenador);
 				moverAlEntrenadorHastaUnPokemon(entrenador->id_entrenador);
 
 				if(llegoAlObjetivoPokemon(entrenador)){
@@ -352,10 +351,7 @@ uint32_t esperarIdCatch(int socket_cliente){
 
 void moverAlEntrenadorHastaUnPokemon(uint32_t idEntrenador){
 
-	printf("comienza sleep\n");
-	printf("caca %d\n", retardoCPU);
 	sleep(retardoCPU);
-	printf("termina sleep\n");
 
 	pthread_mutex_lock(&mutex_entrenadores);
 	t_entrenador* entrenador = list_get(entrenadores, idEntrenador);
@@ -366,8 +362,6 @@ void moverAlEntrenadorHastaUnPokemon(uint32_t idEntrenador){
 
 	uint32_t posicionXPokemon = entrenador->pokemonInstantaneo->coordenadas->posX;
 	uint32_t posicionYPokemon = entrenador->pokemonInstantaneo->coordenadas->posY;
-
-	printf("saque coords del pkm %s\n", entrenador->pokemonInstantaneo->pokemon->nombre);
 
 	if (posicionXEntrenador != posicionXPokemon) {
 

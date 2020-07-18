@@ -44,6 +44,7 @@ void log_inicio_algoritmo_deadlock()
 
 void log_fin_algoritmo_deadlock(char* resultado)
 {
+	printf("a logear deadlock\n");
 	char log_msg[100];
 	sprintf(log_msg, "El resultado del algoritmo de deadlock fue: %s", resultado);
 	log_info(LOGGER,log_msg);
@@ -70,6 +71,7 @@ void log_llegada_caught(uint32_t id_corr, uint32_t atrapado)
 
 void log_resultado_team(char* resultado, int ciclosCPUTotales, int cantidadCambiosContexto, char* cantCiclosCPUPorEntrenador, int cantDeadlocks)
 {
+	printf("logeo resultado\n");
 	char* log_msg = "El resultado final es: %s /n Ciclos de CPU totales: %d \n Cantidad de cambios de contexto: %d \n Cantidad de ciclos de CPU realizados por entrenador: %s \n Deadlocks producidos y resueltos: %d ";
 	log_info(LOGGER,log_msg, resultado, ciclosCPUTotales, cantidadCambiosContexto, cantCiclosCPUPorEntrenador, cantDeadlocks);
 }
