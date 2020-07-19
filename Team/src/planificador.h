@@ -176,4 +176,10 @@ int llegoAlObjetivoEntrenador(t_entrenador*, t_entrenador*);
 
 int getIndexEntrenadorEnLista(t_list*, t_entrenador*);
 
+void intercambiarPokemonesEntre(t_entrenador*, t_entrenador*);
+
+void diferenciasListasDeadlock(t_list*, t_list*, t_list*);
+
+void pokemonsQuePuedeDarle(t_list*, t_list*, t_list*);
+
 #endif /* PLANIFICADOR_H_ */

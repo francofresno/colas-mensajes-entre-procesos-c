@@ -604,9 +604,8 @@ void intercambiarPokemones(uint32_t idEntrenador1, uint32_t idEntrenador2){
 
 	if (entrenador1->quantumIntercambio <= entrenador1->quantumDisponible || stringACodigoAlgoritmo(algoritmoPlanificacion) != RR) {
 
-		sleep((entrenador1->quantumIntercambio)*retardoCPU);
-		dameTuPokemon(entrenador1,entrenador2);
-		dameTuPokemon(entrenador2, entrenador1);
+		//sleep((entrenador1->quantumIntercambio)*retardoCPU); TODO DESCOMENTAR
+		intercambiarPokemonesEntre(entrenador1, entrenador2);
 
 		log_intercambio_pokemones(idEntrenador1, idEntrenador2);
 
@@ -635,7 +634,7 @@ void dameTuPokemon(t_entrenador* entrenador1, t_entrenador* entrenador2){
 	diferenciaYCargarLista(listaQuiere1, listaPosee1, leFaltanParaObj1);
 	diferenciaYCargarLista(listaPosee2, listaQuiere2, tienePeroNoQuiere2);
 	t_list* tienePeroNoQuiere2AUX = list_duplicate(tienePeroNoQuiere2);
-	diferenciaYCargarLista(leFaltanParaObj1, tienePeroNoQuiere2, pokemonesDe2QueQuiere1);
+	diferenciaYCargarLista(tienePeroNoQuiere2, leFaltanParaObj1, pokemonesDe2QueQuiere1);
 
 	t_list* listaParaCondicion;
 
