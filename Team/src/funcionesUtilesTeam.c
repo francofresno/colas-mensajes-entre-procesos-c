@@ -610,7 +610,10 @@ void intercambiarPokemones(uint32_t idEntrenador1, uint32_t idEntrenador2){
 		log_intercambio_pokemones(idEntrenador1, idEntrenador2);
 
 		entrenador1->quantumDisponible -= entrenador1->quantumIntercambio;
-		entrenador1->quantumIntercambio = 0;
+
+		if (stringACodigoAlgoritmo(algoritmoPlanificacion) == RR) {
+			entrenador1->quantumIntercambio = 0;
+		}
 
 	} else {
 
