@@ -455,7 +455,7 @@ void requiere(t_appearedPokemon_msg* mensajeAppeared){
 		pokemonNuevo->pokemon = &(mensajeAppeared->nombre_pokemon);
 		pokemonNuevo->coordenadas = &(mensajeAppeared->coordenadas);
 
-		sem_wait(&sem_buscarEntrenadorMasCercano);//TODO contador de entrenadores que van a buscar
+		sem_wait(&sem_buscarEntrenadorMasCercano);
 		printf("busco entrenador\n");
 
 		buscarPokemonAppeared(pokemonNuevo);

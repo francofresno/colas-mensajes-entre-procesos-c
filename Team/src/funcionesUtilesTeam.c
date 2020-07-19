@@ -255,7 +255,6 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 
 		} else {
 			if((entrenador->pokemonInstantaneo) != NULL) {
-			printf("Entre a este movimiento!\n");
 
 				moverAlEntrenadorHastaUnPokemon(entrenador->id_entrenador);
 
@@ -303,7 +302,7 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 
 				sem_post(&sem_entrenadorMoviendose);
 			} else {
-				printf("Vamos a intercambiar");
+				printf("Vamos a intercambiar\n");
 				t_entrenador* entrenadorParaIntercambiar = elegirConQuienIntercambiar(entrenador);
 				if (entrenadorParaIntercambiar != NULL) { //TODO puede pasar ese null??
 					list_add(entrenadorConQuienIntercambiar, entrenadorParaIntercambiar);
@@ -388,6 +387,8 @@ void moverAlEntrenadorHastaUnPokemon(uint32_t idEntrenador){
 	}
 
 	log_movimiento_entrenador(idEntrenador, entrenador->coordenadas->posX, entrenador->coordenadas->posY);
+	entrenador->misCiclosDeCPU++;
+
 }
 
 t_entrenador* entrenadorMasCercano(t_newPokemon* pokemon){
@@ -481,7 +482,9 @@ void buscarPokemonAppeared(t_newPokemon* pokemon){  //Busca al entrenador más c
 
 	t_entrenador* entrenador = entrenadorMasCercano(pokemon);
 
+	pthread_mutex_lock(&mutex_listaReady);
 	ponerEntrenadorEnReady(entrenador, pokemon);
+	pthread_mutex_unlock(&mutex_listaReady);
 }
 
 void buscarPokemonLocalized(t_localizedPokemon_msg* mensajeLocalized, uint32_t idMensaje){  //Busca al entrenador más cercano y pone a planificar (para que ejecute, es decir, para que busque al pokemon en cuestión)
@@ -543,11 +546,10 @@ void buscarPokemonLocalized(t_localizedPokemon_msg* mensajeLocalized, uint32_t i
 
 void ponerEntrenadorEnReady(t_entrenador* entrenador, t_newPokemon* pokemon){
 	entrenador->estado = READY;
-	log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "es el mas cercano al pokemon que apareció", "READY");
+	//TODO poner aca log
 
-	pthread_mutex_lock(&mutex_listaReady);
+	log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "es el mas cercano al pokemon que apareció", "READY");
 	list_add(listaReady, entrenador);
-	pthread_mutex_unlock(&mutex_listaReady);
 
 	entrenador->pokemonInstantaneo = pokemon;
 }
@@ -593,6 +595,8 @@ void moverAlEntrenadorHastaOtroEntrenador(uint32_t idEntrenador1, uint32_t idEnt
 
 	log_movimiento_entrenador(idEntrenador1, entrenador1->coordenadas->posX, entrenador1->coordenadas->posY);
 
+	entrenador1->misCiclosDeCPU++;
+
 }
 
 void intercambiarPokemones(uint32_t idEntrenador1, uint32_t idEntrenador2){
@@ -607,6 +611,8 @@ void intercambiarPokemones(uint32_t idEntrenador1, uint32_t idEntrenador2){
 		sleep((entrenador1->quantumIntercambio)*retardoCPU);
 		intercambiarPokemonesEntre(entrenador1, entrenador2);
 
+		entrenador1->misCiclosDeCPU += entrenador1->quantumIntercambio;
+
 		log_intercambio_pokemones(idEntrenador1, idEntrenador2);
 
 		entrenador1->quantumDisponible -= entrenador1->quantumIntercambio;
@@ -618,6 +624,9 @@ void intercambiarPokemones(uint32_t idEntrenador1, uint32_t idEntrenador2){
 	} else {
 
 		sleep((entrenador1->quantumDisponible)*retardoCPU);
+
+		entrenador1->misCiclosDeCPU += entrenador1->quantumDisponible;
+
 		entrenador1->quantumIntercambio -= entrenador1->quantumDisponible;
 		entrenador1->quantumDisponible = 0;
 	}
