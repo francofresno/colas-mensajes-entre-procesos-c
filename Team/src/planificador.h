@@ -182,4 +182,6 @@ void diferenciasListasDeadlock(t_list*, t_list*, t_list*);
 
 void pokemonsQuePuedeDarle(t_list*, t_list*, t_list*);
 
+void finalizarTeam();
+
 #endif /* PLANIFICADOR_H_ */

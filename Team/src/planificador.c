@@ -481,30 +481,9 @@ void chequearDeadlock(int algoritmo) {
 		int tamanioFinalizados = list_size(listaFinalizados);
 		pthread_mutex_unlock(&mutex_listaFinalizados);
 
-		if(tamanioEntrenadores == tamanioFinalizados){
-
-			int ciclosCPUTotales = 0;
-			char* cantidadCiclosCPUPorEntrenador =  string_new();
-
-			for(int i=0; i< list_size(entrenadores);i++){
-
-				t_entrenador* entrenador = list_get(entrenadores, i);
-				ciclosCPUTotales += entrenador->misCiclosDeCPU;
-
-
-				string_append_with_format(&cantidadCiclosCPUPorEntrenador, " el entrenador %d consumio: ", i);
-				string_append_with_format(&cantidadCiclosCPUPorEntrenador, "%d", entrenador->misCiclosDeCPU);
-				string_append(&cantidadCiclosCPUPorEntrenador, ";");
-
-			}
-
-			log_resultado_team("el team cumplió el objetivo", ciclosCPUTotales, cantidadCambiosDeContexto, cantidadCiclosCPUPorEntrenador, cantidadDeadlocksResueltos);
-			//TODO return exit success?
-
-		} else if (list_size(listaBloqueadosDeadlock) == 1) {
-			// TODO no se pueden hacer intercambios, tengo un solo entrenador
+		if(tamanioEntrenadores == tamanioFinalizados || list_size(listaBloqueadosDeadlock) == 1){
+			finalizarTeam();
 		} else {
-
 			printf("CHECK DEADLOCK\n");
 
 			int distancia;
@@ -885,6 +864,18 @@ void chequearDeadlock(int algoritmo) {
 				}
 			pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
 
+			pthread_mutex_lock(&mutex_entrenadores);
+			int cantidadEntrenadores = list_size(entrenadores);
+			pthread_mutex_unlock(&mutex_entrenadores);
+
+			pthread_mutex_lock(&mutex_listaFinalizados);
+			int cantidadFinalizados = list_size(listaFinalizados);
+			pthread_mutex_unlock(&mutex_listaFinalizados);
+
+			if(cantidadEntrenadores == cantidadFinalizados || list_size(listaBloqueadosDeadlock) == 1) {
+				finalizarTeam();
+			}
+
 		}
 	}
 }
@@ -1123,10 +1114,10 @@ void intercambiarPokemonesEntre(t_entrenador* entrenador1, t_entrenador* entrena
 	t_list* leFaltanParaObj1 = list_create();
 	diferenciasListasDeadlock(listaQuiere1, listaPosee1, leFaltanParaObj1);
 
-	for (int i = 0; i < list_size(leFaltanParaObj1); i++) {
-		t_nombrePokemon* pokemon = list_get(leFaltanParaObj1, i);
-		sleep(1);
-	}
+//	for (int i = 0; i < list_size(leFaltanParaObj1); i++) {
+//		t_nombrePokemon* pokemon = list_get(leFaltanParaObj1, i);
+//		sleep(1);
+//	}
 
 
 	list_destroy(listaQuiere1);
@@ -1136,10 +1127,10 @@ void intercambiarPokemonesEntre(t_entrenador* entrenador1, t_entrenador* entrena
 	t_list* leSobranAl1 = list_create();
 	diferenciasListasDeadlock(listaPosee1, listaQuiere1, leSobranAl1);
 
-	for (int i = 0; i < list_size(leSobranAl1); i++) {
-		t_nombrePokemon* pokemon = list_get(leSobranAl1, i);
-		sleep(1);
-	}
+//	for (int i = 0; i < list_size(leSobranAl1); i++) {
+//		t_nombrePokemon* pokemon = list_get(leSobranAl1, i);
+//		sleep(1);
+//	}
 
 
 	list_destroy(listaQuiere1);
@@ -1150,10 +1141,10 @@ void intercambiarPokemonesEntre(t_entrenador* entrenador1, t_entrenador* entrena
 	t_list* leFaltanParaObj2 = list_create();
 	diferenciasListasDeadlock(listaQuiere2, listaPosee2, leFaltanParaObj2);
 
-	for (int i = 0; i < list_size(leFaltanParaObj2); i++) {
-		t_nombrePokemon* pokemon = list_get(leFaltanParaObj2, i);
-		sleep(1);
-	}
+//	for (int i = 0; i < list_size(leFaltanParaObj2); i++) {
+//		t_nombrePokemon* pokemon = list_get(leFaltanParaObj2, i);
+//		sleep(1);
+//	}
 
 
 	list_destroy(listaQuiere2);
@@ -1163,10 +1154,10 @@ void intercambiarPokemonesEntre(t_entrenador* entrenador1, t_entrenador* entrena
 	t_list* leSobranAl2 = list_create();
 	diferenciasListasDeadlock(listaPosee2, listaQuiere2, leSobranAl2);
 
-	for (int i = 0; i < list_size(leSobranAl2); i++) {
-		t_nombrePokemon* pokemon = list_get(leSobranAl2, i);
-		sleep(1);
-	}
+//	for (int i = 0; i < list_size(leSobranAl2); i++) {
+//		t_nombrePokemon* pokemon = list_get(leSobranAl2, i);
+//		sleep(1);
+//	}
 
 
 	list_destroy(listaQuiere2);
@@ -1175,20 +1166,20 @@ void intercambiarPokemonesEntre(t_entrenador* entrenador1, t_entrenador* entrena
 	t_list* pokemonesDe2QueQuiere1 = list_create();
 	pokemonsQuePuedeDarle(leFaltanParaObj1, leSobranAl2, pokemonesDe2QueQuiere1);
 
-	for (int i = 0; i < list_size(pokemonesDe2QueQuiere1); i++) {
-		t_nombrePokemon* pokemon = list_get(pokemonesDe2QueQuiere1, i);
-		sleep(1);
-	}
+//	for (int i = 0; i < list_size(pokemonesDe2QueQuiere1); i++) {
+//		t_nombrePokemon* pokemon = list_get(pokemonesDe2QueQuiere1, i);
+//		sleep(1);
+//	}
 
 
 	t_list* pokemonesDe1QueQuiere2 = list_create();
 	pokemonsQuePuedeDarle(leFaltanParaObj2, leSobranAl1, pokemonesDe1QueQuiere2);
 
 
-	for (int i = 0; i < list_size(pokemonesDe1QueQuiere2); i++) {
-		t_nombrePokemon* pokemon = list_get(pokemonesDe1QueQuiere2, i);
-		sleep(1);
-	}
+//	for (int i = 0; i < list_size(pokemonesDe1QueQuiere2); i++) {
+//		t_nombrePokemon* pokemon = list_get(pokemonesDe1QueQuiere2, i);
+//		sleep(1);
+//	}
 
 	t_nombrePokemon* pokemonBuscado;
 	bool esElPkmBuscado(void* elementoB) {
@@ -1241,10 +1232,10 @@ t_entrenador* elegirConQuienIntercambiar(t_entrenador* entrenador) {
 
 	diferenciasListasDeadlock(listaQuiere1, listaPosee1, leFaltanParaObj1);
 
-	for (int i = 0; i < list_size(leFaltanParaObj1); i++) {
-		t_nombrePokemon* pokemon = list_get(leFaltanParaObj1, i);
-		sleep(1);
-	}
+//	for (int i = 0; i < list_size(leFaltanParaObj1); i++) {
+//		t_nombrePokemon* pokemon = list_get(leFaltanParaObj1, i);
+//		sleep(1);
+//	}
 
 	list_destroy(listaQuiere1);
 	list_destroy(listaPosee1);
@@ -1270,10 +1261,10 @@ t_entrenador* elegirConQuienIntercambiar(t_entrenador* entrenador) {
 
 		diferenciasListasDeadlock(listaPosee2, listaQuiere2, tienePeroNoQuiere2);
 
-		for (int i = 0; i < list_size(tienePeroNoQuiere2); i++) {
-			t_nombrePokemon* pokemon = list_get(tienePeroNoQuiere2, i);
-			sleep(1);
-		}
+//		for (int i = 0; i < list_size(tienePeroNoQuiere2); i++) {
+//			t_nombrePokemon* pokemon = list_get(tienePeroNoQuiere2, i);
+//			sleep(1);
+//		}
 
 		t_list* tienePeroNoQuiere2AUX = list_duplicate(tienePeroNoQuiere2);
 
@@ -1282,10 +1273,10 @@ t_entrenador* elegirConQuienIntercambiar(t_entrenador* entrenador) {
 
 		pokemonsQuePuedeDarle(leFaltanParaObj1, tienePeroNoQuiere2, pokemonesDe2QueQuiere1);
 
-		for (int i = 0; i < list_size(pokemonesDe2QueQuiere1); i++) {
-			t_nombrePokemon* pokemon = list_get(pokemonesDe2QueQuiere1, i);
-			sleep(1);
-		}
+//		for (int i = 0; i < list_size(pokemonesDe2QueQuiere1); i++) {
+//			t_nombrePokemon* pokemon = list_get(pokemonesDe2QueQuiere1, i);
+//			sleep(1);
+//		}
 
 		if(!list_is_empty(pokemonesDe2QueQuiere1)){
 			if(tengoAlgunPokemonQueQuiere2(entrenador, entrenador2)){
@@ -1387,4 +1378,30 @@ int llegoAlObjetivoEntrenador(t_entrenador* entrenador1, t_entrenador* entrenado
 	uint32_t posicionYEntrenador2 = entrenador2->coordenadas->posY;
 
 	return (posicionXEntrenador1 == posicionXEntrenador2) && (posicionYEntrenador1 == posicionYEntrenador2);
+}
+
+void finalizarTeam() {
+
+	int ciclosCPUTotales = 0;
+	char* cantidadCiclosCPUPorEntrenador =  string_new();
+
+	for(int i=0; i< list_size(entrenadores);i++){
+
+		t_entrenador* entrenador = list_get(entrenadores, i);
+		ciclosCPUTotales += entrenador->misCiclosDeCPU;
+
+
+		string_append_with_format(&cantidadCiclosCPUPorEntrenador, " el entrenador %d consumio: ", i);
+		string_append_with_format(&cantidadCiclosCPUPorEntrenador, "%d", entrenador->misCiclosDeCPU);
+		string_append(&cantidadCiclosCPUPorEntrenador, ";");
+
+	}
+
+	log_resultado_team("el team cumplió el objetivo", ciclosCPUTotales, cantidadCambiosDeContexto, cantidadCiclosCPUPorEntrenador, cantidadDeadlocksResueltos);
+
+	// TODO FINALIZAR LISTAS Y LO QUE HAYA GLOBAL ACA
+
+	pid_t pid = getpid();
+	kill(pid, SIGKILL);
+
 }

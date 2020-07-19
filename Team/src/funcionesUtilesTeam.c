@@ -604,7 +604,7 @@ void intercambiarPokemones(uint32_t idEntrenador1, uint32_t idEntrenador2){
 
 	if (entrenador1->quantumIntercambio <= entrenador1->quantumDisponible || stringACodigoAlgoritmo(algoritmoPlanificacion) != RR) {
 
-		//sleep((entrenador1->quantumIntercambio)*retardoCPU); TODO DESCOMENTAR
+		sleep((entrenador1->quantumIntercambio)*retardoCPU);
 		intercambiarPokemonesEntre(entrenador1, entrenador2);
 
 		log_intercambio_pokemones(idEntrenador1, idEntrenador2);

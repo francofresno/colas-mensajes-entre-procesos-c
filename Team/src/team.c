@@ -28,7 +28,6 @@ int main(void) {
 
 	quedarseALaEscucha();
 
-
 	return EXIT_SUCCESS;
 }
 
