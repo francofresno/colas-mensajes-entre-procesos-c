@@ -3,6 +3,94 @@
  	 	 	 	 	 	 		PRUEBAS
  ============================================================================
 
+//Lo que estaba antes en SJF CD => creo que esta mal => team en deadlock => ready no se va a modificar mas => ya tiene todos los pokemones que quiere
+
+int tamanio_ready_actual = list_size(listaReady);
+
+tamanioDeadlock = list_size(listaBloqueadosDeadlock);
+for (int b = 0; b < tamanioDeadlock; b++) {
+
+	t_entrenador* entrenador = (t_entrenador*) list_remove(listaBloqueadosDeadlock, 0);
+	entrenador->estado = EXEC;
+
+	//Cambia los datos del entrenador para cuando calcule su prox rafaga
+	double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
+	entrenador->estimacionInicial = estimadoProxRafaga;
+
+	pthread_mutex_lock(&mutex_cantidadCambiosContexto);
+	cantidadCambiosDeContexto+=1;
+	pthread_mutex_unlock(&mutex_cantidadCambiosContexto);
+
+	log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "va a intercambiar pokemones con otro entrenador", "EXEC");
+
+	t_entrenador* entrenadorConQuienIntercambiar = elegirConQuienIntercambiar(entrenador);
+
+	sacarEntrenadorDeLista(entrenadorConQuienIntercambiar, listaBloqueadosDeadlock);
+
+	sem_init(&sem_entrenadorMoviendose, 0, 0);
+	sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+
+	//Cambia los datos del entrenador para cuando calcule su prox rafaga
+	entrenador->rafagaAnteriorReal = 5 + distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas); //TODO se hace distinto aca que en segun
+
+	sem_post(semaforoDelEntrenador);
+
+	entrenador->misCiclosDeCPU++;
+
+	sem_wait(&sem_entrenadorMoviendose);
+	distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
+
+	int fueDesalojado = 0;
+	while (distancia != 0 && distancia != -1) {
+
+		if (tamanio_ready_actual < list_size(listaReady)) {
+			int distanciaQueLeQueda = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+			entrenador->rafagaAnteriorReal = entrenador->rafagaAnteriorReal - distanciaQueLeQueda;
+			entrenador->estado = READY;
+
+			list_add(listaBloqueadosDeadlock, entrenador);
+			sem_post(&sem_planificar);
+			fueDesalojado = 1;
+			break;
+		} // TODO esto no iria
+
+		sem_post(semaforoDelEntrenador);
+		sem_wait(&sem_entrenadorMoviendose);
+		distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
+		entrenador->misCiclosDeCPU++;
+	}
+
+	sem_destroy(&sem_entrenadorMoviendose);
+
+	if (!fueDesalojado) {
+		entrenador->misCiclosDeCPU = entrenador->misCiclosDeCPU + 5;
+
+		pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
+		verificarTieneTodoLoQueQuiere(entrenador);
+		verificarTieneTodoLoQueQuiere(entrenadorConQuienIntercambiar);
+
+		pthread_mutex_lock(&mutex_cantidadDeadlocks);
+		if(entrenador->estado == BLOCKED){
+			if(entrenadorConQuienIntercambiar->estado == BLOCKED){
+				log_fin_algoritmo_deadlock("ambos entrenadores siguen en deadlock.\n");
+			} else{
+				cantidadDeadlocksResueltos+=1;
+				log_fin_algoritmo_deadlock("el entrenador elegido sigue en deadlock, sin embargo el elegido para intercambiar finalizó.\n");
+			}
+
+		} else{
+			cantidadDeadlocksResueltos+=1;
+			if(entrenadorConQuienIntercambiar->estado == BLOCKED){
+				log_fin_algoritmo_deadlock("el entrenador que ejecutó pasó a estado finalizado, sin embargo el entrenador con el que intercambió sigue en deadlock.\n");
+			} else{
+				cantidadDeadlocksResueltos+=1;
+				log_fin_algoritmo_deadlock("ambos entrenadores finalizaron, consiguiendo los pokemones que desean.\n");
+			}
+		}
+		pthread_mutex_unlock(&mutex_cantidadDeadlocks);
+	} else {
+		pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
+	}
 
 // 1. Poner entrenadores en lista.
 

@@ -275,6 +275,7 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 										entrenador->pokemonInstantaneo->coordenadas->posX,
 										entrenador->pokemonInstantaneo->coordenadas->posY);
 
+
 						pthread_mutex_lock(&mutex_atrapados);
 						list_add(atrapados,(void*) pokemonAtrapado);
 						pthread_mutex_unlock(&mutex_atrapados);
@@ -288,12 +289,13 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 						entrenador->pokemonInstantaneo = NULL;
 						entrenador->esLocalized = 0;
 					}
-
 					entrenador->idMensajeCaught = id;
+
 					sem_post(&sem_esperarCaught);
 				}
 
 				sem_post(&sem_entrenadorMoviendose);
+				printf("SAli de ahi\n");
 
 			} else if (list_get(entrenadorIntercambio,0) != NULL) {
 				t_entrenador* elEntrenador =  list_get(entrenadorIntercambio,0);
@@ -482,9 +484,8 @@ void buscarPokemonAppeared(t_newPokemon* pokemon){  //Busca al entrenador más c
 
 	t_entrenador* entrenador = entrenadorMasCercano(pokemon);
 
-	pthread_mutex_lock(&mutex_listaReady);
 	ponerEntrenadorEnReady(entrenador, pokemon);
-	pthread_mutex_unlock(&mutex_listaReady);
+
 }
 
 void buscarPokemonLocalized(t_localizedPokemon_msg* mensajeLocalized, uint32_t idMensaje){  //Busca al entrenador más cercano y pone a planificar (para que ejecute, es decir, para que busque al pokemon en cuestión)
@@ -526,6 +527,7 @@ void buscarPokemonLocalized(t_localizedPokemon_msg* mensajeLocalized, uint32_t i
 
 	ponerEntrenadorEnReady(entrenador, pokemonNuevo);
 
+
 	t_coordenadas nuevasCoords[cantidadCoords-1];
 	// TODO Posibilemente hay que hacer un malloc t_coordenadas* nuevasCoords = malloc((cantidadCoords-1) * sizeof(*nuevasCoords)); y hacer frees
 
@@ -546,10 +548,11 @@ void buscarPokemonLocalized(t_localizedPokemon_msg* mensajeLocalized, uint32_t i
 
 void ponerEntrenadorEnReady(t_entrenador* entrenador, t_newPokemon* pokemon){
 	entrenador->estado = READY;
-	//TODO poner aca log
 
+	pthread_mutex_lock(&mutex_listaReady);
 	log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "es el mas cercano al pokemon que apareció", "READY");
 	list_add(listaReady, entrenador);
+	pthread_mutex_unlock(&mutex_listaReady);
 
 	entrenador->pokemonInstantaneo = pokemon;
 }
