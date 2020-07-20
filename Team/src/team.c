@@ -186,6 +186,12 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 	{
 		case APPEARED_POKEMON: ;
 
+			if(list_is_empty(listaNuevos) && list_is_empty(listaBloqueadosEsperandoMensaje)){
+					pthread_mutex_lock(&mutex_mensajeNuevo);
+					mensajesNuevos++;
+					pthread_mutex_unlock(&mutex_mensajeNuevo);
+			}
+
 			t_appearedPokemon_msg* mensajeAppeared = (t_appearedPokemon_msg*) paquete_recibido->mensaje;
 
 			nombrePosta = arreglarNombrePokemon(mensajeAppeared->nombre_pokemon);
@@ -211,6 +217,12 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 		break;
 
 		case LOCALIZED_POKEMON: ;
+
+			if(list_is_empty(listaNuevos) && list_is_empty(listaBloqueadosEsperandoMensaje)){
+				pthread_mutex_lock(&mutex_mensajeNuevo);
+				mensajesNuevos++;
+				pthread_mutex_unlock(&mutex_mensajeNuevo);
+			}
 
 			t_localizedPokemon_msg* mensajeLocalized = (t_localizedPokemon_msg*) paquete_recibido->mensaje;
 

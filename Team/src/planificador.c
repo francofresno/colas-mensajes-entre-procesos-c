@@ -22,6 +22,8 @@ pthread_mutex_t mutex_listaFinalizados = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_cantidadDeadlocks = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_cantidadCambiosContexto = PTHREAD_MUTEX_INITIALIZER;
 
+pthread_mutex_t mutex_mensajeNuevo = PTHREAD_MUTEX_INITIALIZER;
+
 void planificarCaught() {
 
 	int cantidadCaughts1 = 0;
@@ -105,7 +107,6 @@ void planificarSegunFifo() {
 	sem_init(&sem_esperarCaught, 0, 0);
 
 	t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, 0);
-	printf("Voy a planificar soy %d\n", entrenador->id_entrenador);
 	entrenador->estado = EXEC;
 
 	pthread_mutex_lock(&mutex_cantidadCambiosContexto);
@@ -170,7 +171,7 @@ int planificarSegunRR(){
 
 	int distancia;
 
-	pthread_mutex_lock(&mutex_listaReady);
+	//pthread_mutex_lock(&mutex_listaReady);
 
 	sem_wait(&sem_planificar);
 
@@ -196,7 +197,6 @@ int planificarSegunRR(){
 
 	} else {
 		sem_init(&sem_entrenadorMoviendose, 0, 0);
-		//Esto es un appeared o un localized
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 		sem_post(semaforoDelEntrenador);
 
@@ -272,6 +272,8 @@ int planificarSegunSJFConDesalojo(){
 
 	int tamanioReadyActual = list_size(listaReady);
 
+	int mensajesQueHubo = mensajesNuevos;
+
 	//pthread_mutex_unlock(&mutex_listaReady);
 
 	//Cambia los datos del entrenador para cuando calcule su prox rafaga
@@ -307,7 +309,7 @@ int planificarSegunSJFConDesalojo(){
 
 		while (distancia != 0 && distancia != -1) {
 
-			if (tamanioReadyActual < list_size(listaReady)) {
+			if ((tamanioReadyActual < list_size(listaReady)) && (mensajesQueHubo < mensajesNuevos)) {
 				printf("replanifique\n");
 				int distanciaQueLeQueda = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
 				entrenador->rafagaAnteriorReal = entrenador->rafagaAnteriorReal - distanciaQueLeQueda;

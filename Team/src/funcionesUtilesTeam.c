@@ -76,6 +76,8 @@ void ponerEntrenadoresEnLista(t_config* config) {
 
 	list_destroy(listaDePokemonesDeEntrenadores);
 	list_destroy(listaDePokemonesObjetivoDeEntrenadores);
+
+	mensajesNuevos = 0;
 }
 
 void crearHilosEntrenadores() {

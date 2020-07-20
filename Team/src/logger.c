@@ -9,7 +9,7 @@
 
 void log_entrenador_cambio_de_cola_planificacion(uint32_t id_entrenador, char* razon, char* cola)
 {
-	char* log_msg = "El entrenador con ID %d cambió a la cola %s porque: %s";
+	char* log_msg = "El entrenador con ID %d cambió a la cola %s porque %s";
 	log_info(LOGGER,log_msg, id_entrenador, cola, razon);
 }
 
