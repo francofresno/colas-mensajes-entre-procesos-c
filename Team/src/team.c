@@ -186,7 +186,7 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 	{
 		case APPEARED_POKEMON: ;
 
-			if(list_is_empty(listaNuevos) && list_is_empty(listaBloqueadosEsperandoMensaje)){
+			if(list_is_empty(listaNuevos) && list_is_empty(listaBloqueadosEsperandoMensaje) && (stringACodigoAlgoritmo(algoritmoPlanificacion) == SJFCD)){
 					pthread_mutex_lock(&mutex_mensajeNuevo);
 					mensajesNuevos++;
 					pthread_mutex_unlock(&mutex_mensajeNuevo);
@@ -218,7 +218,7 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int soc
 
 		case LOCALIZED_POKEMON: ;
 
-			if(list_is_empty(listaNuevos) && list_is_empty(listaBloqueadosEsperandoMensaje)){
+			if(list_is_empty(listaNuevos) && list_is_empty(listaBloqueadosEsperandoMensaje) && (stringACodigoAlgoritmo(algoritmoPlanificacion) == SJFCD)){
 				pthread_mutex_lock(&mutex_mensajeNuevo);
 				mensajesNuevos++;
 				pthread_mutex_unlock(&mutex_mensajeNuevo);

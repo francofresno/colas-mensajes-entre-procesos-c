@@ -297,7 +297,6 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 				}
 
 				sem_post(&sem_entrenadorMoviendose);
-				printf("SAli de ahi\n");
 
 			} else if (list_get(entrenadorIntercambio,0) != NULL) {
 				t_entrenador* elEntrenador =  list_get(entrenadorIntercambio,0);
@@ -308,7 +307,7 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 			} else {
 				printf("Vamos a intercambiar\n");
 				t_entrenador* entrenadorParaIntercambiar = elegirConQuienIntercambiar(entrenador);
-				if (entrenadorParaIntercambiar != NULL) { //TODO puede pasar ese null??
+				if (entrenadorParaIntercambiar != NULL) {
 					list_add(entrenadorConQuienIntercambiar, entrenadorParaIntercambiar);
 					intercambiarPokemones(entrenador->id_entrenador, entrenadorParaIntercambiar->id_entrenador);
 					sem_post(&sem_entrenadorMoviendose);
@@ -611,7 +610,10 @@ void intercambiarPokemones(uint32_t idEntrenador1, uint32_t idEntrenador2){
 	t_entrenador* entrenador2 = list_get(entrenadores, idEntrenador2);
 	pthread_mutex_unlock(&mutex_entrenadores);
 
-	if (entrenador1->quantumIntercambio <= entrenador1->quantumDisponible || stringACodigoAlgoritmo(algoritmoPlanificacion) != RR) {
+	printf("El quantum de intercambio de %d es: %d y el disponible es: %d\n", entrenador1->id_entrenador, entrenador1->quantumIntercambio, entrenador1->quantumDisponible);
+	printf("El quantum de intercambio de %d es: %d y el disponible es: %d\n", entrenador2->id_entrenador, entrenador2->quantumIntercambio, entrenador2->quantumDisponible);
+
+	if ((entrenador1->quantumIntercambio) <= (entrenador1->quantumDisponible) || (stringACodigoAlgoritmo(algoritmoPlanificacion) != RR)) {
 
 		sleep((entrenador1->quantumIntercambio)*retardoCPU);
 		intercambiarPokemonesEntre(entrenador1, entrenador2);

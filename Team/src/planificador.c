@@ -224,7 +224,7 @@ int planificarSegunRR(){
 			return 1;
 		} else{
 			sem_wait(&sem_esperarCaught);
-
+			entrenador->quantumDisponible = quantum;
 			if(entrenador->idMensajeCaught){
 				entrenador->estado = BLOCKED;
 				log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se queda esperando un caught", "BLOCKED");
@@ -477,7 +477,6 @@ void chequearDeadlock(int algoritmo) {
 			printf("CHECK DEADLOCK\n");
 
 			int distancia;
-			int tamanioDeadlock;
 			int i = 0;
 			t_entrenador* entrenadorBloqueadoParaIntercambio;
 
@@ -585,10 +584,75 @@ void chequearDeadlock(int algoritmo) {
 
 				case RR:
 
-					tamanioDeadlock = list_size(listaBloqueadosDeadlock);
-					for (int b = 0; b < tamanioDeadlock; b++) {
+					entrenadorBloqueadoParaIntercambio = list_remove(listaBloqueadosDeadlock, 0);
+					entrenadorBloqueadoParaIntercambio->quantumDisponible = quantum;
+					list_add(entrenadorIntercambio, entrenadorBloqueadoParaIntercambio);
 
-						t_entrenador* entrenador = (t_entrenador*) list_remove(listaBloqueadosDeadlock, 0);
+					for (int i=0; i < list_size(listaBloqueadosDeadlock); i++) {
+						t_entrenador* entrenador = list_get(listaBloqueadosDeadlock, i);
+						entrenador->estado = READY;
+						entrenador->quantumDisponible = quantum;
+						log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se ejecutó el algoritmo de detección de deadlocks", "READY");
+					}
+
+					t_list* listaDeadlockDuplicada = list_duplicate(listaBloqueadosDeadlock);
+
+					while(!list_is_empty(listaDeadlockDuplicada)) {
+
+						t_entrenador* entrenador = list_remove(listaDeadlockDuplicada, 0);
+						entrenador->estado = EXEC;
+
+						pthread_mutex_lock(&mutex_cantidadCambiosContexto);
+						cantidadCambiosDeContexto+=1;
+						pthread_mutex_unlock(&mutex_cantidadCambiosContexto);
+
+						log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "va a la posición de un entrenador para intercambiar", "EXEC");
+
+						sem_init(&sem_entrenadorMoviendose, 0, 0);
+						sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+						sem_post(semaforoDelEntrenador);
+						sem_wait(&sem_entrenadorMoviendose);
+						distancia = distanciaA(entrenador->coordenadas, entrenadorBloqueadoParaIntercambio->coordenadas);
+
+						entrenador->quantumDisponible-=1;
+						printf("PL: Me movi un lugar, distancia: %d\n", distancia);
+						printf("Soy entrenador %d y ahora tengo de q %d\n", entrenador->id_entrenador, entrenador->quantumDisponible);
+
+						while (((distancia != 0) && (entrenador->quantumDisponible)>0) && (distancia != -1)) {
+							sem_post(semaforoDelEntrenador);
+							sem_wait(&sem_entrenadorMoviendose);
+							distancia = distanciaA(entrenador->coordenadas, entrenadorBloqueadoParaIntercambio->coordenadas);
+
+							printf("PL: Me movi un lugar, distancia: %d\n", distancia);
+							entrenador->quantumDisponible -= 1;
+						}
+
+						if(((entrenador->quantumDisponible)==0) && (distancia!=0)){
+
+							entrenador->estado = READY;
+							log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se le termino el quantum, no llego a la posicion del entrenador", "READY");
+
+							entrenador->quantumDisponible = quantum;
+
+							list_add(listaDeadlockDuplicada, entrenador);
+
+						} else{
+						entrenador->estado = BLOCKED;
+						log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "llegó a la posición del entrenador para intercambiar", "BLOCKED");
+						entrenador->quantumDisponible = quantum;
+						}
+
+						sem_destroy(&sem_entrenadorMoviendose);
+					}
+
+					list_destroy(listaDeadlockDuplicada);
+					list_add_in_index(listaBloqueadosDeadlock, 0, entrenadorBloqueadoParaIntercambio);
+					list_remove(entrenadorIntercambio, 0);
+
+					while (list_size(listaBloqueadosDeadlock) > 1 && list_size(listaBloqueadosDeadlock) > list_size(entrenadoresNoSeleccionables)) {
+
+						printf("Entre al while\n");
+						t_entrenador* entrenador = list_get(listaBloqueadosDeadlock, i);
 						entrenador->estado = EXEC;
 
 						pthread_mutex_lock(&mutex_cantidadCambiosContexto);
@@ -597,51 +661,25 @@ void chequearDeadlock(int algoritmo) {
 
 						log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "va a intercambiar pokemones con otro entrenador", "EXEC");
 
-						t_entrenador* entrenadorConQuienIntercambiar = elegirConQuienIntercambiar(entrenador);
-
-						distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
-
-						if(distancia!=0){
-							entrenador->quantumIntercambio = 5;
-						}
-
 						sem_init(&sem_entrenadorMoviendose, 0, 0);
 						sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 						sem_post(semaforoDelEntrenador);
-
 						sem_wait(&sem_entrenadorMoviendose);
-						distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
-
-						entrenador->quantumDisponible-=1;
-
-
-						while (((distancia != 0) && (entrenador->quantumDisponible)>0) && (distancia != -1)) {
-							sem_post(semaforoDelEntrenador);
-							sem_wait(&sem_entrenadorMoviendose);
-							distancia = distanciaA(entrenador->coordenadas, entrenadorConQuienIntercambiar->coordenadas);
-
-							entrenador->quantumDisponible -= 1;
-						}
-
-						sem_destroy(&sem_entrenadorMoviendose);
 
 						if(entrenador->quantumIntercambio){
-							list_add(listaBloqueadosDeadlock, entrenador);
-							entrenador->estado = BLOCKED;
+							printf("El q de intercambio del entrenador %d es: %d y el q disponible es %d\n", entrenador->id_entrenador, entrenador->quantumIntercambio, entrenador->quantumDisponible);
+							//aca iba un list add
+							entrenador->estado = READY;
 							entrenador->quantumDisponible = quantum;
 						} else{
-
-							entrenador->quantumIntercambio = 5;
-
-							sacarEntrenadorDeLista(entrenadorConQuienIntercambiar, listaBloqueadosDeadlock);
-
-							pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
+							printf("Intercambie\n");
+							t_entrenador* entrenadorParaIntercambiar = list_get(entrenadorConQuienIntercambiar, 0);
 							verificarTieneTodoLoQueQuiere(entrenador);
-							verificarTieneTodoLoQueQuiere(entrenadorConQuienIntercambiar);
+							verificarTieneTodoLoQueQuiere(entrenadorParaIntercambiar);
 
 							pthread_mutex_lock(&mutex_cantidadDeadlocks);
 							if(entrenador->estado == BLOCKED){
-								if(entrenadorConQuienIntercambiar->estado == BLOCKED){
+								if(entrenadorParaIntercambiar->estado == BLOCKED){
 									log_fin_algoritmo_deadlock("ambos entrenadores siguen en deadlock.\n");
 								} else{
 									cantidadDeadlocksResueltos+=1;
@@ -650,7 +688,8 @@ void chequearDeadlock(int algoritmo) {
 
 							} else{
 								cantidadDeadlocksResueltos+=1;
-								if(entrenadorConQuienIntercambiar->estado == BLOCKED){
+								if(entrenadorParaIntercambiar->estado == BLOCKED){
+									i=-1;
 									log_fin_algoritmo_deadlock("el entrenador que ejecutó pasó a estado finalizado, sin embargo el entrenador con el que intercambió sigue en deadlock.\n");
 								} else{
 									cantidadDeadlocksResueltos+=1;
@@ -658,16 +697,21 @@ void chequearDeadlock(int algoritmo) {
 								}
 							}
 							pthread_mutex_unlock(&mutex_cantidadDeadlocks);
-
 						}
 
+						list_remove(entrenadorConQuienIntercambiar, 0);
+
+						i++;
+						if (i > list_size(listaBloqueadosDeadlock) - 1) {
+							i = 0;
+						}
+
+						printf("Vuelvo al while con i = %d y la lista de bloqueados por deadl tiene %d entrenadores\n", i, list_size(listaBloqueadosDeadlock));
+
 					}
-
-
 					break;
 
 				case SJFCD:
-
 
 					//de mas
 					for (int i=0; i < list_size(listaBloqueadosDeadlock); i++) {
@@ -947,6 +991,7 @@ void chequearDeadlock(int algoritmo) {
 		}
 	}
 }
+
 
 void ordenarListaPorEstimacion(t_list* list) {
 
@@ -1473,3 +1518,4 @@ void finalizarTeam() {
 	kill(pid, SIGKILL);
 
 }
+
