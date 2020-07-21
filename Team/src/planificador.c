@@ -22,8 +22,6 @@ pthread_mutex_t mutex_listaFinalizados = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_cantidadDeadlocks = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_cantidadCambiosContexto = PTHREAD_MUTEX_INITIALIZER;
 
-pthread_mutex_t mutex_mensajeNuevo = PTHREAD_MUTEX_INITIALIZER;
-
 void planificarCaught() {
 
 	int cantidadCaughts1 = 0;
@@ -100,8 +98,6 @@ void planificarSegunFifo() {
 
 	int distancia;
 
-	//pthread_mutex_lock(&mutex_listaReady);
-
 	sem_wait(&sem_planificar);
 
 	sem_init(&sem_esperarCaught, 0, 0);
@@ -155,8 +151,6 @@ void planificarSegunFifo() {
 		}
 	}
 
-	//pthread_mutex_unlock(&mutex_listaReady);
-
 	sem_destroy(&sem_esperarCaught);
 
 	chequearDeadlock(FIFO);
@@ -170,8 +164,6 @@ void planificarSegunFifo() {
 int planificarSegunRR(){
 
 	int distancia;
-
-	//pthread_mutex_lock(&mutex_listaReady);
 
 	sem_wait(&sem_planificar);
 
@@ -217,7 +209,6 @@ int planificarSegunRR(){
 		if(((entrenador->quantumDisponible)==0) && ((entrenador->pokemonInstantaneo != NULL ? !llegoAlObjetivoPokemon(entrenador) : 0))){
 			list_add(listaReady, entrenador);
 			entrenador->estado = READY;
-			//pthread_mutex_unlock(&mutex_listaReady);
 			entrenador->quantumDisponible = quantum;
 			sem_destroy(&sem_esperarCaught);
 			sem_post(&sem_planificar);
@@ -239,8 +230,6 @@ int planificarSegunRR(){
 		}
 	}
 
-	//pthread_mutex_unlock(&mutex_listaReady);
-
 	sem_destroy(&sem_esperarCaught);
 
 	chequearDeadlock(RR);
@@ -256,8 +245,6 @@ int planificarSegunSJFConDesalojo(){
 
 	int distancia;
 
-	//pthread_mutex_lock(&mutex_listaReady);
-
 	sem_wait(&sem_planificar);
 
 	ordenarListaPorEstimacion(listaReady);
@@ -267,10 +254,6 @@ int planificarSegunSJFConDesalojo(){
 	t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, 0);
 
 	int tamanioReadyActual = list_size(listaReady);
-
-	int mensajesQueHubo = mensajesNuevos;
-
-	//pthread_mutex_unlock(&mutex_listaReady);
 
 	//Cambia los datos del entrenador para cuando calcule su prox rafaga
 	double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
@@ -305,7 +288,7 @@ int planificarSegunSJFConDesalojo(){
 
 		while (distancia != 0 && distancia != -1) {
 
-			if ((tamanioReadyActual < list_size(listaReady)) && (mensajesQueHubo < mensajesNuevos)) {
+			if ((tamanioReadyActual < list_size(listaReady))) {
 				printf("replanifique\n");
 				int distanciaQueLeQueda = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
 				entrenador->rafagaAnteriorReal = entrenador->rafagaAnteriorReal - distanciaQueLeQueda;
@@ -355,8 +338,6 @@ void planificarSegunSJFSinDesalojo(){
 
 	int distancia;
 
-	//pthread_mutex_lock(&mutex_listaReady);
-
 	sem_wait(&sem_planificar);
 
 	ordenarListaPorEstimacion(listaReady);
@@ -418,8 +399,6 @@ void planificarSegunSJFSinDesalojo(){
 			verificarTieneTodoLoQueQuiere(entrenador);
 		}
 	}
-
-	//pthread_mutex_unlock(&mutex_listaReady); //TODO VER
 
 	sem_destroy(&sem_esperarCaught);
 
@@ -1514,8 +1493,6 @@ void finalizarTeam() {
 
 	// TODO FINALIZAR LISTAS Y LO QUE HAYA GLOBAL ACA
 
-	pid_t pid = getpid();
-	kill(pid, SIGKILL);
-
+	exit(-1);
 }
 

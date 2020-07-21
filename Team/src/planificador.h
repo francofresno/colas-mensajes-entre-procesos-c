@@ -34,7 +34,6 @@ int cantidadDeadlocksResueltos;
 int cantidadCambiosDeContexto;
 
 int inicioAlgoritmoDeadlock;
-int mensajesNuevos;
 
 //Listas de entrenadores segun estado
 t_list* listaNuevos;
@@ -79,8 +78,6 @@ extern pthread_mutex_t mutex_listaFinalizados;
 
 extern pthread_mutex_t mutex_cantidadDeadlocks;
 extern pthread_mutex_t mutex_cantidadCambiosContexto;
-
-extern pthread_mutex_t mutex_mensajeNuevo;
 
 typedef enum{
 	NEW = 1,
