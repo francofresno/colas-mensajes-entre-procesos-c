@@ -48,7 +48,7 @@ extern pthread_mutex_t mutex_especies_que_llegaron;
 
 t_list* organizarPokemones(char**);
 
-void ponerEntrenadoresEnLista(t_config*);
+void ponerEntrenadoresEnLista();
 
 void crearHilosEntrenadores();
 

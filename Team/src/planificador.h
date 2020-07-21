@@ -35,6 +35,8 @@ int cantidadCambiosDeContexto;
 
 int inicioAlgoritmoDeadlock;
 
+t_config* config;
+
 //Listas de entrenadores segun estado
 t_list* listaNuevos;
 t_list* listaReady;
@@ -56,6 +58,10 @@ t_list* entrenadoresNoSeleccionables;
 
 //lista quantum
 t_list* quantumPorEntrenador;
+
+//Variables a liberar
+t_list* socketsALiberar;
+
 
 //semaforos
 t_list* sem_entrenadores_ejecutar;

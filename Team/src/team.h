@@ -36,7 +36,7 @@ t_log* iniciar_logger(void);
 
 t_config* leer_config(void);
 
-void inicializarConfig(t_config*);
+void inicializarConfig();
 
 void inicializarSemaforoPlanificador();
 
@@ -52,7 +52,7 @@ void suscribirseA(op_code);
 
 void serve_client(int*);
 
-void process_request(char*, t_paquete*, int);
+void process_request(char*, t_paquete*);
 
 char* arreglarNombrePokemon(t_nombrePokemon);
 

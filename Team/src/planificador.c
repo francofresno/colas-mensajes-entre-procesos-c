@@ -209,6 +209,8 @@ int planificarSegunRR(){
 		if(((entrenador->quantumDisponible)==0) && ((entrenador->pokemonInstantaneo != NULL ? !llegoAlObjetivoPokemon(entrenador) : 0))){
 			list_add(listaReady, entrenador);
 			entrenador->estado = READY;
+			log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se le terminó el quantum", "READY");
+
 			entrenador->quantumDisponible = quantum;
 			sem_destroy(&sem_esperarCaught);
 			sem_post(&sem_planificar);
@@ -293,7 +295,7 @@ int planificarSegunSJFConDesalojo(){
 				int distanciaQueLeQueda = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
 				entrenador->rafagaAnteriorReal = entrenador->rafagaAnteriorReal - distanciaQueLeQueda;
 				entrenador->estado = READY;
-
+				log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "replanificó", "READY");
 				pthread_mutex_lock(&mutex_listaReady);
 				list_add(listaReady, entrenador);
 				pthread_mutex_unlock(&mutex_listaReady);
@@ -1009,7 +1011,11 @@ int tieneTodoLoQueQuiere(t_entrenador* entrenador){
 	list_destroy(listaTodoLoQueQuiere);
 	list_destroy(listaTodoLoQuePosee);
 
-	return list_is_empty(diferencia);
+	int esVacia = list_is_empty(diferencia);
+
+	list_destroy(diferencia);
+
+	return esVacia;
 
 }
 //quiero yo / tiene el otro
@@ -1052,6 +1058,7 @@ void pokemonsQuePuedeDarle(t_list* listaA, t_list* listaB, t_list* listaACargar)
 	}
 
 	list_iterate(listaA, cargarDiferenciaConB);
+	list_destroy(listaAAux);
 }
 
 void diferenciasListasDeadlock(t_list* listaA, t_list* listaB, t_list* listaACargar) {
@@ -1087,7 +1094,7 @@ void diferenciasListasDeadlock(t_list* listaA, t_list* listaB, t_list* listaACar
 	}
 
 	list_iterate(listaA, cargarDiferenciaConB);
-
+	list_destroy(listaAAux);
 }
 
 void diferenciaYCargarLista(t_list* listaA, t_list* listaB, t_list* listaACargar) { 		//listaGrande A lista chica B
@@ -1492,6 +1499,35 @@ void finalizarTeam() {
 	log_resultado_team("el team cumplió el objetivo", ciclosCPUTotales, cantidadCambiosDeContexto, cantidadCiclosCPUPorEntrenador, cantidadDeadlocksResueltos);
 
 	// TODO FINALIZAR LISTAS Y LO QUE HAYA GLOBAL ACA
+	void destruirSockets(void* elemento){
+		int* socket = (int*) elemento;
+		close(*socket);
+	}
+
+	list_destroy_and_destroy_elements(socketsALiberar, destruirSockets);
+
+	void destruirEntrenadores(void* elemento){
+		t_entrenador* entrenador = (t_entrenador*) elemento;
+		free(entrenador->coordenadas);
+
+		void liberarPokemones(void* elemento){
+			t_nombrePokemon* pokemon = (t_nombrePokemon*) elemento;
+			if(pokemon!=NULL){
+				if(pokemon->nombre!=NULL){
+					free(pokemon->nombre);
+				}
+				free(pokemon);
+			}
+		}
+
+		list_destroy_and_destroy_elements(entrenador->pokemonesQuePosee, liberarPokemones);
+		list_destroy_and_destroy_elements(entrenador->pokemonesQueQuiere, liberarPokemones);
+		free(entrenador);
+	}
+
+	list_destroy_and_destroy_elements(entrenadores, destruirEntrenadores);
+
+	config_destroy(config);
 
 	exit(-1);
 }

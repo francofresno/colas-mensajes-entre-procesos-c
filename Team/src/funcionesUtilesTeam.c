@@ -18,21 +18,34 @@ pthread_mutex_t mutex_hay_pokemones = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_especies_requeridas = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_especies_que_llegaron = PTHREAD_MUTEX_INITIALIZER;
 
+int cantidadElementosArray(char** array)
+{
+	int i = 0;
+	while(array[i])
+	{
+		i++;
+	}
+	return i;
+}
 
-void ponerEntrenadoresEnLista(t_config* config) {
+void liberarArray(char** array)
+{
+	for(int i = 0; i < cantidadElementosArray(array); i++)
+		free(array[i]);
+	free(array);
+}
+
+void ponerEntrenadoresEnLista() {
 
 	inicializarListasDeEstados();
 
 	entrenadores = list_create(); //Creamos la lista de entrenadores
 
-	char** coordenadasEntrenadores = config_get_array_value(config,
-			"POSICIONES_ENTRENADORES");
+	char** coordenadasEntrenadores = config_get_array_value(config, "POSICIONES_ENTRENADORES");
 
-	char** pokemonesDeEntrenadores = config_get_array_value(config,
-			"POKEMON_ENTRENADORES");
+	char** pokemonesDeEntrenadores = config_get_array_value(config, "POKEMON_ENTRENADORES");
 
-	char** pokemonesObjetivoDeEntrenadores = config_get_array_value(config,
-			"OBJETIVOS_ENTRENADORES");
+	char** pokemonesObjetivoDeEntrenadores = config_get_array_value(config, "OBJETIVOS_ENTRENADORES");
 
 	int i = 0, j = 0;
 
@@ -77,6 +90,9 @@ void ponerEntrenadoresEnLista(t_config* config) {
 	list_destroy(listaDePokemonesDeEntrenadores);
 	list_destroy(listaDePokemonesObjetivoDeEntrenadores);
 
+	liberarArray(coordenadasEntrenadores);
+	liberarArray(pokemonesDeEntrenadores);
+	liberarArray(pokemonesObjetivoDeEntrenadores);
 }
 
 void crearHilosEntrenadores() {
@@ -166,10 +182,10 @@ t_list* organizarPokemones(char** listaPokemones) { //tanto para pokemonesObjeti
 
 		j++;
 		w=0;
+		free(pokemonesDeUnEntrenador);
 	}
 
 	return listaDePokemonesDeEntrenadores;
-
 }
 
 t_nombrePokemon* crear_pokemon(char* pokemon) {
@@ -332,13 +348,13 @@ uint32_t enviarMensajeCatch(t_newPokemon* pokemon){
 
 	int status = enviar_mensaje(CATCH_POKEMON, 0, 0, estructuraPokemon, socket_cliente);
 
-
 	if(status>=0){
 		id = esperarIdCatch(socket_cliente);
 	}
 
 	liberar_conexion(socket_cliente);
 
+	free(estructuraPokemon);
 	return id;
 }
 

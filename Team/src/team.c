@@ -12,12 +12,12 @@ int main(void) {
 
 	inicializarSemaforoPlanificador();
 	inicializarListas();
-	t_config* config = leer_config();
-	inicializarConfig(config);
+	config = leer_config();
+	inicializarConfig();
 
 	inicioAlgoritmoDeadlock = 0;
 
-	ponerEntrenadoresEnLista(config);
+	ponerEntrenadoresEnLista();
 	crearHilosEntrenadores();
 
 	enviarMensajeGetABroker();
@@ -33,6 +33,7 @@ int main(void) {
 
 void quedarseALaEscucha() {
 	int socket_servidor = iniciar_servidor(IP_TEAM, PUERTO_TEAM);
+	list_add(socketsALiberar, &socket_servidor);
 	while(1) {
 		int socket_potencial = esperar_cliente(socket_servidor);
 		if(socket_potencial > 0) {
@@ -56,7 +57,7 @@ t_config* leer_config(void)
 
 }
 
-void inicializarConfig(t_config* config){
+void inicializarConfig(){
 
 	IP_TEAM = config_get_string_value(config, "IP_TEAM");
 	PUERTO_TEAM = config_get_string_value(config, "PUERTO_TEAM");
@@ -109,41 +110,36 @@ void suscribirseA(op_code tipo_cola){
 
 	pthread_mutex_lock(&mutex_send);
 	int socket_cliente = crear_conexion(ipBroker, puertoBroker);
+
+	list_add(socketsALiberar, &socket_cliente);
+
 	while(socket_cliente<=0){
 		log_inicio_reintento_conexion_broker();
 		sleep(TIEMPO_RECONEXION);
 		socket_cliente = crear_conexion(ipBroker, puertoBroker);
 		log_resultado_proceso_reintento_conexion_broker(socket_cliente);
 	}
-	printf("Conexion con broker en socket %d\n", socket_cliente);
 
 	t_suscripcion_msg* estructuraSuscripcion = malloc(sizeof(t_suscripcion_msg));
 	estructuraSuscripcion->id_proceso = ID_TEAM;
 	estructuraSuscripcion->tipo_cola = tipo_cola;
 	estructuraSuscripcion->temporal = 0;
 
-	int status_susc = suscribirse_a_cola(estructuraSuscripcion, socket_cliente);
+	suscribirse_a_cola(estructuraSuscripcion, socket_cliente);
 	pthread_mutex_unlock(&mutex_send);
-
-	printf("status de envio de susc %d\n", status_susc);
 
 	uint32_t cant_paquetes;
 	t_list* paquetes = respuesta_suscripcion_obtener_paquetes(socket_cliente, &cant_paquetes);
-	printf("Recibi %d mensajes\n", cant_paquetes);
 	fflush(stdout);
 
-	int status_ack=informar_ack(socket_cliente);
-	printf("Informe ACK con status %d \n", status_ack);
+	informar_ack(socket_cliente);
 
 	for(int i = 0; i<cant_paquetes; i++){
 		t_paquete* paquete_recibido = list_get(paquetes, i);
-		process_request(NULL, paquete_recibido, socket_cliente);
-		printf("Recibi un mensaje por haberme suscripto: %d\n", paquete_recibido->codigo_operacion);
+		process_request(NULL, paquete_recibido);
 	}
 
 	free(estructuraSuscripcion);
-
-	printf("---------Recepciones por suscripcion---------cola %d\n", tipo_cola);
 
 	while(1){
 		char*nombre_recibido = NULL;
@@ -157,14 +153,9 @@ void suscribirseA(op_code tipo_cola){
 			log_resultado_proceso_reintento_conexion_broker(socket_cliente);
 		}
 
-		printf("------------------------\n");
-		printf("COD OP: %d\n", paquete_recibido->codigo_operacion);
-		printf("ID: %d\n", paquete_recibido->id);
-		printf("ID_CORRELATIVO: %d\n", paquete_recibido->id_correlativo);
-		process_request(nombre_recibido, paquete_recibido, socket_cliente);
+		process_request(nombre_recibido, paquete_recibido);
 
-		int status_ack = informar_ack(socket_cliente);
-		printf("informe ACK con status %d\n", status_ack);
+		informar_ack(socket_cliente);
 	}
 
 }
@@ -176,10 +167,12 @@ void serve_client(int* socket_cliente)
 
 	t_paquete* paquete_recibido = recibir_paquete(*socket_cliente, &nombre_recibido, &tamanioRecibido);
 
-	process_request(nombre_recibido, paquete_recibido, *socket_cliente);
+	process_request(nombre_recibido, paquete_recibido);
+
+	close(*socket_cliente);
 }
 
-void process_request(char* nombre_recibido, t_paquete* paquete_recibido, int socket_cliente)
+void process_request(char* nombre_recibido, t_paquete* paquete_recibido)
 {
 	char* nombrePosta;
 	switch(paquete_recibido->codigo_operacion)
@@ -426,6 +419,8 @@ void inicializarListas(){
 	entrenadorIntercambio = list_create();
 	entrenadorConQuienIntercambiar = list_create();
 	entrenadoresNoSeleccionables = list_create();
+
+	socketsALiberar = list_create();
 }
 
 void esperarIdGet(int socket_cliente){
