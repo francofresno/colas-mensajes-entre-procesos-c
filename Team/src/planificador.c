@@ -129,12 +129,12 @@ void planificarSegunFifo() {
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 		sem_post(semaforoDelEntrenador);
 		sem_wait(&sem_entrenadorMoviendose);
-		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo != NULL ? entrenador->pokemonInstantaneo->coordenadas : 0);
 
 		while (distancia != 0 && distancia != -1) {
 			sem_post(semaforoDelEntrenador);
 			sem_wait(&sem_entrenadorMoviendose);
-			printf("Llegue aca\n");
+			printf("Llegue aca\n"); //TODO esto está por la prueba que le pase otras coords
 			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo != NULL ? entrenador->pokemonInstantaneo->coordenadas : NULL);
 		}
 		printf("Termine de moverme y mande o atrape\n");
@@ -200,34 +200,31 @@ int planificarSegunRR(){
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 		sem_post(semaforoDelEntrenador);
 
-		entrenador->misCiclosDeCPU++;
-
 		sem_wait(&sem_entrenadorMoviendose);
-		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo != NULL ? entrenador->pokemonInstantaneo->coordenadas : 0);
 
 		entrenador->quantumDisponible -=1;
 
 		while (((distancia != 0) && (entrenador->quantumDisponible)>0) && (distancia != -1)) {
 			sem_post(semaforoDelEntrenador);
 			sem_wait(&sem_entrenadorMoviendose);
-			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo != NULL ? entrenador->pokemonInstantaneo->coordenadas : NULL);
-			entrenador->misCiclosDeCPU++;
+			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo != NULL ? entrenador->pokemonInstantaneo->coordenadas : 0);
 			entrenador->quantumDisponible -= 1;
 		}
 
 		sem_destroy(&sem_entrenadorMoviendose);
 
-		if(((entrenador->quantumDisponible)==0) && (!llegoAlObjetivoPokemon(entrenador))){
-			pthread_mutex_lock(&mutex_listaReady);
+		if(((entrenador->quantumDisponible)==0) && ((entrenador->pokemonInstantaneo != NULL ? !llegoAlObjetivoPokemon(entrenador) : 0))){
 			list_add(listaReady, entrenador);
 			entrenador->estado = READY;
-			pthread_mutex_unlock(&mutex_listaReady);
+			//pthread_mutex_unlock(&mutex_listaReady);
 			entrenador->quantumDisponible = quantum;
 			sem_destroy(&sem_esperarCaught);
 			sem_post(&sem_planificar);
 			return 1;
 		} else{
 			sem_wait(&sem_esperarCaught);
+
 			if(entrenador->idMensajeCaught){
 				entrenador->estado = BLOCKED;
 				log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se queda esperando un caught", "BLOCKED");
@@ -242,8 +239,7 @@ int planificarSegunRR(){
 		}
 	}
 
-
-	pthread_mutex_unlock(&mutex_listaReady);
+	//pthread_mutex_unlock(&mutex_listaReady);
 
 	sem_destroy(&sem_esperarCaught);
 
@@ -305,7 +301,7 @@ int planificarSegunSJFConDesalojo(){
 		sem_post(semaforoDelEntrenador);
 		sem_wait(&sem_entrenadorMoviendose);
 
-		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo != NULL ? entrenador->pokemonInstantaneo->coordenadas : 0);
 
 		while (distancia != 0 && distancia != -1) {
 
@@ -399,7 +395,7 @@ void planificarSegunSJFSinDesalojo(){
 		sem_post(semaforoDelEntrenador);
 
 		sem_wait(&sem_entrenadorMoviendose);
-		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
+		distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo != NULL ? entrenador->pokemonInstantaneo->coordenadas : 0);
 
 		while (distancia != 0 && distancia != -1) {
 			sem_post(semaforoDelEntrenador);
