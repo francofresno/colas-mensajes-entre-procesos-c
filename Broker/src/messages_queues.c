@@ -200,14 +200,16 @@ int get_index_of_subscriber(t_list* subscribers, uint32_t id_subscriber)
 
 t_subscriber* get_subscriber_by_id(t_list* subscribers, uint32_t id_subscriber)
 {
+	printf("antes del index\n");
 	int index = get_index_of_subscriber(subscribers, id_subscriber);
+	printf("index: %d\n", index);
 
 	return index >= 0 ? (t_subscriber*) list_get(subscribers, index) : NULL;
 }
 
 int isSubscriberListed(t_list* subscribers, uint32_t id_subscriber)
 {
-	return get_index_of_subscriber(subscribers, id_subscriber) >= 0;
+	return !list_is_empty(subscribers) && get_index_of_subscriber(subscribers, id_subscriber) >= 0;
 }
 
 void add_new_informed_subscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber) {
@@ -221,10 +223,17 @@ void add_new_informed_subscriber_to_mq(t_list* messages_in_queue, uint32_t numbe
 }
 
 void add_new_ack_suscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber) {
+	printf("cantidad mensajes: %d\n", list_size(messages_in_queue));
+
 	for (int i=0; i < number_of_messages; i++) {
+		printf("iterando magicamente\n");
 		t_enqueued_message* message = (t_enqueued_message*) list_get(messages_in_queue, i);
+		printf("cantidad suscriptores: %d\n", list_size(message->subscribers_ack));
+		printf("id: %d\n", subscriber->id_subscriber);
 		if (!isSubscriberListed(message->subscribers_ack, subscriber->id_subscriber)) {
+			printf("tamoooos\n");
 			list_add(message->subscribers_ack, subscriber); //TODO mutex?
+			printf("id %d\n",message->ID);
 			log_ack_from_subscriber(subscriber->id_subscriber, message->ID);
 		}
 	}

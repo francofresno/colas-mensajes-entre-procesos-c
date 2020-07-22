@@ -53,6 +53,8 @@ void serve_client(int* client_socket)
 		process_new_message(paquete_recibido->codigo_operacion, paquete_recibido->id_correlativo, paquete_recibido->mensaje, size_message, *client_socket);
 	}
 
+	printf("termino el serve\n");
+
 	free_paquete_recibido(nombre_recibido, paquete_recibido);
 }
 
@@ -84,7 +86,7 @@ void process_suscription(t_suscripcion_msg* subscription_msg, int socket_subscri
 	}
 
 	log_new_subscriber(subscription_msg->id_proceso, subscription_msg->tipo_cola);
-	receive_ack(mensajes_encolados, cantidad_mensajes, subscriber);
+	receive_ack(mensajes_encolados, cantidad_mensajes, subscriber, 0, ERROR_CODIGO);
 
 	if (VICTIM_SELECTION_ALGORITHM == LRU) {
 		for (int i=0; i < cantidad_mensajes; i++) {
@@ -101,8 +103,10 @@ void process_suscription(t_suscripcion_msg* subscription_msg, int socket_subscri
 void process_new_message(op_code cod_op, uint32_t id_correlative, void* received_message, uint32_t size_message, int socket_cliente)
 {
 	t_queue* queue = COLAS_MENSAJES[cod_op];
-	uint32_t id_message = generate_id();
+	uint32_t* id_message = malloc(sizeof(*id_message));
+	*id_message = generate_id();
 
+	log_new_message(*id_message, cod_op);
 	if (id_correlative == 0 || find_message_by_id_correlative(queue, id_correlative) == NULL) {
 		t_list* subscribers = SUSCRIPTORES_MENSAJES[cod_op];
 		pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
@@ -111,7 +115,7 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 
 		t_copy_args* args = malloc(sizeof(*args));
 		args->queue = cod_op;
-		args->id = id_message;
+		args->id = *id_message;
 		args->data = received_message;
 		args->data_size = net_size_message;
 		void* allocated_memory = memory_alloc(net_size_message);
@@ -130,18 +134,16 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 		}
 		pthread_mutex_unlock(&mutex_deleted_messages_ids);
 
-		t_enqueued_message* mensaje_encolado = push_message_queue(queue, id_message, id_correlative, mutex);
+		t_enqueued_message* mensaje_encolado = push_message_queue(queue, *id_message, id_correlative, mutex);
 
-		enviar_id_respuesta(id_message, socket_cliente);
-		t_list* suscriptores_informados = inform_subscribers(cod_op, allocated_message, id_message, id_correlative, subscribers, mutex);
+		enviar_id_respuesta(*id_message, socket_cliente);
+		t_list* suscriptores_informados = inform_subscribers(cod_op, allocated_message, *id_message, id_correlative, subscribers, mutex);
 		mensaje_encolado->subscribers_informed = suscriptores_informados;
-		log_new_message(id_message, cod_op);
-		notify_message_used(id_message);
+		notify_message_used(*id_message);
 
-		receive_multiples_ack(cod_op, id_message, suscriptores_informados);
+		receive_multiples_ack(cod_op, *id_message, suscriptores_informados);
 	} else {
-		enviar_id_respuesta(id_message, socket_cliente); //TODO devolver -1?
-		log_new_message(id_message, cod_op);
+		enviar_id_respuesta(*id_message, socket_cliente); //TODO devolver -1?
 	}
 
 }
@@ -189,17 +191,13 @@ t_list* inform_subscribers(op_code codigo, void* mensaje, uint32_t id, uint32_t 
 
 void receive_multiples_ack(op_code codigo, uint32_t id, t_list* suscriptores_informados)
 {
-	t_list* mensajes_encolados = list_create();
-	t_queue* queue = COLAS_MENSAJES[codigo];
-	t_enqueued_message* enqueued_message = find_message_by_id(queue, id);
-	list_add(mensajes_encolados, enqueued_message);
+	t_list* mensajes_encolados = NULL;
 
 	for (int i=0; i < list_size(suscriptores_informados); i++) {
+		printf("Una iteracion\n");
 		t_subscriber* suscriptor = list_get(suscriptores_informados, i);
-		receive_ack(mensajes_encolados, 1, suscriptor);
+		receive_ack(mensajes_encolados, 1, suscriptor, id, codigo);
 	}
-
-	list_destroy(mensajes_encolados);
 }
 
 void reply_to_new_subscriber(op_code code, t_queue* message_queue, t_subscriber* subscriber, uint32_t* messages_count, t_list* enqueue_messages)
@@ -280,16 +278,24 @@ void send_enqueued_messages(uint32_t cantidad_mensajes, uint32_t tamanio_stream,
 	free(a_enviar);
 }
 
-void receive_ack(t_list* mensajes_encolados, uint32_t cantidad_mensajes, t_subscriber* subscriber)
+void receive_ack(t_list* mensajes_encolados, uint32_t cantidad_mensajes, t_subscriber* subscriber, uint32_t id, op_code code)
 {
 	uint32_t response_status = 0;
 	int status = recv(subscriber->socket_subscriber, &response_status, sizeof(response_status), MSG_WAITALL);
 
 	printf("Recibi ACK status %d\n", status);
 
-	if(status > 0 && response_status == 200) {
+	if (mensajes_encolados == NULL && cantidad_mensajes > 0) {
+		t_queue* queue = COLAS_MENSAJES[code];
+		t_enqueued_message* enqueued_message = find_message_by_id(queue, id);
+		mensajes_encolados = list_create();
+		list_add(mensajes_encolados, enqueued_message);
+	}
+
+	if(status >= 0 && response_status == 200) {
 		add_new_ack_suscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber);
 	}
+	printf("termino este calvario\n");
 }
 
 void remove_messages_by_id(t_list* ids_messages_deleted, int ids_count)
