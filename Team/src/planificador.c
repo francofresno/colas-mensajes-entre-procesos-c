@@ -133,7 +133,6 @@ void planificarSegunFifo() {
 			printf("Llegue aca\n"); //TODO esto está por la prueba que le pase otras coords
 			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo != NULL ? entrenador->pokemonInstantaneo->coordenadas : NULL);
 		}
-		printf("Termine de moverme y mande o atrape\n");
 		sem_destroy(&sem_entrenadorMoviendose);
 
 		sem_wait(&sem_esperarCaught);
@@ -146,7 +145,6 @@ void planificarSegunFifo() {
 			pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
 
 		} else{
-			printf("Voy a verificar\n");
 			verificarTieneTodoLoQueQuiere(entrenador);
 		}
 	}

@@ -240,7 +240,9 @@ void aplanarDobleLista(t_list* lista){
 void ejecutarEntrenador(t_entrenador* entrenador){
 
 	while(1) {
+		printf("Quiero ejecutar! %d\n", entrenador->id_entrenador);
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
+		printf("le doy wait a mi sem %d\n", entrenador->id_entrenador);
 		sem_wait(semaforoDelEntrenador);
 		printf("Arranco yo! id: %d\n", entrenador->id_entrenador);
 
@@ -329,6 +331,7 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 				}
 			}
 		}
+		printf("termine de ejecutar, soy entrenador\n");
 	}
 }
 
@@ -509,9 +512,10 @@ void buscarPokemonLocalized(t_localizedPokemon_msg* mensajeLocalized, uint32_t i
 	int cantidadCoords = mensajeLocalized->cantidad_coordenadas;
 
 	t_newPokemon* pokemonNuevo = malloc(sizeof(t_newPokemon));
+	t_coordenadas* pkmCoordenadas = malloc(sizeof(t_coordenadas));
+	pokemonNuevo->coordenadas = pkmCoordenadas;
 
 	pokemonNuevo->pokemon = &(mensajeLocalized->nombre_pokemon);
-
 	pokemonNuevo->coordenadas->posX = mensajeLocalized->coordenadas[0].posX;
 	pokemonNuevo->coordenadas->posY = mensajeLocalized->coordenadas[0].posY;
 
@@ -544,8 +548,8 @@ void buscarPokemonLocalized(t_localizedPokemon_msg* mensajeLocalized, uint32_t i
 	ponerEntrenadorEnReady(entrenador, pokemonNuevo);
 
 
-	t_coordenadas nuevasCoords[cantidadCoords-1];
-	// TODO Posibilemente hay que hacer un malloc t_coordenadas* nuevasCoords = malloc((cantidadCoords-1) * sizeof(*nuevasCoords)); y hacer frees
+	///t_coordenadas nuevasCoords[cantidadCoords-1];
+	t_coordenadas* nuevasCoords = malloc((cantidadCoords-1) * sizeof(*nuevasCoords));
 
 	int m=0;
 
@@ -575,9 +579,7 @@ void ponerEntrenadorEnReady(t_entrenador* entrenador, t_newPokemon* pokemon){
 
 void moverAlEntrenadorHastaOtroEntrenador(uint32_t idEntrenador1, uint32_t idEntrenador2){
 
-	printf("Antes del sleep\n");
 	sleep(retardoCPU);
-	printf("Despues del sleep\n");
 
 	pthread_mutex_lock(&mutex_entrenadores);
 	t_entrenador* entrenador1 = list_get(entrenadores, idEntrenador1);

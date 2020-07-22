@@ -144,6 +144,7 @@ void suscribirseA(op_code tipo_cola){
 	while(1){
 		char*nombre_recibido = NULL;
 		uint32_t tamanioRecibido;
+
 		t_paquete* paquete_recibido = recibir_paquete(socket_cliente,&nombre_recibido, &tamanioRecibido);
 
 		if(paquete_recibido == NULL){
@@ -174,6 +175,9 @@ void serve_client(int* socket_cliente)
 
 void process_request(char* nombre_recibido, t_paquete* paquete_recibido)
 {
+
+	printf("Codigo: %d (Proc Req TEAM)\n", paquete_recibido->codigo_operacion);
+
 	char* nombrePosta;
 	switch(paquete_recibido->codigo_operacion)
 	{
@@ -250,11 +254,10 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido)
 
 					int cuantosNecesita = necesitaTeamAlPokemon(&(mensajeLocalized->nombre_pokemon));
 
-					for(int i=0; i<cuantosNecesita; i++){
-
-					sem_wait(&sem_buscarEntrenadorMasCercano);
-					buscarPokemonLocalized(mensajeLocalized, paquete_recibido->id);
-					planificarSegun();
+					for(int i=0; i<cuantosNecesita && mensajeLocalized->cantidad_coordenadas > 0; i++){
+						sem_wait(&sem_buscarEntrenadorMasCercano);
+						buscarPokemonLocalized(mensajeLocalized, paquete_recibido->id);
+						planificarSegun();
 
 					} //Si necesita + de un pikachu los manda a buscar.
 			}
@@ -264,6 +267,9 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido)
 		case CAUGHT_POKEMON: ;
 
 		t_caughtPokemon_msg* mensajeCaught = (t_caughtPokemon_msg*) paquete_recibido->mensaje;
+
+		printf("atrapado %d (TEAM)\n", mensajeCaught->atrapado);
+
 		log_llegada_caught(paquete_recibido->id_correlativo, mensajeCaught->atrapado);
 
 		pthread_mutex_lock(&mutex_entrenadores);
@@ -426,7 +432,7 @@ void inicializarListas(){
 void esperarIdGet(int socket_cliente){
 	uint32_t* id_respuesta = malloc(sizeof(uint32_t));
 	*id_respuesta = recibir_id(socket_cliente);
-	printf("recibi el id %d\n", *id_respuesta);
+	printf("recibi el id %d (esperarIdGet TEAM)\n", *id_respuesta);
 	pthread_mutex_lock(&mutex_id_mensaje_get);
 	list_add(id_mensajeGet,(void*) id_respuesta);
 	pthread_mutex_unlock(&mutex_id_mensaje_get);
@@ -451,7 +457,6 @@ void requiere(t_appearedPokemon_msg* mensajeAppeared){
 		pokemonNuevo->coordenadas = &(mensajeAppeared->coordenadas);
 
 		sem_wait(&sem_buscarEntrenadorMasCercano);
-		printf("busco entrenador\n");
 
 		buscarPokemonAppeared(pokemonNuevo);
 		planificarSegun();
