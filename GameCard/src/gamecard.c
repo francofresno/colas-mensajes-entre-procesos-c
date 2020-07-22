@@ -165,6 +165,7 @@ void devolverMensajeCorrespondiente(t_paquete* paquete_recibido)
 			break;
 		default: break;
 	}
+	recibir_id(socketTemporal);
 	liberar_conexion(socketTemporal);
 }
 
