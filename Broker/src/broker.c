@@ -139,7 +139,13 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 
 		t_enqueued_message* mensaje_encolado = push_message_queue(queue, *id_message, id_correlative, mutex);
 
+		printf("Voy a enviar id rta 142 \n");
+
 		enviar_id_respuesta(*id_message, socket_cliente);
+
+
+		printf("Voy a informar a suscs 147 \n");
+
 		t_list* suscriptores_informados = inform_subscribers(cod_op, allocated_message, *id_message, id_correlative, subscribers, mutex);
 		mensaje_encolado->subscribers_informed = suscriptores_informados;
 		notify_message_used(*id_message);
@@ -176,7 +182,10 @@ uint32_t generate_id()
 t_list* inform_subscribers(op_code codigo, void* mensaje, uint32_t id, uint32_t id_correlativo, t_list* suscriptores, pthread_mutex_t mutex)
 {
 	t_list* suscriptores_informados = list_create();
-	//pthread_mutex_lock(&mutex);
+
+	pthread_mutex_t mutex_subs = MUTEX_SUSCRIPTORES[codigo];
+
+	pthread_mutex_lock(&mutex_subs);
 	for (int i=0; i < list_size(suscriptores); i++) {
 		t_subscriber* suscriptor = list_get(suscriptores, i);
 
@@ -190,7 +199,7 @@ t_list* inform_subscribers(op_code codigo, void* mensaje, uint32_t id, uint32_t 
 		}
 
 	}
-	//pthread_mutex_unlock(&mutex);
+	pthread_mutex_unlock(&mutex_subs);
 
 	return suscriptores_informados;
 }
@@ -209,11 +218,12 @@ void receive_multiples_ack(op_code codigo, uint32_t id, t_list* suscriptores_inf
 		t_queue* queue = COLAS_MENSAJES[codigo];
 		t_enqueued_message* message = find_message_by_id(queue, id);
 
-		if (message != NULL) {
-			if (!isSubscriberListed(message->subscribers_ack, suscriptor->id_subscriber)) {
-				list_add(message->subscribers_ack, suscriptor); //TODO mutex?
-				log_ack_from_subscriber(suscriptor->id_subscriber, message->ID);
-			}
+		if (message == NULL)
+			break;
+
+		if (!isSubscriberListed(message->subscribers_ack, suscriptor->id_subscriber)) {
+			list_add(message->subscribers_ack, suscriptor); //TODO mutex?
+			log_ack_from_subscriber(suscriptor->id_subscriber, message->ID);
 		}
 
 	}
