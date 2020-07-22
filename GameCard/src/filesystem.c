@@ -31,7 +31,7 @@ void verificarMetadata(char* pathDirectorio)
 	{
 		archivoMetadata = fopen(pathMetadata, "wb");
 		if(string_ends_with(pathDirectorio, "Metadata"))
-			fprintf(archivoMetadata, "BLOCK_SIZE=64\nBLOCKS=5192\nMAGIC_NUMBER=TALL_GRASS");
+			fprintf(archivoMetadata, "BLOCK_SIZE=64\nBLOCKS=1024\nMAGIC_NUMBER=TALL_GRASS");
 		else
 			fprintf(archivoMetadata, "DIRECTORY=Y");
 	}
