@@ -83,7 +83,7 @@ void send_enqueued_messages(uint32_t cantidad_mensajes, uint32_t tamanio_stream,
 		t_list* mensajes_encolados, t_subscriber* subscriber);
 void remove_subscriber_if_temporal(t_list* subscribers, t_subscriber* subscriber, uint32_t tiempo, pthread_mutex_t mutex);
 void receive_ack(t_list* mensajes_encolados, uint32_t cantidad_mensajes, t_subscriber* subscriber, uint32_t id, op_code code);
-void receive_multiples_ack(op_code codigo, uint32_t id, t_list* suscriptores_informados);
+void receive_multiples_ack(op_code codigo, uint32_t id, t_list* suscriptores_informados, pthread_mutex_t mutex);
 void remove_messages_by_id(t_list* ids_messages_deleted, int ids_count);
 
 uint32_t generate_id();

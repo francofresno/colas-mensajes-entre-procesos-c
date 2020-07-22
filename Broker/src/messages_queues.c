@@ -25,9 +25,11 @@ t_enqueued_message* push_message_queue(t_queue* queue, uint32_t ID, uint32_t ID_
 	data->ID = ID;
 	data->ID_correlativo = ID_correlativo;
 
-	pthread_mutex_lock(&mutex);
+	//pthread_mutex_lock(&mutex);
 	queue_push(queue, (void*) data);
-	pthread_mutex_unlock(&mutex);
+	//pthread_mutex_unlock(&mutex);
+
+	printf("queue size %d\n", queue_size(queue));
 
 	return data;
 }

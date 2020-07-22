@@ -105,13 +105,16 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 	t_queue* queue = COLAS_MENSAJES[cod_op];
 	uint32_t* id_message = malloc(sizeof(*id_message));
 	*id_message = generate_id();
+	pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
 
 	log_new_message(*id_message, cod_op);
+	pthread_mutex_lock(&mutex);
 	if (id_correlative == 0 || find_message_by_id_correlative(queue, id_correlative) == NULL) {
 		t_list* subscribers = SUSCRIPTORES_MENSAJES[cod_op];
-		pthread_mutex_t mutex = MUTEX_COLAS[cod_op];
 
 		uint32_t net_size_message = size_message - sizeof(uint32_t)*3; // Se resta el tamanio del cod. op, id e id correlativo que son 3 uint32_t
+
+		printf("size mensaje %d\n", net_size_message);
 
 		t_copy_args* args = malloc(sizeof(*args));
 		args->queue = cod_op;
@@ -141,10 +144,13 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 		mensaje_encolado->subscribers_informed = suscriptores_informados;
 		notify_message_used(*id_message);
 
-		receive_multiples_ack(cod_op, *id_message, suscriptores_informados);
+		printf("correlativo: %d\n", id_correlative);
+
+		receive_multiples_ack(cod_op, *id_message, suscriptores_informados, mutex);
 	} else {
 		enviar_id_respuesta(*id_message, socket_cliente); //TODO devolver -1?
 	}
+	pthread_mutex_unlock(&mutex);
 
 }
 
@@ -170,7 +176,7 @@ uint32_t generate_id()
 t_list* inform_subscribers(op_code codigo, void* mensaje, uint32_t id, uint32_t id_correlativo, t_list* suscriptores, pthread_mutex_t mutex)
 {
 	t_list* suscriptores_informados = list_create();
-	pthread_mutex_lock(&mutex);
+	//pthread_mutex_lock(&mutex);
 	for (int i=0; i < list_size(suscriptores); i++) {
 		t_subscriber* suscriptor = list_get(suscriptores, i);
 
@@ -184,20 +190,34 @@ t_list* inform_subscribers(op_code codigo, void* mensaje, uint32_t id, uint32_t 
 		}
 
 	}
-	pthread_mutex_unlock(&mutex);
+	//pthread_mutex_unlock(&mutex);
 
 	return suscriptores_informados;
 }
 
-void receive_multiples_ack(op_code codigo, uint32_t id, t_list* suscriptores_informados)
+void receive_multiples_ack(op_code codigo, uint32_t id, t_list* suscriptores_informados, pthread_mutex_t mutex)
 {
-	t_list* mensajes_encolados = NULL;
-
+	//pthread_mutex_lock(&mutex);
 	for (int i=0; i < list_size(suscriptores_informados); i++) {
-		printf("Una iteracion\n");
 		t_subscriber* suscriptor = list_get(suscriptores_informados, i);
-		receive_ack(mensajes_encolados, 1, suscriptor, id, codigo);
+
+		uint32_t response_status = 0;
+		int status = recv(suscriptor->socket_subscriber, &response_status, sizeof(response_status), MSG_WAITALL);
+
+		printf("Recibi ACK status %d\n", status);
+
+		t_queue* queue = COLAS_MENSAJES[codigo];
+		t_enqueued_message* message = find_message_by_id(queue, id);
+
+		if (message != NULL) {
+			if (!isSubscriberListed(message->subscribers_ack, suscriptor->id_subscriber)) {
+				list_add(message->subscribers_ack, suscriptor); //TODO mutex?
+				log_ack_from_subscriber(suscriptor->id_subscriber, message->ID);
+			}
+		}
+
 	}
+	//pthread_mutex_unlock(&mutex);
 }
 
 void reply_to_new_subscriber(op_code code, t_queue* message_queue, t_subscriber* subscriber, uint32_t* messages_count, t_list* enqueue_messages)
@@ -295,7 +315,6 @@ void receive_ack(t_list* mensajes_encolados, uint32_t cantidad_mensajes, t_subsc
 	if(status >= 0 && response_status == 200) {
 		add_new_ack_suscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber);
 	}
-	printf("termino este calvario\n");
 }
 
 void remove_messages_by_id(t_list* ids_messages_deleted, int ids_count)
@@ -307,10 +326,11 @@ void remove_messages_by_id(t_list* ids_messages_deleted, int ids_count)
 		uint32_t id = *(msg_d->id);
 		op_code code = *(msg_d->queue);
 		t_queue* queue = COLAS_MENSAJES[code];
-		pthread_mutex_t mutex = MUTEX_COLAS[code];
-		pthread_mutex_lock(&mutex);
+		//pthread_mutex_t mutex = MUTEX_COLAS[code];
+		//pthread_mutex_lock(&mutex);
 		remove_message_by_id(queue, id);
-		pthread_mutex_unlock(&mutex);
+		//pthread_mutex_unlock(&mutex);
+		printf("ID eliminado: %d\n", id);
 	}
 }
 
