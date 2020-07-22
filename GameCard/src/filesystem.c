@@ -529,7 +529,7 @@ t_localizedPokemon_msg procesarGetPokemon(t_getPokemon_msg* estructuraGet)
 	{
 		estructuraLocalized.cantidad_coordenadas = 0;
 		estructuraLocalized.nombre_pokemon = estructuraGet->nombre_pokemon;
-		estructuraLocalized.coordenadas = NULL;
+		estructuraLocalized.coordenadas = malloc(sizeof(t_coordenadas));
 		return estructuraLocalized;
 	}
 
