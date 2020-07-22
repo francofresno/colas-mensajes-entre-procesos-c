@@ -218,6 +218,10 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido)
 			mensajeLocalized->nombre_pokemon.nombre = nombrePosta;
 
 			char* coordenadas =  string_new();
+			if (mensajeLocalized->cantidad_coordenadas == 0) {
+				string_append(&coordenadas, "[  ]");
+			}
+
 			for(int i=0; i<(mensajeLocalized->cantidad_coordenadas); i++){
 
 				char* x = string_itoa(mensajeLocalized->coordenadas[i].posX);
@@ -230,8 +234,6 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido)
 				string_append(&coordenadas, "]");
 				string_append(&coordenadas, " ");
 			}
-
-
 			log_llegada_localized(paquete_recibido->id, mensajeLocalized->nombre_pokemon.nombre, mensajeLocalized->cantidad_coordenadas, coordenadas);
 
 			bool compararId(void* elemento){

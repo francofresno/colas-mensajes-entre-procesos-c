@@ -118,6 +118,7 @@ void planificarSegunFifo() {
 
 		sem_wait(&sem_esperarCaught);
 		verificarTieneTodoLoQueQuiere(entrenador);
+		entrenador->puedeAtrapar = 0;
 
 	} else {
 		//Esto es un appeared o un localized
@@ -184,6 +185,8 @@ int planificarSegunRR(){
 
 		sem_wait(&sem_esperarCaught);
 		verificarTieneTodoLoQueQuiere(entrenador);
+
+		entrenador->puedeAtrapar = 0;
 
 	} else {
 		sem_init(&sem_entrenadorMoviendose, 0, 0);
@@ -273,6 +276,8 @@ int planificarSegunSJFConDesalojo(){
 		sem_post(semaforoDelEntrenador);
 		sem_wait(&sem_esperarCaught);
 		verificarTieneTodoLoQueQuiere(entrenador);
+
+		entrenador->puedeAtrapar = 0;
 
 	} else {
 		sem_init(&sem_entrenadorMoviendose, 0, 0);
@@ -364,6 +369,8 @@ void planificarSegunSJFSinDesalojo(){
 
 		sem_wait(&sem_esperarCaught);
 		verificarTieneTodoLoQueQuiere(entrenador);
+
+		entrenador->puedeAtrapar = 0;
 
 	} else {
 		sem_init(&sem_entrenadorMoviendose, 0, 0);
