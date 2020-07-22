@@ -438,25 +438,32 @@ void chequearSiEstaDisponible(t_entrenador* entrenador){
 }
 
 void chequearDeadlock(int algoritmo) {
-	pthread_mutex_lock(&mutex_objetivoTeam);
+
 	int tamanioObjetivoTeam = list_size(objetivoTeam);
-	pthread_mutex_unlock(&mutex_objetivoTeam);
+
+
+	printf("pase objt m %d\n", tamanioObjetivoTeam);
 
 	pthread_mutex_lock(&mutex_atrapados);
 	int tamanioAtrapados = list_size(atrapados);
 	pthread_mutex_unlock(&mutex_atrapados);
 
+	printf("pase atrapados m %d \n", tamanioAtrapados);
+
 	if(tamanioObjetivoTeam == tamanioAtrapados){ //o cumplio el objetivo o hay deadlock
 
-		pthread_mutex_lock(&mutex_entrenadores);
 		int tamanioEntrenadores = list_size(entrenadores);
-		pthread_mutex_unlock(&mutex_entrenadores);
+
+		printf("entre a comparar porque hay dl %d \n", tamanioEntrenadores);
 
 		pthread_mutex_lock(&mutex_listaFinalizados);
 		int tamanioFinalizados = list_size(listaFinalizados);
 		pthread_mutex_unlock(&mutex_listaFinalizados);
 
+		printf("pase mx de fn %d \n", tamanioFinalizados);
+
 		if(tamanioEntrenadores == tamanioFinalizados || list_size(listaBloqueadosDeadlock) == 1){
+			printf("finalizo\n");
 			finalizarTeam();
 		} else {
 			printf("CHECK DEADLOCK\n");
@@ -953,9 +960,7 @@ void chequearDeadlock(int algoritmo) {
 				}
 			pthread_mutex_unlock(&mutex_listaBloqueadosDeadlock);
 
-			pthread_mutex_lock(&mutex_entrenadores);
 			int cantidadEntrenadores = list_size(entrenadores);
-			pthread_mutex_unlock(&mutex_entrenadores);
 
 			pthread_mutex_lock(&mutex_listaFinalizados);
 			int cantidadFinalizados = list_size(listaFinalizados);

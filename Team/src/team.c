@@ -272,7 +272,6 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido)
 
 		log_llegada_caught(paquete_recibido->id_correlativo, mensajeCaught->atrapado);
 
-		pthread_mutex_lock(&mutex_entrenadores);
 		int a = list_size(entrenadores);
 		for(int i=0; i<a; i++){
 			t_entrenador* entrenador = list_get(entrenadores, i);
@@ -308,7 +307,8 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido)
 				}
 			}
 		}
-		pthread_mutex_unlock(&mutex_entrenadores);
+
+		printf("TERMINO UN CAUGHT\n");
 
 		free_paquete_recibido(nombre_recibido, paquete_recibido);
 

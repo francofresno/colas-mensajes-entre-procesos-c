@@ -575,11 +575,8 @@ void moverAlEntrenadorHastaOtroEntrenador(uint32_t idEntrenador1, uint32_t idEnt
 
 	sleep(retardoCPU);
 
-	pthread_mutex_lock(&mutex_entrenadores);
 	t_entrenador* entrenador1 = list_get(entrenadores, idEntrenador1);
 	t_entrenador* entrenador2 = list_get(entrenadores, idEntrenador2);
-	pthread_mutex_unlock(&mutex_entrenadores);
-
 
 	uint32_t posicionXEntrenador1 = entrenador1->coordenadas->posX;
 	uint32_t posicionYEntrenador1 = entrenador1->coordenadas->posY;
@@ -616,10 +613,8 @@ void moverAlEntrenadorHastaOtroEntrenador(uint32_t idEntrenador1, uint32_t idEnt
 
 void intercambiarPokemones(uint32_t idEntrenador1, uint32_t idEntrenador2){
 
-	pthread_mutex_lock(&mutex_entrenadores);
 	t_entrenador* entrenador1 = list_get(entrenadores, idEntrenador1);
 	t_entrenador* entrenador2 = list_get(entrenadores, idEntrenador2);
-	pthread_mutex_unlock(&mutex_entrenadores);
 
 	printf("El quantum de intercambio de %d es: %d y el disponible es: %d\n", entrenador1->id_entrenador, entrenador1->quantumIntercambio, entrenador1->quantumDisponible);
 	printf("El quantum de intercambio de %d es: %d y el disponible es: %d\n", entrenador2->id_entrenador, entrenador2->quantumIntercambio, entrenador2->quantumDisponible);
