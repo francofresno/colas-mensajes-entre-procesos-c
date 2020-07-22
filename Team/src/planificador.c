@@ -624,9 +624,9 @@ void chequearDeadlock(int algoritmo) {
 							list_add(listaDeadlockDuplicada, entrenador);
 
 						} else{
-						entrenador->estado = BLOCKED;
-						log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "llegó a la posición del entrenador para intercambiar", "BLOCKED");
-						entrenador->quantumDisponible = quantum;
+							entrenador->estado = BLOCKED;
+							log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "llegó a la posición del entrenador para intercambiar", "BLOCKED");
+							entrenador->quantumDisponible = quantum;
 						}
 
 						sem_destroy(&sem_entrenadorMoviendose);
@@ -653,9 +653,9 @@ void chequearDeadlock(int algoritmo) {
 						sem_wait(&sem_entrenadorMoviendose);
 
 						if(entrenador->quantumIntercambio){
-							//aca iba un list add
 							entrenador->estado = READY;
 							entrenador->quantumDisponible = quantum;
+							log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se le terminó el quantum y no llegó a intercambiar", "READY");
 						} else{
 							t_entrenador* entrenadorParaIntercambiar = list_get(entrenadorConQuienIntercambiar, 0);
 							verificarTieneTodoLoQueQuiere(entrenador);

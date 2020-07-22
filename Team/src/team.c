@@ -72,6 +72,9 @@ void inicializarConfig(){
 	retardoCPU = config_get_int_value(config, "RETARDO_CICLO_CPU");
 	char* team_log = config_get_string_value(config, "LOG_FILE");
 	LOGGER = log_create(team_log, PUERTO_TEAM, false, LOG_LEVEL_INFO);
+
+
+	printf("ALGORITMO: %s\n", algoritmoPlanificacion);
 }
 
 void inicializarSemaforoPlanificador(){
