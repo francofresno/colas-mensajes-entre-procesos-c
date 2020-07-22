@@ -240,9 +240,7 @@ void aplanarDobleLista(t_list* lista){
 void ejecutarEntrenador(t_entrenador* entrenador){
 
 	while(1) {
-		printf("Quiero ejecutar! %d\n", entrenador->id_entrenador);
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
-		printf("le doy wait a mi sem %d\n", entrenador->id_entrenador);
 		sem_wait(semaforoDelEntrenador);
 		printf("Arranco yo! id: %d\n", entrenador->id_entrenador);
 
@@ -317,12 +315,10 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 
 			} else if (list_get(entrenadorIntercambio,0) != NULL) {
 				t_entrenador* elEntrenador =  list_get(entrenadorIntercambio,0);
-				printf("Moviendome hacia un entrenador %d\n", elEntrenador->id_entrenador);
 				moverAlEntrenadorHastaOtroEntrenador(entrenador->id_entrenador, elEntrenador->id_entrenador);
 
 				sem_post(&sem_entrenadorMoviendose);
 			} else {
-				printf("Vamos a intercambiar\n");
 				t_entrenador* entrenadorParaIntercambiar = elegirConQuienIntercambiar(entrenador);
 				if (entrenadorParaIntercambiar != NULL) {
 					list_add(entrenadorConQuienIntercambiar, entrenadorParaIntercambiar);
@@ -377,9 +373,7 @@ void moverAlEntrenadorHastaUnPokemon(uint32_t idEntrenador){
 
 	sleep(retardoCPU);
 
-	pthread_mutex_lock(&mutex_entrenadores);
 	t_entrenador* entrenador = list_get(entrenadores, idEntrenador);
-	pthread_mutex_unlock(&mutex_entrenadores);
 
 	uint32_t posicionXEntrenador = entrenador->coordenadas->posX;
 	uint32_t posicionYEntrenador = entrenador->coordenadas->posY;

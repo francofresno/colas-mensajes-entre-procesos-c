@@ -59,6 +59,7 @@ void planificarCaught() {
 
 void planificarSegun() {
 
+	printf("Vamos a planif\n");
 	switch (stringACodigoAlgoritmo(algoritmoPlanificacion)) {
 
 		case FIFO:
@@ -95,7 +96,6 @@ void planificarSegun() {
 }
 
 void planificarSegunFifo() {
-
 	int distancia;
 
 	sem_wait(&sem_planificar);
@@ -155,8 +155,8 @@ void planificarSegunFifo() {
 
 	chequearSiEstaDisponible(entrenador);
 
-	printf("termino fifo\n");
 	sem_post(&sem_planificar);
+	printf("termino fifo\n");
 }
 
 int planificarSegunRR(){
@@ -289,7 +289,6 @@ int planificarSegunSJFConDesalojo(){
 		while (distancia != 0 && distancia != -1) {
 
 			if ((tamanioReadyActual < list_size(listaReady))) {
-				printf("replanifique\n");
 				int distanciaQueLeQueda = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo->coordenadas);
 				entrenador->rafagaAnteriorReal = entrenador->rafagaAnteriorReal - distanciaQueLeQueda;
 				entrenador->estado = READY;
@@ -493,13 +492,10 @@ void chequearDeadlock(int algoritmo) {
 						sem_wait(&sem_entrenadorMoviendose);
 						distancia = distanciaA(entrenador->coordenadas, entrenadorBloqueadoParaIntercambio->coordenadas);
 
-						printf("PL: Me movi un lugar, distancia: %d\n", distancia);
-
 						while (distancia != 0 && distancia != -1) {
 							sem_post(semaforoDelEntrenador);
 							sem_wait(&sem_entrenadorMoviendose);
 							distancia = distanciaA(entrenador->coordenadas, entrenadorBloqueadoParaIntercambio->coordenadas);
-							printf("PL: Me movi un lugar, distancia: %d\n", distancia);
 						}
 
 						entrenador->estado = BLOCKED;
@@ -594,8 +590,6 @@ void chequearDeadlock(int algoritmo) {
 						distancia = distanciaA(entrenador->coordenadas, entrenadorBloqueadoParaIntercambio->coordenadas);
 
 						entrenador->quantumDisponible-=1;
-						printf("PL: Me movi un lugar, distancia: %d\n", distancia);
-						printf("Soy entrenador %d y ahora tengo de q %d\n", entrenador->id_entrenador, entrenador->quantumDisponible);
 
 						while (((distancia != 0) && (entrenador->quantumDisponible)>0) && (distancia != -1)) {
 							sem_post(semaforoDelEntrenador);
@@ -630,7 +624,6 @@ void chequearDeadlock(int algoritmo) {
 
 					while (list_size(listaBloqueadosDeadlock) > 1 && list_size(listaBloqueadosDeadlock) > list_size(entrenadoresNoSeleccionables)) {
 
-						printf("Entre al while\n");
 						t_entrenador* entrenador = list_get(listaBloqueadosDeadlock, i);
 						entrenador->estado = EXEC;
 
@@ -646,12 +639,10 @@ void chequearDeadlock(int algoritmo) {
 						sem_wait(&sem_entrenadorMoviendose);
 
 						if(entrenador->quantumIntercambio){
-							printf("El q de intercambio del entrenador %d es: %d y el q disponible es %d\n", entrenador->id_entrenador, entrenador->quantumIntercambio, entrenador->quantumDisponible);
 							//aca iba un list add
 							entrenador->estado = READY;
 							entrenador->quantumDisponible = quantum;
 						} else{
-							printf("Intercambie\n");
 							t_entrenador* entrenadorParaIntercambiar = list_get(entrenadorConQuienIntercambiar, 0);
 							verificarTieneTodoLoQueQuiere(entrenador);
 							verificarTieneTodoLoQueQuiere(entrenadorParaIntercambiar);

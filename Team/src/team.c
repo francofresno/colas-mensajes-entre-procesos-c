@@ -268,8 +268,6 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido)
 
 		t_caughtPokemon_msg* mensajeCaught = (t_caughtPokemon_msg*) paquete_recibido->mensaje;
 
-		printf("atrapado %d (TEAM)\n", mensajeCaught->atrapado);
-
 		log_llegada_caught(paquete_recibido->id_correlativo, mensajeCaught->atrapado);
 
 		pthread_mutex_lock(&mutex_entrenadores);
@@ -383,7 +381,7 @@ t_list* eliminarRepetidos(){
 	for(int i=0; i < a; i++){
 
 		int k=0;
-		while((k<c) && (sonIguales(list_get(objetivoTeamSinRepetidos,k), list_get(objetivoTeam, i))!=0)){
+		while((k<c) && (!sonIguales(list_get(objetivoTeamSinRepetidos,k), list_get(objetivoTeam, i)))){
 			k++;
 		}
 
