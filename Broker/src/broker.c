@@ -53,8 +53,6 @@ void serve_client(int* client_socket)
 		process_new_message(paquete_recibido->codigo_operacion, paquete_recibido->id_correlativo, paquete_recibido->mensaje, size_message, *client_socket);
 	}
 
-	printf("termino el serve\n");
-
 	free_paquete_recibido(nombre_recibido, paquete_recibido);
 }
 
@@ -67,6 +65,8 @@ void process_suscription(t_suscripcion_msg* subscription_msg, int socket_subscri
 	pthread_mutex_t mutex = MUTEX_SUSCRIPTORES[subscription_msg->tipo_cola];
 	uint32_t cantidad_mensajes = size_message_queue(queue); // Como maximo sera del size de la lista, este valor es modificado en responder_a_suscriptor_nuevo
 	t_list* mensajes_encolados = list_create();
+
+	log_new_subscriber(subscription_msg->id_proceso, subscription_msg->tipo_cola);
 
 	if (isSubscriberListed(suscriptores, subscription_msg->id_proceso)) {
 		t_subscriber* subscriber_listed = get_subscriber_by_id(suscriptores, subscription_msg->id_proceso);
@@ -85,7 +85,6 @@ void process_suscription(t_suscripcion_msg* subscription_msg, int socket_subscri
 		reply_to_new_subscriber(subscription_msg->tipo_cola, queue, subscriber, &cantidad_mensajes, mensajes_encolados);
 	}
 
-	log_new_subscriber(subscription_msg->id_proceso, subscription_msg->tipo_cola);
 	receive_ack(mensajes_encolados, cantidad_mensajes, subscriber, 0, ERROR_CODIGO);
 
 	if (VICTIM_SELECTION_ALGORITHM == LRU) {
@@ -127,28 +126,20 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 		free(args);
 		free(received_message);
 
-		printf("hice frees BROKER\n");
-
 		pthread_mutex_lock(&mutex_deleted_messages_ids);
 		int ids_count = 0;
 		t_list* ids_messages_deleted = get_victim_messages_ids(&ids_count);
 
-		printf("obtuve victimcas BROKER\n");
-
 		if (ids_count > 0) {
 			remove_messages_by_id(ids_messages_deleted, ids_count);
-			printf("removi mensajes BROKER\n");
 			notify_all_victim_messages_deleted();
-			printf("notifique que removi BROKER\n");
 		}
 		pthread_mutex_unlock(&mutex_deleted_messages_ids);
 
 		t_enqueued_message* mensaje_encolado = push_message_queue(queue, *id_message, id_correlative, mutex);
-		printf("Pushee a la cola el id %d BROKER\n", *id_message);
 
 		enviar_id_respuesta(*id_message, socket_cliente);
 
-		printf("voy a informar a suscs el id %d BROKER\n", *id_message);
 		t_list* suscriptores_informados = inform_subscribers(cod_op, message_to_send, *id_message, id_correlative, subscribers, mutex);
 		free(message_to_send);
 		mensaje_encolado->subscribers_informed = suscriptores_informados;
@@ -156,7 +147,7 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 
 		receive_multiples_ack(cod_op, *id_message, suscriptores_informados, mutex);
 	} else {
-		enviar_id_respuesta(*id_message, socket_cliente); //TODO devolver -1?
+		enviar_id_respuesta(*id_message, socket_cliente);
 	}
 	pthread_mutex_unlock(&mutex);
 
@@ -187,23 +178,13 @@ t_list* inform_subscribers(op_code codigo, void* mensaje, uint32_t id, uint32_t 
 
 	pthread_mutex_t mutex_subs = MUTEX_SUSCRIPTORES[codigo];
 
-	printf("listo para informar BROKER\n");
 	pthread_mutex_lock(&mutex_subs);
 	for (int i=0; i < list_size(suscriptores); i++) {
 		t_subscriber* suscriptor = list_get(suscriptores, i);
 
-		printf("voy a informarle al susc %d BROKER\n", suscriptor->id_subscriber);
-
-		if (mensaje == NULL) printf("el mensaje a enviar esta NULL BROKER\n");
-
-		printf("id del msg %d\n", id);
-
 		if (suscriptor->activo == 1) {
-			printf("voy a informar ahora , la cola es: %d BROKER\n", codigo);
 			if (enviar_mensaje(codigo, id, id_correlativo, mensaje, suscriptor->socket_subscriber) > 0) {
-				printf("ya informe! BROKER\n");
 				list_add(suscriptores_informados, (void*)suscriptor);
-				printf("agregue a la lista! BROKER\n");
 				log_message_to_subscriber(suscriptor->id_subscriber, id);
 			} else {
 				suscriptor->activo = 0;
@@ -218,14 +199,11 @@ t_list* inform_subscribers(op_code codigo, void* mensaje, uint32_t id, uint32_t 
 
 void receive_multiples_ack(op_code codigo, uint32_t id, t_list* suscriptores_informados, pthread_mutex_t mutex)
 {
-	//pthread_mutex_lock(&mutex);
 	for (int i=0; i < list_size(suscriptores_informados); i++) {
 		t_subscriber* suscriptor = list_get(suscriptores_informados, i);
 
 		uint32_t response_status = 0;
-		int status = recv(suscriptor->socket_subscriber, &response_status, sizeof(response_status), MSG_WAITALL);
-
-		printf("Recibi ACK status %d\n", status);
+		recv(suscriptor->socket_subscriber, &response_status, sizeof(response_status), MSG_WAITALL);
 
 		t_queue* queue = COLAS_MENSAJES[codigo];
 		t_enqueued_message* message = find_message_by_id(queue, id);
@@ -234,18 +212,15 @@ void receive_multiples_ack(op_code codigo, uint32_t id, t_list* suscriptores_inf
 			break;
 
 		if (!isSubscriberListed(message->subscribers_ack, suscriptor->id_subscriber)) {
-			list_add(message->subscribers_ack, suscriptor); //TODO mutex?
+			list_add(message->subscribers_ack, suscriptor);
 			log_ack_from_subscriber(suscriptor->id_subscriber, message->ID);
 		}
 
 	}
-	//pthread_mutex_unlock(&mutex);
 }
 
 void reply_to_new_subscriber(op_code code, t_queue* message_queue, t_subscriber* subscriber, uint32_t* messages_count, t_list* enqueue_messages)
 {
-	printf("Cantidad de mensajes en cola: %d\n", *messages_count);
-	printf("Socket suscriptor: %d\n", subscriber->socket_subscriber);
 	fflush(stdout);
 
 	t_list* paquetes_serializados = list_create();
@@ -306,14 +281,11 @@ void send_enqueued_messages(uint32_t cantidad_mensajes, uint32_t tamanio_stream,
 		memcpy(a_enviar + sizeof(cantidad_mensajes), &tamanio_stream, sizeof(tamanio_stream));
 	}
 
-	if (send(subscriber->socket_subscriber, a_enviar, bytes_a_enviar, MSG_NOSIGNAL) > 0) { //TODO podria ser >= 0
-	printf("Respondí a la suscripción!\n");
+	if (send(subscriber->socket_subscriber, a_enviar, bytes_a_enviar, MSG_NOSIGNAL) > 0) {
 		if (cantidad_mensajes > 0) {
-			printf("Envié mensajes encolados!\n");
 			add_new_informed_subscriber_to_mq(mensajes_encolados, cantidad_mensajes, subscriber);
 		}
 	} else {
-		printf("El suscriptor está inactivo!\n");
 		subscriber->activo = 0;
 	}
 
@@ -324,8 +296,6 @@ void receive_ack(t_list* mensajes_encolados, uint32_t cantidad_mensajes, t_subsc
 {
 	uint32_t response_status = 0;
 	int status = recv(subscriber->socket_subscriber, &response_status, sizeof(response_status), MSG_WAITALL);
-
-	printf("Recibi ACK status %d\n", status);
 
 	if (mensajes_encolados == NULL && cantidad_mensajes > 0) {
 		t_queue* queue = COLAS_MENSAJES[code];
@@ -348,10 +318,8 @@ void remove_messages_by_id(t_list* ids_messages_deleted, int ids_count)
 		uint32_t id = *(msg_d->id);
 		op_code code = *(msg_d->queue);
 		t_queue* queue = COLAS_MENSAJES[code];
-		//pthread_mutex_t mutex = MUTEX_COLAS[code];
-		//pthread_mutex_lock(&mutex);
+
 		remove_message_by_id(queue, id);
-		//pthread_mutex_unlock(&mutex);
 	}
 }
 
