@@ -29,8 +29,6 @@ t_enqueued_message* push_message_queue(t_queue* queue, uint32_t ID, uint32_t ID_
 	queue_push(queue, (void*) data);
 	//pthread_mutex_unlock(&mutex);
 
-	printf("queue size %d\n", queue_size(queue));
-
 	return data;
 }
 
