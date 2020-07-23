@@ -31,6 +31,8 @@ void planificarCaught() {
 		for(int i=0; i<j ; i++){
 			t_entrenador* entrenador = list_get(listaBloqueadosEsperandoMensaje, i);
 
+			printf("entrenador %d PLCAUGHT\n", entrenador->id_entrenador);
+
 			if(entrenador->puedeAtrapar){
 				entrenador->estado = READY;
 				log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "llegó un caught que le permite atrapar al pokemon", "READY");
@@ -43,11 +45,13 @@ void planificarCaught() {
 			}
 
 			if((entrenador->pokemonInstantaneo) == NULL){
+				printf("el instantaneo es NULL PLCAUGHT\n");
 				pthread_mutex_lock(&mutex_listaBloqueadosEsperandoPokemones);
 				list_add(listaBloqueadosEsperandoPokemones, entrenador);
 				pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoPokemones);
 				list_remove(listaBloqueadosEsperandoMensaje, i);
 			}
+			printf("termina un for PLCAUGHT\n");
 		}
 	}
 	pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
@@ -96,14 +100,24 @@ void planificarSegun() {
 }
 
 void planificarSegunFifo() {
+	printf("En FIFO\n");
 	int distancia;
 
 	sem_wait(&sem_planificar);
 
+	printf("Pase el WAIT del planif FIFO\n");
+
 	sem_init(&sem_esperarCaught, 0, 0);
 
+	printf("init sem caught FIFO\n");
+
 	t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, 0);
+
+	printf("removi de ready a %d FIFO\n", entrenador->id_entrenador);
+
 	entrenador->estado = EXEC;
+
+	printf("cambiando contexto FIFO\n");
 
 	pthread_mutex_lock(&mutex_cantidadCambiosContexto);
 	cantidadCambiosDeContexto+=1;
@@ -131,7 +145,6 @@ void planificarSegunFifo() {
 		while (distancia != 0 && distancia != -1) {
 			sem_post(semaforoDelEntrenador);
 			sem_wait(&sem_entrenadorMoviendose);
-			printf("Llegue aca\n"); //TODO esto está por la prueba que le pase otras coords
 			distancia = distanciaA(entrenador->coordenadas, entrenador->pokemonInstantaneo != NULL ? entrenador->pokemonInstantaneo->coordenadas : NULL);
 		}
 		sem_destroy(&sem_entrenadorMoviendose);
@@ -162,15 +175,24 @@ void planificarSegunFifo() {
 
 int planificarSegunRR(){
 
+	printf("En RR\n");
 	int distancia;
 
 	sem_wait(&sem_planificar);
 
+	printf("Pase el WAIT del planif RR\n");
+
 	sem_init(&sem_esperarCaught, 0, 0);
+
+	printf("init sem caught RR\n");
 
 	t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, 0);
 
+	printf("removi de ready a %d RR\n", entrenador->id_entrenador);
+
 	entrenador->estado = EXEC;
+
+	printf("cambiando contexto RR\n");
 
 	pthread_mutex_lock(&mutex_cantidadCambiosContexto);
 	cantidadCambiosDeContexto+=1;
@@ -240,6 +262,8 @@ int planificarSegunRR(){
 	chequearSiEstaDisponible(entrenador);
 
 	sem_post(&sem_planificar);
+
+	printf("Termino RR\n");
 
 	return 0;
 }
@@ -441,14 +465,9 @@ void chequearDeadlock(int algoritmo) {
 
 	int tamanioObjetivoTeam = list_size(objetivoTeam);
 
-
-	printf("pase objt m %d\n", tamanioObjetivoTeam);
-
 	pthread_mutex_lock(&mutex_atrapados);
 	int tamanioAtrapados = list_size(atrapados);
 	pthread_mutex_unlock(&mutex_atrapados);
-
-	printf("pase atrapados m %d \n", tamanioAtrapados);
 
 	if(tamanioObjetivoTeam == tamanioAtrapados){ //o cumplio el objetivo o hay deadlock
 
