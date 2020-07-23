@@ -53,6 +53,7 @@ void* memory_alloc(int size)
 
 void* memory_copy(t_copy_args* args)
 {
+	printf("Voy a copiar un mensaje a MEM\n");
 	void* data = NULL;
 	if (MEMORY_ALGORITHM == BUDDY_SYSTEM) {
 		t_buddy* buddy = args->alloc;
@@ -73,6 +74,7 @@ void* memory_copy(t_copy_args* args)
 
 		log_new_message_in_memory(partition->id_data, partition->base);
 	}
+	printf("Copie mensaje a MEM\n");
 
 	return data;
 }
