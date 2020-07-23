@@ -114,8 +114,6 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 
 		uint32_t net_size_message = size_message - sizeof(uint32_t)*3; // Se resta el tamanio del cod. op, id e id correlativo que son 3 uint32_t
 
-		printf("size mensaje %d\n", net_size_message);
-
 		t_copy_args* args = malloc(sizeof(*args));
 		args->queue = cod_op;
 		args->id = *id_message;
@@ -124,33 +122,37 @@ void process_new_message(op_code cod_op, uint32_t id_correlative, void* received
 		void* allocated_memory = memory_alloc(net_size_message);
 		args->alloc = allocated_memory;
 		void* allocated_message = memory_copy(args);
+		void* message_to_send = malloc(net_size_message); // Copio el mensaje por si es eliminado antes de ser informado a suscriptores
+		memcpy(message_to_send, allocated_message, net_size_message);
 		free(args);
 		free(received_message);
+
+		printf("hice frees BROKER\n");
 
 		pthread_mutex_lock(&mutex_deleted_messages_ids);
 		int ids_count = 0;
 		t_list* ids_messages_deleted = get_victim_messages_ids(&ids_count);
 
+		printf("obtuve victimcas BROKER\n");
+
 		if (ids_count > 0) {
 			remove_messages_by_id(ids_messages_deleted, ids_count);
+			printf("removi mensajes BROKER\n");
 			notify_all_victim_messages_deleted();
+			printf("notifique que removi BROKER\n");
 		}
 		pthread_mutex_unlock(&mutex_deleted_messages_ids);
 
 		t_enqueued_message* mensaje_encolado = push_message_queue(queue, *id_message, id_correlative, mutex);
-
-		printf("Voy a enviar id rta 142 \n");
+		printf("Pushee a la cola el id %d BROKER\n", *id_message);
 
 		enviar_id_respuesta(*id_message, socket_cliente);
 
-
-		printf("Voy a informar a suscs 147 \n");
-
-		t_list* suscriptores_informados = inform_subscribers(cod_op, allocated_message, *id_message, id_correlative, subscribers, mutex);
+		printf("voy a informar a suscs el id %d BROKER\n", *id_message);
+		t_list* suscriptores_informados = inform_subscribers(cod_op, message_to_send, *id_message, id_correlative, subscribers, mutex);
+		free(message_to_send);
 		mensaje_encolado->subscribers_informed = suscriptores_informados;
 		notify_message_used(*id_message);
-
-		printf("correlativo: %d\n", id_correlative);
 
 		receive_multiples_ack(cod_op, *id_message, suscriptores_informados, mutex);
 	} else {
@@ -185,13 +187,23 @@ t_list* inform_subscribers(op_code codigo, void* mensaje, uint32_t id, uint32_t 
 
 	pthread_mutex_t mutex_subs = MUTEX_SUSCRIPTORES[codigo];
 
+	printf("listo para informar BROKER\n");
 	pthread_mutex_lock(&mutex_subs);
 	for (int i=0; i < list_size(suscriptores); i++) {
 		t_subscriber* suscriptor = list_get(suscriptores, i);
 
+		printf("voy a informarle al susc %d BROKER\n", suscriptor->id_subscriber);
+
+		if (mensaje == NULL) printf("el mensaje a enviar esta NULL BROKER\n");
+
+		printf("id del msg %d\n", id);
+
 		if (suscriptor->activo == 1) {
+			printf("voy a informar ahora , la cola es: %d BROKER\n", codigo);
 			if (enviar_mensaje(codigo, id, id_correlativo, mensaje, suscriptor->socket_subscriber) > 0) {
+				printf("ya informe! BROKER\n");
 				list_add(suscriptores_informados, (void*)suscriptor);
+				printf("agregue a la lista! BROKER\n");
 				log_message_to_subscriber(suscriptor->id_subscriber, id);
 			} else {
 				suscriptor->activo = 0;
@@ -340,7 +352,6 @@ void remove_messages_by_id(t_list* ids_messages_deleted, int ids_count)
 		//pthread_mutex_lock(&mutex);
 		remove_message_by_id(queue, id);
 		//pthread_mutex_unlock(&mutex);
-		printf("ID eliminado: %d\n", id);
 	}
 }
 

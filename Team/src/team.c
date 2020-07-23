@@ -37,7 +37,6 @@ void quedarseALaEscucha() {
 	while(1) {
 		int socket_potencial = esperar_cliente(socket_servidor);
 		if(socket_potencial > 0) {
-			printf("Llegó alguien\n");
 			int* socket_cliente = (int*) malloc(sizeof(int));
 			*socket_cliente = socket_potencial;
 			pthread_create(&threadEscucha,NULL,(void*)serve_client,socket_cliente);
@@ -311,7 +310,7 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido)
 			}
 		}
 
-		printf("TERMINO UN CAUGHT\n");
+		printf("TERMINO UN MENSAJE\n");
 
 		free_paquete_recibido(nombre_recibido, paquete_recibido);
 
