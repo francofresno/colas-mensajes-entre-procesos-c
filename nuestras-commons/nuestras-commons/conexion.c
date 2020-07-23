@@ -92,12 +92,14 @@ int enviar_mensaje(op_code codigoOperacion, uint32_t id, uint32_t id_correlativo
 void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_correlativo, void* estructura, uint32_t* bytes)
 {
 	int offset = 0;
-	*bytes = sizeof(codigo_operacion) + sizeof(id) + sizeof(id_correlativo);
+	uint32_t codigo_a_serializar = -1;
+	*bytes = sizeof(codigo_a_serializar) + sizeof(id) + sizeof(id_correlativo);
 	void* a_enviar;
 
 	switch(codigo_operacion)
 	{
 		case SUSCRIPCION: ;
+			codigo_a_serializar = 7;
 			t_suscripcion_msg* estSuscripcion = estructura;
 			*bytes += sizeof(estSuscripcion->id_proceso)
 					+ sizeof(estSuscripcion->tipo_cola)
@@ -105,7 +107,7 @@ void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_corr
 			a_enviar = malloc(*bytes + sizeof(*bytes));
 
 			serializar_variable(a_enviar, bytes, sizeof(uint32_t), &offset);
-			serializar_variable(a_enviar, &codigo_operacion, sizeof(codigo_operacion), &offset);
+			serializar_variable(a_enviar, &codigo_a_serializar, sizeof(codigo_a_serializar), &offset);
 			serializar_variable(a_enviar, &id, sizeof(id), &offset);
 			serializar_variable(a_enviar, &id_correlativo, sizeof(id_correlativo), &offset);
 			serializar_variable(a_enviar, &(estSuscripcion->id_proceso), sizeof(estSuscripcion->id_proceso), &offset);
@@ -113,6 +115,7 @@ void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_corr
 			serializar_variable(a_enviar, &(estSuscripcion->temporal), sizeof(estSuscripcion->temporal), &offset);
 			break;
 		case NEW_POKEMON: ;
+			codigo_a_serializar = 1;
 			t_newPokemon_msg* estNew = estructura;
 			*bytes += estNew->nombre_pokemon.nombre_lenght
 					+ sizeof(estNew->nombre_pokemon.nombre_lenght)
@@ -122,7 +125,7 @@ void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_corr
 			a_enviar = malloc(*bytes + sizeof(*bytes));
 
 			serializar_variable(a_enviar, bytes, sizeof(uint32_t), &offset);
-			serializar_variable(a_enviar, &codigo_operacion, sizeof(codigo_operacion), &offset);
+			serializar_variable(a_enviar, &codigo_a_serializar, sizeof(codigo_a_serializar), &offset);
 			serializar_variable(a_enviar, &id, sizeof(id), &offset);
 			serializar_variable(a_enviar, &id_correlativo, sizeof(id_correlativo), &offset);
 			serializar_nombre(a_enviar, estNew->nombre_pokemon, &offset);
@@ -132,6 +135,7 @@ void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_corr
 
 			break;
 		case APPEARED_POKEMON: ;
+			codigo_a_serializar = 2;
 			t_appearedPokemon_msg* estAppeared = estructura;
 			*bytes += estAppeared->nombre_pokemon.nombre_lenght
 					+ sizeof(estAppeared->nombre_pokemon.nombre_lenght)
@@ -140,7 +144,7 @@ void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_corr
 			a_enviar = malloc(*bytes + sizeof(*bytes));
 
 			serializar_variable(a_enviar, bytes, sizeof(uint32_t), &offset);
-			serializar_variable(a_enviar, &codigo_operacion, sizeof(codigo_operacion), &offset);
+			serializar_variable(a_enviar, &codigo_a_serializar, sizeof(codigo_a_serializar), &offset);
 			serializar_variable(a_enviar, &id, sizeof(id), &offset);
 			serializar_variable(a_enviar, &id_correlativo, sizeof(id_correlativo), &offset);
 			serializar_nombre(a_enviar, estAppeared->nombre_pokemon, &offset);
@@ -148,18 +152,20 @@ void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_corr
 			serializar_variable(a_enviar, &(estAppeared->coordenadas.posY), sizeof(estAppeared->coordenadas.posY), &offset);
 			break;
 		case GET_POKEMON: ;
+			codigo_a_serializar = 5;
 			t_getPokemon_msg* estGet = estructura;
 			*bytes += estGet->nombre_pokemon.nombre_lenght
 					+ sizeof(estGet->nombre_pokemon.nombre_lenght);
 			a_enviar = malloc(*bytes + sizeof(*bytes));
 
 			serializar_variable(a_enviar, bytes, sizeof(uint32_t), &offset);
-			serializar_variable(a_enviar, &codigo_operacion, sizeof(codigo_operacion), &offset);
+			serializar_variable(a_enviar, &codigo_a_serializar, sizeof(codigo_a_serializar), &offset);
 			serializar_variable(a_enviar, &id, sizeof(id), &offset);
 			serializar_variable(a_enviar, &id_correlativo, sizeof(id_correlativo), &offset);
 			serializar_nombre(a_enviar, estGet->nombre_pokemon, &offset);
 			break;
 		case LOCALIZED_POKEMON: ;
+			codigo_a_serializar = 6;
 			t_localizedPokemon_msg* estLocalized = estructura;
 			*bytes += estLocalized->nombre_pokemon.nombre_lenght
 					+ sizeof(estLocalized->nombre_pokemon.nombre_lenght)
@@ -168,7 +174,7 @@ void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_corr
 			a_enviar = malloc(*bytes + sizeof(*bytes));
 
 			serializar_variable(a_enviar, bytes, sizeof(uint32_t), &offset);
-			serializar_variable(a_enviar, &codigo_operacion, sizeof(codigo_operacion), &offset);
+			serializar_variable(a_enviar, &codigo_a_serializar, sizeof(codigo_a_serializar), &offset);
 			serializar_variable(a_enviar, &id, sizeof(id), &offset);
 			serializar_variable(a_enviar, &id_correlativo, sizeof(id_correlativo), &offset);
 			serializar_nombre(a_enviar, estLocalized->nombre_pokemon, &offset);
@@ -181,6 +187,7 @@ void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_corr
 
 			break;
 		case CATCH_POKEMON: ;
+			codigo_a_serializar = 3;
 			t_catchPokemon_msg* estCatch = estructura;
 			*bytes += estCatch->nombre_pokemon.nombre_lenght
 					+ sizeof(estCatch->nombre_pokemon.nombre_lenght)
@@ -189,7 +196,7 @@ void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_corr
 			a_enviar = malloc(*bytes + sizeof(*bytes));
 
 			serializar_variable(a_enviar, bytes, sizeof(uint32_t), &offset);
-			serializar_variable(a_enviar, &codigo_operacion, sizeof(codigo_operacion), &offset);
+			serializar_variable(a_enviar, &codigo_a_serializar, sizeof(codigo_a_serializar), &offset);
 			serializar_variable(a_enviar, &id, sizeof(id), &offset);
 			serializar_variable(a_enviar, &id_correlativo, sizeof(id_correlativo), &offset);
 			serializar_nombre(a_enviar, estCatch->nombre_pokemon, &offset);
@@ -197,12 +204,13 @@ void* serializar_paquete(op_code codigo_operacion, uint32_t id, uint32_t id_corr
 			serializar_variable(a_enviar, &(estCatch->coordenadas.posY), sizeof(estCatch->coordenadas.posY), &offset);
 			break;
 		case CAUGHT_POKEMON: ;
+			codigo_a_serializar = 4;
 			t_caughtPokemon_msg* estCaught = estructura;
 			*bytes += sizeof(estCaught->atrapado);
 			a_enviar = malloc(*bytes + sizeof(*bytes));
 
 			serializar_variable(a_enviar, bytes, sizeof(uint32_t), &offset);
-			serializar_variable(a_enviar, &codigo_operacion, sizeof(codigo_operacion), &offset);
+			serializar_variable(a_enviar, &codigo_a_serializar, sizeof(codigo_a_serializar), &offset);
 			serializar_variable(a_enviar, &id, sizeof(id), &offset);
 			serializar_variable(a_enviar, &id_correlativo, sizeof(id_correlativo), &offset);
 			serializar_variable(a_enviar, &(estCaught->atrapado), sizeof(estCaught->atrapado), &offset);
@@ -260,7 +268,22 @@ t_paquete* recibir_paquete(int socket_cliente, char** nombre_recibido, uint32_t*
 
 void deserializar_paquete(void* stream, t_paquete* paquete_recibido, int* offset, uint32_t bytes, char** nombre_recibido)
 {
-	copiar_variable(&(paquete_recibido->codigo_operacion), stream, offset, sizeof(paquete_recibido->codigo_operacion));
+	uint32_t codigo_deserializado = -1;
+	copiar_variable(&(codigo_deserializado), stream, offset, sizeof(codigo_deserializado));
+
+	switch(codigo_deserializado)
+	{
+		case 1: paquete_recibido->codigo_operacion = NEW_POKEMON; break;
+		case 2: paquete_recibido->codigo_operacion = APPEARED_POKEMON; break;
+		case 3: paquete_recibido->codigo_operacion = CATCH_POKEMON; break;
+		case 4: paquete_recibido->codigo_operacion = CAUGHT_POKEMON; break;
+		case 5: paquete_recibido->codigo_operacion = GET_POKEMON; break;
+		case 6: paquete_recibido->codigo_operacion = LOCALIZED_POKEMON; break;
+		case 7: paquete_recibido->codigo_operacion = SUSCRIPCION; break;
+		default: paquete_recibido->codigo_operacion = ERROR_CODIGO; break;
+	}
+
+
 	copiar_variable(&(paquete_recibido->id), stream, offset, sizeof(paquete_recibido->id));
 	copiar_variable(&(paquete_recibido->id_correlativo), stream, offset, sizeof(paquete_recibido->id_correlativo));
 
