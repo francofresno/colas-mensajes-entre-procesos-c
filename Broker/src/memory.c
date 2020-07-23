@@ -53,7 +53,6 @@ void* memory_alloc(int size)
 
 void* memory_copy(t_copy_args* args)
 {
-	printf("Voy a copiar un mensaje a MEM\n");
 	void* data = NULL;
 	if (MEMORY_ALGORITHM == BUDDY_SYSTEM) {
 		t_buddy* buddy = args->alloc;
@@ -69,12 +68,11 @@ void* memory_copy(t_copy_args* args)
 		partition->id_data = args->id;
 		partition->queue = args->queue;
 
-		data = memcpy(MEMORY + partition->base, args->data, args->data_size); // TODO funciona bien pero valgrind dice invalid read of size X
+		data = memcpy(MEMORY + partition->base, args->data, args->data_size); //funciona bien pero valgrind dice invalid read of size X
 		partition->data = data;
 
 		log_new_message_in_memory(partition->id_data, partition->base);
 	}
-	printf("Copie mensaje a MEM\n");
 
 	return data;
 }
@@ -167,7 +165,6 @@ void write_partitions_info(FILE* dump_file)
 
 void memory_dump()
 {
-	printf("dump triggered\n");
 	pthread_mutex_lock(&mutex_memory);
 	FILE* dump_file = fopen(DUMP_PATH, "w");
 
@@ -225,7 +222,7 @@ void notify_message_used(uint32_t id_message)
 	}
 }
 
-void end_memory()  //TODO
+void end_memory()
 {
 
 }

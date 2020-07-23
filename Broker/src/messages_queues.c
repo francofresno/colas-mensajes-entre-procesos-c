@@ -25,9 +25,7 @@ t_enqueued_message* push_message_queue(t_queue* queue, uint32_t ID, uint32_t ID_
 	data->ID = ID;
 	data->ID_correlativo = ID_correlativo;
 
-	//pthread_mutex_lock(&mutex);
 	queue_push(queue, (void*) data);
-	//pthread_mutex_unlock(&mutex);
 
 	return data;
 }
@@ -135,7 +133,6 @@ void element_destroyer_mq(void* message)
 	t_enqueued_message* message_enqueue = (t_enqueued_message*) message;
 	free_subscribers_list(message_enqueue->subscribers_ack);
 	free_subscribers_list(message_enqueue->subscribers_informed);
-	//free(message_enqueue->message); TODO freerear los nombres de alguna manera aca
 	free(message_enqueue);
 }
 
@@ -151,7 +148,7 @@ int is_empty_message_queue(t_queue* queue)
 
 void free_message_queue(t_queue* queue)
 {
-	queue_destroy_and_destroy_elements(queue, element_destroyer_mq); // TODO chequear que element_destroyer_mq no freerea la data
+	queue_destroy_and_destroy_elements(queue, element_destroyer_mq);
 }
 
 
@@ -200,9 +197,7 @@ int get_index_of_subscriber(t_list* subscribers, uint32_t id_subscriber)
 
 t_subscriber* get_subscriber_by_id(t_list* subscribers, uint32_t id_subscriber)
 {
-	printf("antes del index\n");
 	int index = get_index_of_subscriber(subscribers, id_subscriber);
-	printf("index: %d\n", index);
 
 	return index >= 0 ? (t_subscriber*) list_get(subscribers, index) : NULL;
 }
@@ -216,24 +211,18 @@ void add_new_informed_subscriber_to_mq(t_list* messages_in_queue, uint32_t numbe
 	for (int i=0; i < number_of_messages; i++) {
 		t_enqueued_message* message = (t_enqueued_message*) list_get(messages_in_queue, i);
 		if (!isSubscriberListed(message->subscribers_informed, subscriber->id_subscriber)) {
-			list_add(message->subscribers_informed, subscriber); //TODO mutex?
+			list_add(message->subscribers_informed, subscriber);
 			log_message_to_subscriber(subscriber->id_subscriber, message->ID);
 		}
 	}
 }
 
 void add_new_ack_suscriber_to_mq(t_list* messages_in_queue, uint32_t number_of_messages, t_subscriber* subscriber) {
-	printf("cantidad mensajes: %d\n", list_size(messages_in_queue));
 
 	for (int i=0; i < number_of_messages; i++) {
-		printf("iterando magicamente\n");
 		t_enqueued_message* message = (t_enqueued_message*) list_get(messages_in_queue, i);
-		printf("cantidad suscriptores: %d\n", list_size(message->subscribers_ack));
-		printf("id: %d\n", subscriber->id_subscriber);
 		if (!isSubscriberListed(message->subscribers_ack, subscriber->id_subscriber)) {
-			printf("tamoooos\n");
-			list_add(message->subscribers_ack, subscriber); //TODO mutex?
-			printf("id %d\n",message->ID);
+			list_add(message->subscribers_ack, subscriber);
 			log_ack_from_subscriber(subscriber->id_subscriber, message->ID);
 		}
 	}

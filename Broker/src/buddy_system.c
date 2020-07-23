@@ -34,8 +34,6 @@ void* buddy_alloc(int size)
 			buddy->is_free = 1;
 			buddy->data = NULL;
 
-			printf("Desde BS ID %d\n", buddy->id_data);
-
 			uint32_t* id_to_delete = malloc(sizeof(*id_to_delete));
 			op_code* queue_deleted_msg = malloc(sizeof(*queue_deleted_msg));
 			*id_to_delete = buddy->id_data;
