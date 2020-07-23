@@ -24,11 +24,14 @@ pthread_mutex_t mutex_cantidadCambiosContexto = PTHREAD_MUTEX_INITIALIZER;
 
 void planificarCaught() {
 
+	printf("Comienza PLCAUGHT\n");
 	int cantidadCaughts1 = 0;
 	pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
 	if(!(list_is_empty(listaBloqueadosEsperandoMensaje))){
-		int j = list_size(listaBloqueadosEsperandoMensaje);
-		for(int i=0; i<j ; i++){
+		for(int i=0; i < list_size(listaBloqueadosEsperandoMensaje) ; i++){
+			printf("Comienza el for en PLCAUGHT\n");
+			printf("Voy a obtener el entrenador de la lista size %d, siendo i %d PLCAUGHT\n", list_size(listaBloqueadosEsperandoMensaje), i);
+
 			t_entrenador* entrenador = list_get(listaBloqueadosEsperandoMensaje, i);
 
 			printf("entrenador %d PLCAUGHT\n", entrenador->id_entrenador);
@@ -37,11 +40,14 @@ void planificarCaught() {
 				entrenador->estado = READY;
 				log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "llegó un caught que le permite atrapar al pokemon", "READY");
 
+				printf("Ya loggee entrenador a ready PLCAUGHT\n");
 				pthread_mutex_lock(&mutex_listaReady);
 				list_add(listaReady, entrenador);
 				pthread_mutex_unlock(&mutex_listaReady);
+				printf("lo agregue a ready PLCAUGHT\n");
 				list_remove(listaBloqueadosEsperandoMensaje, i);
 				cantidadCaughts1++;
+				i--;
 			}
 
 			if((entrenador->pokemonInstantaneo) == NULL){
@@ -50,9 +56,11 @@ void planificarCaught() {
 				list_add(listaBloqueadosEsperandoPokemones, entrenador);
 				pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoPokemones);
 				list_remove(listaBloqueadosEsperandoMensaje, i);
+				i--;
 			}
 			printf("termina un for PLCAUGHT\n");
 		}
+		printf("termino el for completo, size de la lista %d PLCAUGHT\n", list_size(listaBloqueadosEsperandoMensaje));
 	}
 	pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
 
