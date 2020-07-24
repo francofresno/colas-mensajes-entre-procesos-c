@@ -67,7 +67,7 @@ void log_llegada_caught(uint32_t id_corr, uint32_t atrapado)
 void log_resultado_team(char* resultado, int ciclosCPUTotales, int cantidadCambiosContexto, char* cantCiclosCPUPorEntrenador, int cantDeadlocks)
 {
 	printf("logeo resultado\n");
-	char* log_msg = "El resultado final es: %s /n Ciclos de CPU totales: %d \n Cantidad de cambios de contexto: %d \n Cantidad de ciclos de CPU realizados por entrenador: %s \n Deadlocks producidos y resueltos: %d ";
+	char* log_msg = "El resultado final es: %s \n Ciclos de CPU totales: %d \n Cantidad de cambios de contexto: %d \n Cantidad de ciclos de CPU realizados por entrenador: %s \n Deadlocks producidos y resueltos: %d ";
 	log_info(LOGGER,log_msg, resultado, ciclosCPUTotales, cantidadCambiosContexto, cantCiclosCPUPorEntrenador, cantDeadlocks);
 }
 
