@@ -680,12 +680,6 @@ void chequearDeadlock(int algoritmo) {
 
 				case SJFCD:
 
-					//de mas
-					for (int i=0; i < list_size(listaBloqueadosDeadlock); i++) {
-					t_entrenador* entrenador = list_get(listaBloqueadosDeadlock, i);
-					double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
-					} //
-
 					ordenarListaPorEstimacion(listaBloqueadosDeadlock);
 					entrenadorBloqueadoParaIntercambio = list_remove(listaBloqueadosDeadlock, 0);
 					list_add(entrenadorIntercambio, entrenadorBloqueadoParaIntercambio);
@@ -693,7 +687,6 @@ void chequearDeadlock(int algoritmo) {
 						t_entrenador* entrenador = list_get(listaBloqueadosDeadlock, i);
 						entrenador->estado = READY;
 						log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se ejecutó el algoritmo de detección de deadlocks", "READY");
-						double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
 					}
 
 					for (int i=0; i < list_size(listaBloqueadosDeadlock); i++) {
@@ -732,18 +725,11 @@ void chequearDeadlock(int algoritmo) {
 					list_add_in_index(listaBloqueadosDeadlock, 0, entrenadorBloqueadoParaIntercambio);
 					list_remove(entrenadorIntercambio, 0);
 
-					for (int i=0; i < list_size(listaBloqueadosDeadlock); i++) {
-						t_entrenador* entrenador = list_get(listaBloqueadosDeadlock, i);
-						double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
-					}
-
 					ordenarListaPorEstimacion(listaBloqueadosDeadlock);
 					while (list_size(listaBloqueadosDeadlock) > 1 && list_size(listaBloqueadosDeadlock) > list_size(entrenadoresNoSeleccionables)) {
 
 						t_entrenador* entrenador = list_get(listaBloqueadosDeadlock, i);
 						entrenador->estado = EXEC;
-
-						double estimadoProxRafagaEj = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
 
 						pthread_mutex_lock(&mutex_cantidadCambiosContexto);
 						cantidadCambiosDeContexto+=1;
@@ -796,12 +782,6 @@ void chequearDeadlock(int algoritmo) {
 					break;
 				case SJFSD:
 
-					//de mas
-					for (int i=0; i < list_size(listaBloqueadosDeadlock); i++) {
-					t_entrenador* entrenador = list_get(listaBloqueadosDeadlock, i);
-					double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
-					} //
-
 					ordenarListaPorEstimacion(listaBloqueadosDeadlock);
 					entrenadorBloqueadoParaIntercambio = list_remove(listaBloqueadosDeadlock, 0);
 					list_add(entrenadorIntercambio, entrenadorBloqueadoParaIntercambio);
@@ -809,7 +789,6 @@ void chequearDeadlock(int algoritmo) {
 						t_entrenador* entrenador = list_get(listaBloqueadosDeadlock, i);
 						entrenador->estado = READY;
 						log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se ejecutó el algoritmo de detección de deadlocks", "READY");
-						double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
 					}
 
 					for (int i=0; i < list_size(listaBloqueadosDeadlock); i++) {
@@ -848,18 +827,11 @@ void chequearDeadlock(int algoritmo) {
 					list_add_in_index(listaBloqueadosDeadlock, 0, entrenadorBloqueadoParaIntercambio);
 					list_remove(entrenadorIntercambio, 0);
 
-					for (int i=0; i < list_size(listaBloqueadosDeadlock); i++) {
-						t_entrenador* entrenador = list_get(listaBloqueadosDeadlock, i);
-						double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
-					}
-
 					ordenarListaPorEstimacion(listaBloqueadosDeadlock);
 					while (list_size(listaBloqueadosDeadlock) > 1 && list_size(listaBloqueadosDeadlock) > list_size(entrenadoresNoSeleccionables)) {
 
 						t_entrenador* entrenador = list_get(listaBloqueadosDeadlock, i);
 						entrenador->estado = EXEC;
-
-						double estimadoProxRafagaEj = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
 
 						pthread_mutex_lock(&mutex_cantidadCambiosContexto);
 						cantidadCambiosDeContexto+=1;
