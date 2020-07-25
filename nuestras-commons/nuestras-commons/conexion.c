@@ -401,7 +401,7 @@ void enviar_id_respuesta(uint32_t id_msg, int socket_cliente)
 	serializar_variable(a_enviar, &id_msg, sizeof(id_msg), &offset);
 
 	int status = send(socket_cliente, a_enviar, sizeof(id_msg), 0);
-	printf("Envie el id %d como respuesta al mensaje que me llego y el status fue: %d\n", id_msg, status);
+
 	free(a_enviar);
 }
 

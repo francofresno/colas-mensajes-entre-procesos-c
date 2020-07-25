@@ -72,8 +72,6 @@ void inicializarConfig(){
 	char* team_log = config_get_string_value(config, "LOG_FILE");
 	LOGGER = log_create(team_log, PUERTO_TEAM, false, LOG_LEVEL_INFO);
 
-
-	printf("ALGORITMO: %s\n", algoritmoPlanificacion);
 }
 
 void inicializarSemaforoPlanificador(){
@@ -104,11 +102,6 @@ void suscribirseAColas(){
 }
 
 void suscribirseA(op_code tipo_cola){
-
-	printf("===============\n");
-	printf("SUSCRIPCION A COLA\n");
-	printf("===============\n");
-	fflush(stdout);
 
 	pthread_mutex_lock(&mutex_send);
 	int socket_cliente = crear_conexion(ipBroker, puertoBroker);
@@ -177,9 +170,6 @@ void serve_client(int* socket_cliente)
 
 void process_request(char* nombre_recibido, t_paquete* paquete_recibido)
 {
-
-	printf("Codigo: %d (Proc Req TEAM)\n", paquete_recibido->codigo_operacion);
-
 	char* nombrePosta;
 	switch(paquete_recibido->codigo_operacion)
 	{
@@ -310,8 +300,6 @@ void process_request(char* nombre_recibido, t_paquete* paquete_recibido)
 			}
 		}
 
-		printf("TERMINO UN MENSAJE\n");
-
 		free_paquete_recibido(nombre_recibido, paquete_recibido);
 
 			break;
@@ -434,7 +422,6 @@ void inicializarListas(){
 void esperarIdGet(int socket_cliente){
 	uint32_t* id_respuesta = malloc(sizeof(uint32_t));
 	*id_respuesta = recibir_id(socket_cliente);
-	printf("recibi el id %d (esperarIdGet TEAM)\n", *id_respuesta);
 	pthread_mutex_lock(&mutex_id_mensaje_get);
 	list_add(id_mensajeGet,(void*) id_respuesta);
 	pthread_mutex_unlock(&mutex_id_mensaje_get);

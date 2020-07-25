@@ -242,7 +242,6 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 	while(1) {
 		sem_t* semaforoDelEntrenador = (sem_t*) list_get(sem_entrenadores_ejecutar, entrenador->id_entrenador);
 		sem_wait(semaforoDelEntrenador);
-		printf("Arranco yo! id: %d\n", entrenador->id_entrenador);
 
 		if(entrenador->puedeAtrapar){
 
@@ -327,7 +326,6 @@ void ejecutarEntrenador(t_entrenador* entrenador){
 				}
 			}
 		}
-		printf("termine de ejecutar, soy entrenador\n");
 	}
 }
 
@@ -360,7 +358,6 @@ uint32_t enviarMensajeCatch(t_newPokemon* pokemon){
 uint32_t esperarIdCatch(int socket_cliente){
 	uint32_t* id_respuesta = malloc(sizeof(uint32_t));
 	*id_respuesta = recibir_id(socket_cliente);
-	printf("recibi el id %d\n", *id_respuesta);
 
 	pthread_mutex_lock(&mutex_id_mensaje_catch);
 	list_add(id_mensajeCatch,(void*) id_respuesta);
@@ -615,9 +612,6 @@ void intercambiarPokemones(uint32_t idEntrenador1, uint32_t idEntrenador2){
 
 	t_entrenador* entrenador1 = list_get(entrenadores, idEntrenador1);
 	t_entrenador* entrenador2 = list_get(entrenadores, idEntrenador2);
-
-	printf("El quantum de intercambio de %d es: %d y el disponible es: %d\n", entrenador1->id_entrenador, entrenador1->quantumIntercambio, entrenador1->quantumDisponible);
-	printf("El quantum de intercambio de %d es: %d y el disponible es: %d\n", entrenador2->id_entrenador, entrenador2->quantumIntercambio, entrenador2->quantumDisponible);
 
 	if ((entrenador1->quantumIntercambio) <= (entrenador1->quantumDisponible) || (stringACodigoAlgoritmo(algoritmoPlanificacion) != RR)) {
 

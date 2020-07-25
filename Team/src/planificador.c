@@ -24,43 +24,35 @@ pthread_mutex_t mutex_cantidadCambiosContexto = PTHREAD_MUTEX_INITIALIZER;
 
 void planificarCaught() {
 
-	printf("Comienza PLCAUGHT\n");
 	int cantidadCaughts1 = 0;
 	pthread_mutex_lock(&mutex_listaBloqueadosEsperandoMensaje);
 	if(!(list_is_empty(listaBloqueadosEsperandoMensaje))){
 		for(int i=0; i < list_size(listaBloqueadosEsperandoMensaje) ; i++){
-			printf("Comienza el for en PLCAUGHT\n");
-			printf("Voy a obtener el entrenador de la lista size %d, siendo i %d PLCAUGHT\n", list_size(listaBloqueadosEsperandoMensaje), i);
 
 			t_entrenador* entrenador = list_get(listaBloqueadosEsperandoMensaje, i);
-
-			printf("entrenador %d PLCAUGHT\n", entrenador->id_entrenador);
 
 			if(entrenador->puedeAtrapar){
 				entrenador->estado = READY;
 				log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "llegó un caught que le permite atrapar al pokemon", "READY");
 
-				printf("Ya loggee entrenador a ready PLCAUGHT\n");
 				pthread_mutex_lock(&mutex_listaReady);
 				list_add(listaReady, entrenador);
 				pthread_mutex_unlock(&mutex_listaReady);
-				printf("lo agregue a ready PLCAUGHT\n");
+
 				list_remove(listaBloqueadosEsperandoMensaje, i);
 				cantidadCaughts1++;
 				i--;
 			}
 
 			if((entrenador->pokemonInstantaneo) == NULL){
-				printf("el instantaneo es NULL PLCAUGHT\n");
+
 				pthread_mutex_lock(&mutex_listaBloqueadosEsperandoPokemones);
 				list_add(listaBloqueadosEsperandoPokemones, entrenador);
 				pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoPokemones);
 				list_remove(listaBloqueadosEsperandoMensaje, i);
 				i--;
 			}
-			printf("termina un for PLCAUGHT\n");
 		}
-		printf("termino el for completo, size de la lista %d PLCAUGHT\n", list_size(listaBloqueadosEsperandoMensaje));
 	}
 	pthread_mutex_unlock(&mutex_listaBloqueadosEsperandoMensaje);
 
@@ -71,7 +63,6 @@ void planificarCaught() {
 
 void planificarSegun() {
 
-	printf("Vamos a planif\n");
 	switch (stringACodigoAlgoritmo(algoritmoPlanificacion)) {
 
 		case FIFO:
@@ -96,11 +87,9 @@ void planificarSegun() {
 			break;
 
 		case ERROR_CODIGO_ALGORITMO:
-			puts("Se recibio mal el codigo\n");
 			break;
 
 		default:
-			puts("Error desconocido\n");
 			break;
 
 	}
@@ -108,24 +97,15 @@ void planificarSegun() {
 }
 
 void planificarSegunFifo() {
-	printf("En FIFO\n");
 	int distancia;
 
 	sem_wait(&sem_planificar);
 
-	printf("Pase el WAIT del planif FIFO\n");
-
 	sem_init(&sem_esperarCaught, 0, 0);
-
-	printf("init sem caught FIFO\n");
 
 	t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, 0);
 
-	printf("removi de ready a %d FIFO\n", entrenador->id_entrenador);
-
 	entrenador->estado = EXEC;
-
-	printf("cambiando contexto FIFO\n");
 
 	pthread_mutex_lock(&mutex_cantidadCambiosContexto);
 	cantidadCambiosDeContexto+=1;
@@ -178,29 +158,19 @@ void planificarSegunFifo() {
 	chequearSiEstaDisponible(entrenador);
 
 	sem_post(&sem_planificar);
-	printf("termino fifo\n");
 }
 
 int planificarSegunRR(){
 
-	printf("En RR\n");
 	int distancia;
 
 	sem_wait(&sem_planificar);
 
-	printf("Pase el WAIT del planif RR\n");
-
 	sem_init(&sem_esperarCaught, 0, 0);
-
-	printf("init sem caught RR\n");
 
 	t_entrenador* entrenador = (t_entrenador*) list_remove(listaReady, 0);
 
-	printf("removi de ready a %d RR\n", entrenador->id_entrenador);
-
 	entrenador->estado = EXEC;
-
-	printf("cambiando contexto RR\n");
 
 	pthread_mutex_lock(&mutex_cantidadCambiosContexto);
 	cantidadCambiosDeContexto+=1;
@@ -270,8 +240,6 @@ int planificarSegunRR(){
 	chequearSiEstaDisponible(entrenador);
 
 	sem_post(&sem_planificar);
-
-	printf("Termino RR\n");
 
 	return 0;
 }
@@ -444,8 +412,6 @@ void planificarSegunSJFSinDesalojo(){
 
 	chequearSiEstaDisponible(entrenador);
 
-	printf("termino SJF sin desalojo\n");
-
 	sem_post(&sem_planificar);
 }
 
@@ -481,20 +447,13 @@ void chequearDeadlock(int algoritmo) {
 
 		int tamanioEntrenadores = list_size(entrenadores);
 
-		printf("entre a comparar porque hay dl %d \n", tamanioEntrenadores);
-
 		pthread_mutex_lock(&mutex_listaFinalizados);
 		int tamanioFinalizados = list_size(listaFinalizados);
 		pthread_mutex_unlock(&mutex_listaFinalizados);
 
-		printf("pase mx de fn %d \n", tamanioFinalizados);
-
 		if(tamanioEntrenadores == tamanioFinalizados || list_size(listaBloqueadosDeadlock) == 1){
-			printf("finalizo\n");
 			finalizarTeam();
 		} else {
-			printf("CHECK DEADLOCK\n");
-
 			int distancia;
 			int i = 0;
 			t_entrenador* entrenadorBloqueadoParaIntercambio;
@@ -637,7 +596,6 @@ void chequearDeadlock(int algoritmo) {
 							sem_wait(&sem_entrenadorMoviendose);
 							distancia = distanciaA(entrenador->coordenadas, entrenadorBloqueadoParaIntercambio->coordenadas);
 
-							printf("PL: Me movi un lugar, distancia: %d\n", distancia);
 							entrenador->quantumDisponible -= 1;
 						}
 
@@ -717,8 +675,6 @@ void chequearDeadlock(int algoritmo) {
 							i = 0;
 						}
 
-						printf("Vuelvo al while con i = %d y la lista de bloqueados por deadl tiene %d entrenadores\n", i, list_size(listaBloqueadosDeadlock));
-
 					}
 					break;
 
@@ -728,7 +684,6 @@ void chequearDeadlock(int algoritmo) {
 					for (int i=0; i < list_size(listaBloqueadosDeadlock); i++) {
 					t_entrenador* entrenador = list_get(listaBloqueadosDeadlock, i);
 					double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
-					printf("El entrenador con id %d\n tiene rafaga anterior %d,\n estimador inicial %f, \n estimado prox raf %f \n",  entrenador->id_entrenador, entrenador->rafagaAnteriorReal, entrenador->estimacionInicial, estimadoProxRafaga);
 					} //
 
 					ordenarListaPorEstimacion(listaBloqueadosDeadlock);
@@ -739,8 +694,6 @@ void chequearDeadlock(int algoritmo) {
 						entrenador->estado = READY;
 						log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se ejecutó el algoritmo de detección de deadlocks", "READY");
 						double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
-						printf("El entrenador con id %d\n tiene rafaga anterior %d,\n estimador inicial %f, \n estimado prox raf %f \n",  entrenador->id_entrenador, entrenador->rafagaAnteriorReal, entrenador->estimacionInicial, estimadoProxRafaga);
-
 					}
 
 					for (int i=0; i < list_size(listaBloqueadosDeadlock); i++) {
@@ -765,13 +718,10 @@ void chequearDeadlock(int algoritmo) {
 						sem_wait(&sem_entrenadorMoviendose);
 						distancia = distanciaA(entrenador->coordenadas, entrenadorBloqueadoParaIntercambio->coordenadas);
 
-						printf("PL: Me movi un lugar, distancia: %d\n", distancia);
-
 						while (distancia != 0 && distancia != -1) {
 							sem_post(semaforoDelEntrenador);
 							sem_wait(&sem_entrenadorMoviendose);
 							distancia = distanciaA(entrenador->coordenadas, entrenadorBloqueadoParaIntercambio->coordenadas);
-							printf("PL: Me movi un lugar, distancia: %d\n", distancia);
 						}
 
 						entrenador->estado = BLOCKED;
@@ -785,7 +735,6 @@ void chequearDeadlock(int algoritmo) {
 					for (int i=0; i < list_size(listaBloqueadosDeadlock); i++) {
 						t_entrenador* entrenador = list_get(listaBloqueadosDeadlock, i);
 						double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
-						printf("El entrenador con id %d\n tiene rafaga anterior %d,\n estimador inicial %f, \n estimado prox raf %f \n",  entrenador->id_entrenador, entrenador->rafagaAnteriorReal, entrenador->estimacionInicial, estimadoProxRafaga);
 					}
 
 					ordenarListaPorEstimacion(listaBloqueadosDeadlock);
@@ -795,8 +744,6 @@ void chequearDeadlock(int algoritmo) {
 						entrenador->estado = EXEC;
 
 						double estimadoProxRafagaEj = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
-						printf("El entrenador con id %d\n tiene rafaga anterior %d,\n estimador inicial %f, \n estimado prox raf %f \n",  entrenador->id_entrenador, entrenador->rafagaAnteriorReal, entrenador->estimacionInicial, estimadoProxRafagaEj);
-
 
 						pthread_mutex_lock(&mutex_cantidadCambiosContexto);
 						cantidadCambiosDeContexto+=1;
@@ -853,7 +800,6 @@ void chequearDeadlock(int algoritmo) {
 					for (int i=0; i < list_size(listaBloqueadosDeadlock); i++) {
 					t_entrenador* entrenador = list_get(listaBloqueadosDeadlock, i);
 					double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
-					printf("El entrenador con id %d\n tiene rafaga anterior %d,\n estimador inicial %f, \n estimado prox raf %f \n",  entrenador->id_entrenador, entrenador->rafagaAnteriorReal, entrenador->estimacionInicial, estimadoProxRafaga);
 					} //
 
 					ordenarListaPorEstimacion(listaBloqueadosDeadlock);
@@ -864,8 +810,6 @@ void chequearDeadlock(int algoritmo) {
 						entrenador->estado = READY;
 						log_entrenador_cambio_de_cola_planificacion(entrenador->id_entrenador, "se ejecutó el algoritmo de detección de deadlocks", "READY");
 						double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
-						printf("El entrenador con id %d\n tiene rafaga anterior %d,\n estimador inicial %f, \n estimado prox raf %f \n",  entrenador->id_entrenador, entrenador->rafagaAnteriorReal, entrenador->estimacionInicial, estimadoProxRafaga);
-
 					}
 
 					for (int i=0; i < list_size(listaBloqueadosDeadlock); i++) {
@@ -890,13 +834,10 @@ void chequearDeadlock(int algoritmo) {
 						sem_wait(&sem_entrenadorMoviendose);
 						distancia = distanciaA(entrenador->coordenadas, entrenadorBloqueadoParaIntercambio->coordenadas);
 
-						printf("PL: Me movi un lugar, distancia: %d\n", distancia);
-
 						while (distancia != 0 && distancia != -1) {
 							sem_post(semaforoDelEntrenador);
 							sem_wait(&sem_entrenadorMoviendose);
 							distancia = distanciaA(entrenador->coordenadas, entrenadorBloqueadoParaIntercambio->coordenadas);
-							printf("PL: Me movi un lugar, distancia: %d\n", distancia);
 						}
 
 						entrenador->estado = BLOCKED;
@@ -910,7 +851,6 @@ void chequearDeadlock(int algoritmo) {
 					for (int i=0; i < list_size(listaBloqueadosDeadlock); i++) {
 						t_entrenador* entrenador = list_get(listaBloqueadosDeadlock, i);
 						double estimadoProxRafaga = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
-						printf("El entrenador con id %d\n tiene rafaga anterior %d,\n estimador inicial %f, \n estimado prox raf %f \n",  entrenador->id_entrenador, entrenador->rafagaAnteriorReal, entrenador->estimacionInicial, estimadoProxRafaga);
 					}
 
 					ordenarListaPorEstimacion(listaBloqueadosDeadlock);
@@ -920,8 +860,6 @@ void chequearDeadlock(int algoritmo) {
 						entrenador->estado = EXEC;
 
 						double estimadoProxRafagaEj = alfa * (entrenador->rafagaAnteriorReal) + (1-alfa)*(entrenador->estimacionInicial);
-						printf("El entrenador con id %d\n tiene rafaga anterior %d,\n estimador inicial %f, \n estimado prox raf %f \n",  entrenador->id_entrenador, entrenador->rafagaAnteriorReal, entrenador->estimacionInicial, estimadoProxRafagaEj);
-
 
 						pthread_mutex_lock(&mutex_cantidadCambiosContexto);
 						cantidadCambiosDeContexto+=1;
@@ -1348,14 +1286,12 @@ void intercambiarPokemonesEntre(t_entrenador* entrenador1, t_entrenador* entrena
 
 t_entrenador* elegirConQuienIntercambiar(t_entrenador* entrenador) {
 
-	printf("PL: eligiendo con quien interc\n");
 
 	t_list* listaQuiere1 = list_duplicate(entrenador->pokemonesQueQuiere);
 	t_list* listaPosee1 = list_duplicate(entrenador->pokemonesQuePosee);
 
 	t_list* leFaltanParaObj1 = list_create();
 
-	printf("PL: Duplico listas\n");
 
 	diferenciasListasDeadlock(listaQuiere1, listaPosee1, leFaltanParaObj1);
 
@@ -1436,8 +1372,6 @@ t_entrenador* elegirConQuienIntercambiar(t_entrenador* entrenador) {
 
 	list_destroy(sublistasPosiblesProveedoresDePokemon);
 	list_destroy(posiblesProveedoresMenorPrioridad);
-
-	printf("PL: Se eligio con quien interc\n");
 
 	return entrenadorProveedor;
 }

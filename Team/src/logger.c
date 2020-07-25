@@ -15,7 +15,6 @@ void log_entrenador_cambio_de_cola_planificacion(uint32_t id_entrenador, char* r
 
 void log_movimiento_entrenador(uint32_t id, uint32_t coordX, uint32_t coordY)
 {
-	printf("Log movimiento entrenador\n");
 	char* log_msg = "El entrenador con ID %d se movió a la posición [%d,%d]";
 	log_info(LOGGER,log_msg, id, coordX, coordY);
 }
@@ -40,7 +39,6 @@ void log_inicio_algoritmo_deadlock()
 
 void log_fin_algoritmo_deadlock(char* resultado)
 {
-	printf("a logear deadlock\n");
 	char* log_msg = "El resultado del algoritmo de deadlock fue: %s";
 	log_info(LOGGER,log_msg, resultado);
 }
@@ -66,7 +64,6 @@ void log_llegada_caught(uint32_t id_corr, uint32_t atrapado)
 
 void log_resultado_team(char* resultado, int ciclosCPUTotales, int cantidadCambiosContexto, char* cantCiclosCPUPorEntrenador, int cantDeadlocks)
 {
-	printf("logeo resultado\n");
 	char* log_msg = "El resultado final es: %s \n Ciclos de CPU totales: %d \n Cantidad de cambios de contexto: %d \n Cantidad de ciclos de CPU realizados por entrenador: %s \n Deadlocks producidos y resueltos: %d ";
 	log_info(LOGGER,log_msg, resultado, ciclosCPUTotales, cantidadCambiosContexto, cantCiclosCPUPorEntrenador, cantDeadlocks);
 }
