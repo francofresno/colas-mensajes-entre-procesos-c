@@ -243,6 +243,7 @@ void sort_memory_by_base()
 
 int compact_memory()
 {
+	printf("a compactar");
 	SEARCH_FAILURE_COUNTER++;
 
 	int occ_size = list_size(OCCUPIED_PARTITIONS);
@@ -250,15 +251,21 @@ int compact_memory()
 		SEARCH_FAILURE_COUNTER = COMPACTION_FREQUENCY;
 
 	if (SEARCH_FAILURE_COUNTER == COMPACTION_FREQUENCY) {
+		printf("a compactar free\n");
 		t_partition* compacted_free_partition = compact_free_list();
+		printf("free list compacted\n");
 		int previous_base = 0;
 		int previous_size = 0;
 		compact_occupied_list(&previous_base, &previous_size);
+		printf("occ compacted\n");
 		compacted_free_partition->base = previous_base + previous_size;
 		list_add(ALL_PARTITIONS, compacted_free_partition);
 
+		printf("part a sortear\n");
 		sort_all_partitions_by_base();
+		printf("sortedds\n");
 		sort_memory_by_base();
+		printf("memory sorteada\n");
 
 		log_compactation();
 		SEARCH_FAILURE_COUNTER = 0;
