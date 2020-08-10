@@ -10,11 +10,11 @@ Los componentes del sistema son:
 
 :mailbox_with_mail: Un proceso administrador de las Colas de Mensajes (Broker). Este proceso utiliza dos sistemas de administración de su memoria interna (caché de mensajes) proporcionados por archivo de configuración: Buddy System y Particiones Dinámicas con compactación.
 
-:arrow_forward:*Procesos que obtienen los mensajes y planifican en función de ellos (Team). Este proceso utiliza cuatro algoritmos de planificación proporcionados por archivo de configuración: FIFO, RR, SJF con desalojo y SJF sin desalojo.
+:arrow_forward: Procesos que obtienen los mensajes y planifican en función de ellos (Team). Este proceso utiliza cuatro algoritmos de planificación proporcionados por archivo de configuración: FIFO, RR, SJF con desalojo y SJF sin desalojo.
 
 :floppy_disk: Procesos filesystem que se encargan de mantener los archivos en el tiempo (Game Card).
 
-:star: *El módulo nuestras-commons es una shared-library que provee funciones de manejo de sockets, envíos y recepciones de mensajes comunes a todos los procesos.
+:star: El módulo nuestras-commons es una shared-library que provee funciones de manejo de sockets, envíos y recepciones de mensajes comunes a todos los procesos.
 
 
 Click para ver el [enunciado](https://docs.google.com/document/d/1be91Gn93O2Vp8frZoV1i5CmtOG0scE1PS8dMHsCP314/edit).
